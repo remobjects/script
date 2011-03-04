@@ -43,6 +43,9 @@ type
     constructor (aStart, aEnd: Position);
     constructor (aStartRow, aStartCol, aEndRow, aEndCol: Integer; aFile: String);
 
+    property Start: Position read new Position(StartRow, STartCol, File);
+    property &End: Position read new Position(EndRow, EndCol, File);
+    property IsValid: Boolean read (StartRow > 0) and not  string.IsNullOrEmpty(File);
     property StartRow: Integer;
     property StartCol: Integer;
     property EndRow: Integer;
@@ -59,9 +62,23 @@ type
     constructor; empty;
     property Row: Integer read fRow write fRow;
     property Col: Integer read fCol write fCol;
+    property Column: Integer read Col;
+    property Line: Integer read Row;
     property &Module: string read fModule write fModule;
   end;
-
+  ScriptScope = public class(RemObjects.Script.EcmaScript.DeclarativeEnvironmentRecord)
+  private
+  public
+    method ContainsVariable(name: String): Boolean;
+    method GetItems: IEnumerable<KeyValuePair<String, Object>>; iterator;
+    method GetVariable<T>(name: String): T;
+    method GetVariable(name: String): Object;
+    method GetVariableNames: IEnumerable<String>;
+    method RemoveVariable(name: String): Boolean;
+    method SetVariable(name: String; value: Object);
+    method TryGetVariable(name: String; out value: Object): Boolean;
+    method TryGetVariable<T>(name: String; out value: T): Boolean;
+  end;
 implementation
 
 constructor PositionPair(aStart, aEnd: Position);
@@ -241,6 +258,56 @@ begin
   
   if arg = nil then arg := 'empty exception';
   exit new Exception(arg.ToString);
+end;
+
+method ScriptScope.ContainsVariable(name: String): Boolean;
+begin
+  exit Bag.ContainsKey(name);
+end;
+
+method ScriptScope.GetItems: IEnumerable<KeyValuePair<String, Object>>;
+begin
+  for each el in Bag do begin
+    yield new KeyValuePair<string, object>(el.Key, if el.Value.Value = nil then el.Value.Value else el.Value);
+  end;
+end;
+
+method ScriptScope.GetVariable<T>(name: String): T;
+begin
+  exit GetVariable(Name) as T;
+end;
+
+method ScriptScope.GetVariable(name: String): Object;
+begin
+  exit Bag[name];
+end;
+
+method ScriptScope.GetVariableNames: IEnumerable<String>;
+begin
+  exit Bag.Keys;
+end;
+
+method ScriptScope.RemoveVariable(name: String): Boolean;
+begin
+  exit inherited DeleteBinding(name);
+end;
+
+method ScriptScope.SetVariable(name: String; value: Object);
+begin
+  if not Bag.ContainsKey(name) then  CreateMutableBinding(name, true);
+  SetMutableBinding(name, value, true);
+end;
+
+method ScriptScope.TryGetVariable(name: String; out value: Object): Boolean;
+begin
+  result := bag.ContainsKey(name);
+  if result then Value := GetVariable(Name) else Value := nil;
+end;
+
+method ScriptScope.TryGetVariable<T>(name: String; out value: T): Boolean;
+begin
+  result := bag.ContainsKey(name);
+  if result then Value := GetVariable<T>(Name) else Value := default(T);
 end;
 
 end.

@@ -34,6 +34,8 @@ type
     constructor (aParser: EcmaScriptCompiler);
 		constructor;
 
+    property Parser: EcmaScriptCompiler read fParser write fParser;
+
     property Debug: IDebugSink read get_Debug write fDebug;
 
     property FunctionPrototype: EcmaScriptObject;

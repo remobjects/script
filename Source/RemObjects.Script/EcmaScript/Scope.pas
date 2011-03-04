@@ -28,17 +28,14 @@ type
   public
     constructor; empty;
     constructor(aScope: EnvironmentRecord);
-    constructor(aScope: EnvironmentRecord; aThis: Object);
     property LexicalScope: EnvironmentRecord;
     property VariableScope: EnvironmentRecord;
-    property This: Object;
-
+    
     property Global: GlobalObject read LexicalScope.Global;
 
     method GetDebugSink: IDebugSink;
 
     class var Method_GetDebugSink: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('GetDebugSink'); readonly;
-    class var Method_get_This: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('get_This'); readonly;
     class var Method_get_LexicalScope: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('get_LexicalScope'); readonly;
     class var Method_get_Global: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('get_Global'); readonly;
   end;
@@ -293,13 +290,6 @@ constructor ExecutionContext(aScope: EnvironmentRecord);
 begin
   LexicalScope := aScope;
   VariableScope := aScope;
-end;
-
-constructor ExecutionContext(aScope: EnvironmentRecord; aThis: Object);
-begin
-  LexicalScope := aScope;
-  VariableScope := aScope;
-  This := athis;
 end;
 
 method ExecutionContext.GetDebugSink: IDebugSink;

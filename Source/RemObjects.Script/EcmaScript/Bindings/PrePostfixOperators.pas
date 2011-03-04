@@ -37,21 +37,59 @@ begin
   if aLeft is Integer then 
     aLeft := Integer(aLeft) -1
   else
-    aLeft := Utilities.GetObjAsDouble(aLeft) -1;
+    aLeft := Utilities.GetObjAsDouble(aLeft) -1.0;
   Reference.SetValue(lRef, aLeft, aExec);
   exit lOldValue;
 end;
 
 class method Operators.PostIncrement(aLeft: Object; aExec: ExecutionContext): Object;
 begin
+  var lRef := Reference(aLeft);
+  
+  if (lRef <> nil) then begin
+    if (lRef.Strict) and (lRef.Base is EnvironmentRecord) and (lRef.Name in ['eval', 'arguments']) then 
+      aExec.Global.RaiseNativeError(NativeErrorType.SyntaxError, 'eval/arguments cannot be used in post increment operator');
+    aLeft := Reference.GetValue(lRef, aExec);
+  end;
+  var lOldValue := aLeft;
+  if aLeft is Integer then 
+    aLeft := Integer(aLeft) +1
+  else
+    aLeft := Utilities.GetObjAsDouble(aLeft) +1.0;
+  Reference.SetValue(lRef, aLeft, aExec);
+  exit lOldValue;
 end;
 
 class method Operators.PreDecrement(aLeft: Object; aExec: ExecutionContext): Object;
 begin
+  var lRef := Reference(aLeft);
+  
+  if (lRef <> nil) then begin
+    if (lRef.Strict) and (lRef.Base is EnvironmentRecord) and (lRef.Name in ['eval', 'arguments']) then 
+      aExec.Global.RaiseNativeError(NativeErrorType.SyntaxError, 'eval/arguments cannot be used in pre decrement operator');
+    aLeft := Reference.GetValue(lRef, aExec);
+  end;
+  if aLeft is Integer then 
+    aLeft := Integer(aLeft) -1
+  else
+    aLeft := Utilities.GetObjAsDouble(aLeft) -1.0;
+  exit Reference.SetValue(lRef, aLeft, aExec);
 end;
 
 class method Operators.PreIncrement(aLeft: Object; aExec: ExecutionContext): Object;
 begin
+  var lRef := Reference(aLeft);
+  
+  if (lRef <> nil) then begin
+    if (lRef.Strict) and (lRef.Base is EnvironmentRecord) and (lRef.Name in ['eval', 'arguments']) then 
+      aExec.Global.RaiseNativeError(NativeErrorType.SyntaxError, 'eval/arguments cannot be used in pre decrement operator');
+    aLeft := Reference.GetValue(lRef, aExec);
+  end;
+  if aLeft is Integer then 
+    aLeft := Integer(aLeft) +1
+  else
+    aLeft := Utilities.GetObjAsDouble(aLeft) +1.0;
+  exit Reference.SetValue(lRef, aLeft, aExec);
 end;
 
 end.

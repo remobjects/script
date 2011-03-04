@@ -85,7 +85,7 @@ type
     fLocals: List<LocalBuilder>;
     method UnrwapPossibleReference;
     method Parse(aFilename, aData: string; aEval: Boolean := false): List<SourceElement>; // eval throws different exception
-    method Parse(aScope: ExecutionContext; aOutside: Boolean; aScopeName: string; aElements: List<SourceElement>): InternalDelegate;
+    method Parse(aOutside: Boolean; aScopeName: string; aElements: List<SourceElement>): InternalDelegate;
     method PushDebugStack;
     method EmitElement(El: SourceElement);
     method AllocateLocal(aType: &Type): LocalBuilder;
@@ -99,7 +99,7 @@ type
 
     property GlobalObject: GlobalObject read fGlobal;
     
-    method EvalParse(aCurrentScope: ExecutionContext; aData: string): InternalDelegate;
+    method EvalParse(aData: string): InternalDelegate;
     method Parse(aFilename, aData: string): InternalDelegate;
   end;
 
@@ -185,18 +185,17 @@ begin
 end;
 
 
-method EcmaScriptCompiler.EvalParse(aCurrentScope: ExecutionContext; aData: string): InternalDelegate;
+method EcmaScriptCompiler.EvalParse(aData: string): InternalDelegate;
 begin
-  exit Parse(aCurrentScope, false, '<eval>', Parse('<eval>', aData, true));
+  exit Parse(false, '<eval>', Parse('<eval>', aData, true));
 end;
 
 method EcmaScriptCompiler.Parse(aFilename, aData: string): InternalDelegate;
 begin
-  var lWork := new ExecutionContext(LexicalScope := fRoot, VariableScope := fRoot, This := fGlobal);
-  exit Parse(lWork, true, aFilename, Parse( aFilename, aData, false));
+  exit Parse(true, aFilename, Parse( aFilename, aData, false));
 end;
 
-method EcmaScriptCompiler.Parse(aScope: ExecutionContext; aOutside: Boolean; aScopeName: string; aElements: List<SourceElement>): InternalDelegate;
+method EcmaScriptCompiler.Parse(aOutside: Boolean; aScopeName: string; aElements: List<SourceElement>): InternalDelegate;
 begin
   if aElements.Count <> 0 then begin
     if aElements[aElements.Count-1].Type <> ElementType.ExpressionStatement then
@@ -218,18 +217,12 @@ begin
 
   var lOldLocals := fLocals;
   fLocals := new List<LocalBuilder>;
-  var lMethod := new System.Reflection.Emit.DynamicMethod(aSCopeName, typeof(Object), [typeof(ExecutionContext), typeof(ExecutionContext), Typeof(array of Object)], typeof(DynamicMethods), true);
+  var lMethod := new System.Reflection.Emit.DynamicMethod(aSCopeName, typeof(Object), [typeof(ExecutionContext), typeof(object), Typeof(array of Object)], typeof(DynamicMethods), true);
 
   fILG := lMethod.GetILGenerator();
   fExecutionContext := fILG.DeclareLocal(typeof(ExecutionContext));
-  fILG.Emit(OpCodes.Ldarg_1); // second execution context
-  fILG.Emit(Opcodes.Stloc, fExecutionContext);
-  var lGotExecutionContext := fILG.DefineLabel();
-  fILG.Emit(Opcodes.Ldloc, fExecutionContext);
-  fILG.Emit(Opcodes.Brtrue, lGotExecutionContext);
   fILG.Emit(OpCodes.Ldarg_0);  // first execution context
   fILG.Emit(Opcodes.Stloc, fExecutionContext);
-  fILG.MarkLabel(lGotExecutionContext);
   if fDebug then begin
     PushDebugStack;
     filg.Emit(OpCodes.Ldstr, aScopeName);
@@ -251,14 +244,11 @@ begin
     EmitElement(aElements[i]);
 
   if fDebug then begin
-    filg.Emit(OpCodes.Leave, fExitLabel);
     filg.BeginFinallyBlock();
     PushDebugStack;
     filg.Emit(OpCodes.Ldstr, aScopeName);
     filg.Emit(Opcodes.Ldloc, fExecutionContext);
     filg.Emit(Opcodes.Callvirt, DebugSink.Method_ExitScope);
-
-    filg.Emit(OpCodes.Leave, fExitLabel);
     filg.EndExceptionBlock();
     if aOutside then begin
       filg.BeginCatchBlock(typeof(Exception));
@@ -266,7 +256,7 @@ begin
       filg.Emit(Opcodes.Stloc, lTemp);
       PushDebugStack;
       filg.Emit(Opcodes.Ldloc, lTemp);
-      filg.Emit(Opcodes.Callvirt, Debugsink.Method_CaughtException);
+      filg.Emit(Opcodes.Callvirt, Debugsink.Method_UncaughtException);
       filg.Emit(Opcodes.Rethrow);
       ReleaseLocal(lTemp);
       filg.EndExceptionBlock();
@@ -274,20 +264,12 @@ begin
   end;
   filg.MarkLabel(fExitLabel);
   filg.Emit(Opcodes.Ldloc, fResultVar);
-  {
-    try 
-      originalode;
-    except
-      on e: Exception do begin
-        Uncaught(e);
-        raise;
-      end;
-    end;
-  }
+  filg.Emit(Opcodes.Ret);
+  
   fExitLabel := lOldExitLabel;
   fResultVar := lOldResultVar;
   fLocals := lOldLocals;
-  exit InternalDelegate(lMethod.CreateDelegate(typeof(InternalDelegate), aScope));
+  exit InternalDelegate(lMethod.CreateDelegate(typeof(InternalDelegate)));
 end;
 
 method EcmaScriptCompiler.PushDebugStack;
@@ -315,7 +297,7 @@ begin
     end;
 
     ElementType.ReturnStatement: begin
-      PushExpression(ExpressionElement(el));
+      PushExpression(ReturnStatement(el).ExpressionElement);
       filg.Emit(Opcodes.Stloc, fResultVar);
       filg.Emit(Opcodes.Leave, fExitLabel);
     end;
@@ -394,8 +376,7 @@ method EcmaScriptCompiler.PushExpression(aExpression: ExpressionElement);
 begin
   case aExpression.Type of
     ElementType.ThisExpression: begin
-      filg.Emit(Opcodes.Ldloc, fExecutionContext);
-      filg.Emit(Opcodes.Call, ExecutionContext.Method_get_This);
+      filg.Emit(Opcodes.Ldarg_1); // this is arg nr 1
     end;
     ElementType.NullExpression: filg.Emit(Opcodes.Ldnull);
     ElementType.BooleanExpression: begin

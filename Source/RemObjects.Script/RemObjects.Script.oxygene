@@ -120,7 +120,9 @@
       <Generator>SettingsSingleFileGenerator</Generator>
     </None>
     <Compile Include="Properties\Settings.Designer.pas" />
-    <Content Include="ScriptComponent.pas" />
+    <Compile Include="ScriptComponent.pas">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="EcmaScript\" />
