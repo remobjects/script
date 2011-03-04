@@ -298,8 +298,22 @@ end;
 
 method EcmaScriptCompiler.EmitElement(El: SourceElement);
 begin
+  if fDebug and (el.PositionPair.StartRow> 0) then begin
+    PushDebugStack;
+    var lPos := el.PositionPair;
+    filg.Emit(opcodes.Ldstr, lPos.File);
+    filg.Emit(Opcodes.Ldc_I4, lPos.StartRow);
+    filg.Emit(Opcodes.Ldc_I4, lPos.StartCol);
+    filg.Emit(Opcodes.Ldc_I4, lPos.EndRow);
+    filg.Emit(Opcodes.Ldc_I4, lPos.EndCol);
+    filg.Emit(Opcodes.Callvirt, DebugSink.Method_DebugLine);
+  end;
+
   case el.Type of
-    ElementType.EmptyStatement: ;
+    ElementType.EmptyStatement: begin
+      filg.Emit(Opcodes.Nop);
+    end;
+
     ElementType.ReturnStatement: begin
       PushExpression(ExpressionElement(el));
       filg.Emit(Opcodes.Stloc, fResultVar);

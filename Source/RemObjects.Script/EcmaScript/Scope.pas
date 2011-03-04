@@ -35,7 +35,7 @@ type
 
     property Global: GlobalObject read LexicalScope.Global;
 
-    method GetDebugSink: DebugSink;
+    method GetDebugSink: IDebugSink;
 
     class var Method_GetDebugSink: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('GetDebugSink'); readonly;
     class var Method_get_This: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('get_This'); readonly;
@@ -302,7 +302,7 @@ begin
   This := athis;
 end;
 
-method ExecutionContext.GetDebugSink: DebugSink;
+method ExecutionContext.GetDebugSink: IDebugSink;
 begin
   exit &Global.Debug;
 end;

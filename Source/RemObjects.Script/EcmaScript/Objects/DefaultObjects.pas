@@ -34,7 +34,7 @@ type
     constructor (aParser: EcmaScriptCompiler);
 		constructor;
 
-    property Debug: DebugSink read get_Debug;
+    property Debug: IDebugSink read get_Debug write fDebug;
 
     property FunctionPrototype: EcmaScriptObject;
     property ObjectPrototype: EcmaScriptObject;
@@ -80,8 +80,8 @@ type
     method CreateObject: EcmaScriptObject;
     method ToString: String; override;
   private
-    fDebug: DebugSink;
-    method get_Debug: DebugSink;
+    fDebug: IDebugSink;
+    method get_Debug: IDebugSink;
   end;
   EcmaScriptEvalFunctionObject = public class(EcmaScriptFunctionObject);
 implementation
@@ -355,9 +355,9 @@ begin
 end;
 
 
-method GlobalObject.get_Debug: DebugSink;
+method GlobalObject.get_Debug: IDebugSink;
 begin
-  if fDebug = nil then fDebug := new DebugSink;
+  if fDebug = nil then fDebug := new DebugSink; // dummy one
   exit fDebug;
 end;
 
