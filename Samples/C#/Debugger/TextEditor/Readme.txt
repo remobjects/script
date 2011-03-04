@@ -1,0 +1,1 @@
+This is copy of the (LGPL) text editor included with SharpDevelop 3.
