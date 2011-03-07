@@ -250,7 +250,7 @@ end;
 
 method EcmaScriptObject.IsAccessorDescriptor(aProp: PropertyValue): Boolean;
 begin
-  exit (aProp.Get = nil) and (aProp.Set = nil);
+  exit (aProp.Get <> nil) or (aProp.Set <> nil);
 end;
 
 method EcmaScriptObject.IsDataDescriptor(aProp: PropertyValue): Boolean;
@@ -324,7 +324,7 @@ begin
       if aThrow then Root.RaiseNativeError(NativeErrorType.TypeError, 'Property '+aName+' not configurable');
       exit false;
     end;
-    if (PropertyAttributes.Enumerable in aValue.Attributes) <> (PropertyAttributes.Enumerable in lCurrent.Attributes) then begin
+    if (PropertyAttributes.Enumerable in aValue.Attributes) and (PropertyAttributes.Enumerable not in lCurrent.Attributes) then begin
       if aThrow then Root.RaiseNativeError(NativeErrorType.TypeError, 'Property '+aName+' enumerable mismatch');
       exit false;
     end;

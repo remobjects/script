@@ -6,7 +6,7 @@ uses
 
 type
   // LexicalEnvironment = EnvironmentRecord
-  Reference = public record
+  Reference = public class
   private
   public
     constructor(aBase: Object; aName: string; aStrict: Boolean);
@@ -18,9 +18,9 @@ type
     class method SetValue(aReference: Object; aValue: Object; aExecutionContext: ExecutionContext): Object;
     class method Delete(aReference: Object; aExecutionContext: ExecutionContext): Boolean;
 
-    class var Method_GetValue: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('GetValue'); readonly;
-    class var Method_SetValue: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('SetValue'); readonly;
-    class var Method_Delete: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('Delete'); readonly;
+    class var Method_GetValue: System.Reflection.MethodInfo := typeof(Reference).GetMethod('GetValue'); readonly;
+    class var Method_SetValue: System.Reflection.MethodInfo := typeof(Reference).GetMethod('SetValue'); readonly;
+    class var Method_Delete: System.Reflection.MethodInfo := typeof(Reference).GetMethod('Delete'); readonly;
   end;
 
   ExecutionContext = public class
@@ -37,23 +37,31 @@ type
 
     class var Method_GetDebugSink: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('GetDebugSink'); readonly;
     class var Method_get_LexicalScope: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('get_LexicalScope'); readonly;
+    class var Method_get_VariableScope: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('get_VariableScope'); readonly;
     class var Method_get_Global: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('get_Global'); readonly;
   end;
 
   EnvironmentRecord = public abstract class
   public
     class method GetIdentifier(aLex: EnvironmentRecord; aName: String; aStrict: Boolean): Reference; 
+
+    class var Method_GetIdentifier: System.Reflection.MethodInfo := typeof(EnvironmentRecord).GetMethod('GetIdentifier'); readonly;
     
     constructor(aPrev: EnvironmentRecord);
     property Previous: EnvironmentRecord; readonly;
     property Global: GlobalObject read ; abstract;
     property IsDeclarative: Boolean read; abstract; 
+    method CreateMutableBindingNoFail(aName: string; aDeleteAfter: Boolean);
+
     method HasBinding(aName: string): Boolean; abstract;
     method CreateMutableBinding(aName: string; aDeleteAfter: Boolean); abstract;
     method SetMutableBinding(aName: string; aValue: Object; aStrict: Boolean); abstract;
     method GetBindingValue(aName: string; aStrict: Boolean): Object; abstract;
     method DeleteBinding(aName: string): Boolean;  abstract;
     method ImplicitThisValue: Object; abstract;
+
+    class var Method_CreateMutableBindingNoFail: System.Reflection.MethodInfo := typeof(EnvironmentRecord).GetMethod('CreateMutableBindingNoFail'); readonly;
+    class var Method_SetMutableBinding: System.Reflection.MethodInfo := typeof(EnvironmentRecord).GetMethod('SetMutableBinding'); readonly;
   end;
   ObjectEnvironmentRecord = public class(EnvironmentRecord)
   private
@@ -216,7 +224,7 @@ begin
     exit lObj.Get(aExecutionContext,lRef. Name);
   var lExec := EnvironmentRecord(lRef.Base);
   if assigned(lExec) then
-    lExec.GetBindingValue(lRef.Name, lRef.Strict);
+    exit lExec.GetBindingValue(lRef.Name, lRef.Strict);
   if lRef.Base is Boolean then exit aExecutionContext.Global.BooleanPrototype.Get(aExecutionContext, lRef.Name);
   if lRef.Base is Integer then exit aExecutionContext.Global.NumberPrototype.Get(aExecutionContext, lRef.Name);
   if lRef.Base is Double then exit aExecutionContext.Global.NumberPrototype.Get(aExecutionContext, lRef.Name);
@@ -285,6 +293,11 @@ begin
   Previous := aPrev;
 end;
 
+
+method EnvironmentRecord.CreateMutableBindingNoFail(aName: string; aDeleteAfter: Boolean);
+begin
+  if not HasBinding(aName) then CreateMutableBinding(aName, aDeleteAfter);
+end;
 
 constructor ExecutionContext(aScope: EnvironmentRecord);
 begin

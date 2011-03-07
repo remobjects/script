@@ -83,9 +83,8 @@ type
     fExecutionContext: LocalBuilder;
     fILG: ILGenerator;
     fLocals: List<LocalBuilder>;
-    method UnrwapPossibleReference;
     method Parse(aFilename, aData: string; aEval: Boolean := false): List<SourceElement>; // eval throws different exception
-    method Parse(aOutside: Boolean; aScopeName: string; aElements: List<SourceElement>): InternalDelegate;
+    method Parse(aOutside, aEval: Boolean; aScopeName: string; aElements: List<SourceElement>): InternalDelegate;
     method PushDebugStack;
     method EmitElement(El: SourceElement);
     method AllocateLocal(aType: &Type): LocalBuilder;
@@ -187,89 +186,126 @@ end;
 
 method EcmaScriptCompiler.EvalParse(aData: string): InternalDelegate;
 begin
-  exit Parse(false, '<eval>', Parse('<eval>', aData, true));
+  exit Parse(false, true, '<eval>', Parse('<eval>', aData, true));
 end;
 
 method EcmaScriptCompiler.Parse(aFilename, aData: string): InternalDelegate;
 begin
-  exit Parse(true, aFilename, Parse( aFilename, aData, false));
+  exit Parse(true, false, aFilename, Parse( aFilename, aData, false));
 end;
 
-method EcmaScriptCompiler.Parse(aOutside: Boolean; aScopeName: string; aElements: List<SourceElement>): InternalDelegate;
+method EcmaScriptCompiler.Parse(aOutside, aEval: Boolean; aScopeName: string; aElements: List<SourceElement>): InternalDelegate;
 begin
-  if aElements.Count <> 0 then begin
-    if aElements[aElements.Count-1].Type <> ElementType.ExpressionStatement then
-      aElements.Add(new ReturnStatement(new PositionPair(), new IdentifierExpression(new PositionPair, 'undefined')))
-    else begin
-      var lEl := ExpressionStatement(aElements[aElements.Count-1]).ExpressionElement;
-      aElements[aElements.Count-1] := new ReturnStatement(lEl.PositionPair, lEl);
+  var lUseStrict := fUseStrict;
+  try
+    if aElements.Count <> 0 then begin
+      if aElements[aElements.Count-1].Type <> ElementType.ExpressionStatement then
+        aElements.Add(new ReturnStatement(new PositionPair(), new IdentifierExpression(new PositionPair, 'undefined')))
+      else begin
+        var lEl := ExpressionStatement(aElements[aElements.Count-1]).ExpressionElement;
+        aElements[aElements.Count-1] := new ReturnStatement(lEl.PositionPair, lEl);
+      end;
+      if aElements.Count > 1 then begin
+        if (aElements[0].Type = ElementType.ExpressionStatement) and (ExpressionStatement(aElements[0]).ExpressionElement.Type = ElementType.StringExpression) then begin
+          if StringExpression(ExpressionStatement(aElements[0]).ExpressionElement).Value = 'use strict' then begin
+            fUseStrict := true;
+            aElements.RemoveAt(0);
+          end;
+        end;
+      end;
+    end else
+      aElements.Add(new ReturnStatement(new PositionPair(), new IdentifierExpression(new PositionPair, 'undefined')));
+
+    var lOldLocals := fLocals;
+    fLocals := new List<LocalBuilder>;
+    var lMethod := new System.Reflection.Emit.DynamicMethod(aSCopeName, typeof(Object), [typeof(ExecutionContext), typeof(object), Typeof(array of Object)], typeof(DynamicMethods), true);
+
+    fILG := lMethod.GetILGenerator();
+    fExecutionContext := fILG.DeclareLocal(typeof(ExecutionContext));
+    fILG.Emit(OpCodes.Ldarg_0);  // first execution context
+    fILG.Emit(Opcodes.Stloc, fExecutionContext);
+    if fDebug then begin
+      PushDebugStack;
+      filg.Emit(OpCodes.Ldstr, aScopeName);
+      filg.Emit(Opcodes.Ldloc, fExecutionContext);
+      filg.Emit(Opcodes.Callvirt, DebugSink.Method_EnterScope);
+      fILG.BeginExceptionBlock; // finally
+      if aOutside then
+        fILG.BeginExceptionBlock; // except
     end;
-    if aElements.Count > 1 then begin
-      if (aElements[0].Type = ElementType.ExpressionStatement) and (ExpressionStatement(aElements[0]).ExpressionElement.Type = ElementType.StringExpression) then begin
-        if StringExpression(ExpressionStatement(aElements[0]).ExpressionElement).Value = 'use strict' then begin
-          fUseStrict := true;
-          aElements.RemoveAt(0);
+    var lOldExitLabel := fExitLabel;
+    var lOldResultVar := fResultVar;
+    fExitLabel := filg.DefineLabel;
+    fResultVar := filg.DeclareLocal(typeof(Object));
+    filg.Emit(Opcodes.Call, Undefined.Method_Instance);
+    filg.Emit(Opcodes.Stloc, fResultVar);
+
+    for i: Integer := 0 to aElements.Count -1 do begin
+      if aElements[i].Type = ElementType.FunctionDeclaration then begin
+        filg.Emit(Opcodes.Ldloc, fExecutionContext);
+        filg.Emit(Opcodes.Call, ExecutionContext.Method_get_VariableScope);
+        filg.Emit(Opcodes.Ldstr, FunctionDeclarationElement(aElements[i]).Identifier);
+        if aEval then
+          filg.Emit(Opcodes.Ldc_I4_1) 
+        else
+          filg.Emit(Opcodes.Ldc_I4_0);
+        filg.Emit(Opcodes.Call, EnvironmentRecord.Method_CreateMutableBindingNoFail);
+        filg.Emit(Opcodes.Ldloc, fExecutionContext);
+        filg.Emit(Opcodes.Call, ExecutionContext.Method_get_VariableScope);
+        filg.Emit(Opcodes.Ldstr, FunctionDeclarationElement(aElements[i]).Identifier);
+        PushExpression(new FunctionExpression(aElements[i].PositionPair, FunctionDeclarationElement(aElements[i])));
+        if fUseStrict then
+          filg.Emit(Opcodes.Ldc_I4_1) 
+        else
+          filg.Emit(Opcodes.Ldc_I4_0);
+        filg.Emit(Opcodes.Callvirt, EnvironmentRecord.Method_SetMutableBinding);
+      end else if aElements[i].Type = ElementType.VariableStatement then begin
+        for each el in VariableStatement(aElements.Item[i]).Items do begin
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
+          filg.Emit(Opcodes.Call, ExecutionContext.Method_get_VariableScope);
+          filg.Emit(Opcodes.Ldstr, el.Identifier);
+          if aEval then
+            filg.Emit(Opcodes.Ldc_I4_1) 
+          else
+            filg.Emit(Opcodes.Ldc_I4_0);
+          filg.Emit(Opcodes.Call, EnvironmentRecord.Method_CreateMutableBindingNoFail);
         end;
       end;
     end;
-  end else
-    aElements.Add(new ReturnStatement(new PositionPair(), new IdentifierExpression(new PositionPair, 'undefined')));
 
-  var lOldLocals := fLocals;
-  fLocals := new List<LocalBuilder>;
-  var lMethod := new System.Reflection.Emit.DynamicMethod(aSCopeName, typeof(Object), [typeof(ExecutionContext), typeof(object), Typeof(array of Object)], typeof(DynamicMethods), true);
+    for i: Integer := 0 to aElements.Count -1 do
+      EmitElement(aElements[i]);
 
-  fILG := lMethod.GetILGenerator();
-  fExecutionContext := fILG.DeclareLocal(typeof(ExecutionContext));
-  fILG.Emit(OpCodes.Ldarg_0);  // first execution context
-  fILG.Emit(Opcodes.Stloc, fExecutionContext);
-  if fDebug then begin
-    PushDebugStack;
-    filg.Emit(OpCodes.Ldstr, aScopeName);
-    filg.Emit(Opcodes.Ldloc, fExecutionContext);
-    filg.Emit(Opcodes.Callvirt, DebugSink.Method_EnterScope);
-    fILG.BeginExceptionBlock; // finally
-    if aOutside then
-      fILG.BeginExceptionBlock; // except
-  end;
-  var lOldExitLabel := fExitLabel;
-  var lOldResultVar := fResultVar;
-  fExitLabel := filg.DefineLabel;
-  fResultVar := filg.DeclareLocal(typeof(Object));
-  filg.Emit(Opcodes.Call, Undefined.Method_Instance);
-  filg.Emit(Opcodes.Stloc, fResultVar);
-
-
-  for i: Integer := 0 to aElements.Count -1 do
-    EmitElement(aElements[i]);
-
-  if fDebug then begin
-    filg.BeginFinallyBlock();
-    PushDebugStack;
-    filg.Emit(OpCodes.Ldstr, aScopeName);
-    filg.Emit(Opcodes.Ldloc, fExecutionContext);
-    filg.Emit(Opcodes.Callvirt, DebugSink.Method_ExitScope);
-    filg.EndExceptionBlock();
-    if aOutside then begin
-      filg.BeginCatchBlock(typeof(Exception));
-      var lTemp := AllocateLocal(typeof(Exception));
-      filg.Emit(Opcodes.Stloc, lTemp);
+    if fDebug then begin
+      filg.BeginFinallyBlock();
       PushDebugStack;
-      filg.Emit(Opcodes.Ldloc, lTemp);
-      filg.Emit(Opcodes.Callvirt, Debugsink.Method_UncaughtException);
-      filg.Emit(Opcodes.Rethrow);
-      ReleaseLocal(lTemp);
+      filg.Emit(OpCodes.Ldstr, aScopeName);
+      filg.Emit(Opcodes.Ldloc, fExecutionContext);
+      filg.Emit(Opcodes.Callvirt, DebugSink.Method_ExitScope);
       filg.EndExceptionBlock();
+      if aOutside then begin
+        filg.BeginCatchBlock(typeof(Exception));
+        var lTemp := AllocateLocal(typeof(Exception));
+        filg.Emit(Opcodes.Stloc, lTemp);
+        PushDebugStack;
+        filg.Emit(Opcodes.Ldloc, lTemp);
+        filg.Emit(Opcodes.Callvirt, Debugsink.Method_UncaughtException);
+        filg.Emit(Opcodes.Rethrow);
+        ReleaseLocal(lTemp);
+        filg.EndExceptionBlock();
+      end;
     end;
-  end;
-  filg.MarkLabel(fExitLabel);
-  filg.Emit(Opcodes.Ldloc, fResultVar);
-  filg.Emit(Opcodes.Ret);
+    filg.MarkLabel(fExitLabel);
+    filg.Emit(Opcodes.Ldloc, fResultVar);
+    filg.Emit(Opcodes.Ret);
   
-  fExitLabel := lOldExitLabel;
-  fResultVar := lOldResultVar;
-  fLocals := lOldLocals;
-  exit InternalDelegate(lMethod.CreateDelegate(typeof(InternalDelegate)));
+    fExitLabel := lOldExitLabel;
+    fResultVar := lOldResultVar;
+    fLocals := lOldLocals;
+    exit InternalDelegate(lMethod.CreateDelegate(typeof(InternalDelegate)));
+  finally
+    fUseStrict := lUseStrict;
+  end;
 end;
 
 method EcmaScriptCompiler.PushDebugStack;
@@ -298,16 +334,25 @@ begin
 
     ElementType.ReturnStatement: begin
       PushExpression(ReturnStatement(el).ExpressionElement);
+      CallGetValue(ReturnStatement(el).ExpressionElement.Type);
       filg.Emit(Opcodes.Stloc, fResultVar);
       filg.Emit(Opcodes.Leave, fExitLabel);
     end;
     ElementType.ExpressionStatement: begin
-      PushExpression(ExpressionElement(el));
+      PushExpression(ExpressionStatement(el).ExpressionElement);
       filg.Emit(Opcodes.Pop);
     end;
     ElementType.DebuggerStatement: begin
       PushDebugStack;
       filg.Emit(opcodes.Callvirt, DebugSink.Method_Debugger);
+    end;
+    ElementType.VariableStatement: begin
+      for i: Integer := 0 to VariableStatement(El).Items.Count- 1 do begin
+        var lItem := VariableStatement(el).Items[i];
+        if lItem.Initializer <> nil then begin
+          PushExpression(new BinaryExpression(lItem.PositionPair, new IdentifierExpression(lItem.PositionPair, lItem.Identifier), lItem.Initializer, BinaryOperator.Assign));
+        end;
+      end;
     end
     (*
     ElementType.ArrayAccessExpression: ;
@@ -346,8 +391,6 @@ begin
     ElementType.ThrowStatement: ;
     ElementType.TryStatement: ;
     ElementType.UnaryExpression: ;
-    ElementType.VariableDeclaration: ;
-    ElementType.VariableStatement: ;
     ElementType.WhileStatement: ;
     ElementType.WithStatement: ;;*)
   else
@@ -467,15 +510,73 @@ begin
         end;
         else raise new EcmacriptException(aExpression.PositionPair.File, aExpression.PositionPair, EcmaScriptErrorKind.EInternalError, 'Unknown type: '+aExpression.Type);
       end; // case
+    end;
+    ElementType.IdentifierExpression: begin
+      filg.Emit(OpCodes.Ldloc, fExecutionContext);
+      filg.Emit(Opcodes.Ldstr, IdentifierExpression(aExpression).Identifier);
+      if fUseStrict then
+        filg.Emit(Opcodes.Ldc_I4_1)
+      else
+        filg.Emit(Opcodes.Ldc_I4_0);
+      filg.Emit(Opcodes.Call, EnvironmentRecord.Method_GetIdentifier);
+    end;
+    ElementType.BinaryExpression: begin
+      case BinaryExpression(aExpression).Operator of
+        BinaryOperator.Assign: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
+          filg.Emit(Opcodes.Call,  Reference.Method_SetValue);
+        end;
+        (*BinaryOperator.And: ;
+        BinaryOperator.AndAssign: ;
+        BinaryOperator.Assign: ;
+        BinaryOperator.BitwiseNot: ;
+        BinaryOperator.Divide: ;
+        BinaryOperator.DivideAssign: ;
+        BinaryOperator.DoubleAnd: ;
+        BinaryOperator.DoubleOr: ;
+        BinaryOperator.DoubleXor: ;
+        BinaryOperator.Equal: ;
+        BinaryOperator.Greater: ;
+        BinaryOperator.GreaterOrEqual: ;
+        BinaryOperator.In: ;
+        BinaryOperator.InstanceOf: ;
+        BinaryOperator.Less: ;
+        BinaryOperator.LessOrEqual: ;
+        BinaryOperator.Minus: ;
+        BinaryOperator.MinusAssign: ;
+        BinaryOperator.Modulus: ;
+        BinaryOperator.ModulusAssign: ;
+        BinaryOperator.Multiply: ;
+        BinaryOperator.MultiplyAssign: ;
+        BinaryOperator.NotEqual: ;
+        BinaryOperator.Or: ;
+        BinaryOperator.OrAssign: ;
+        BinaryOperator.Plus: ;
+        BinaryOperator.PlusAssign: ;
+        BinaryOperator.ShiftLeft: ;
+        BinaryOperator.ShiftLeftAssign: ;
+        BinaryOperator.ShiftRightSigned: ;
+        BinaryOperator.ShiftRightSignedAssign: ;
+        BinaryOperator.ShiftRightUnsigned: ;
+        BinaryOperator.ShiftRightUnsignedAssign: ;
+        BinaryOperator.StrictEqual: ;
+        BinaryOperator.StrictNotEqual: ;
+        BinaryOperator.Xor: ;
+        BinaryOperator.XorAssign: ;*)
+      else
+        raise new EcmacriptException(aExpression.PositionPair.File, aExpression.PositionPair, EcmaScriptErrorKind.EInternalError, 'Unknown type: '+aExpression.Type);
+      end; // case
     end
     (*ElementType.ArrayAccessExpression: ;
     ElementType.ArrayLiteralExpression: ;
     ElementType.CallExpression: ;
     ElementType.CommaSeparatedExpression: ;
     ElementType.ConditionalExpression: ;
-    ElementType.BinaryExpression: ;
     ElementType.FunctionExpression: ;
-    ElementType.IdentifierExpression: ;
+    
     : ;
     ElementType.NewExpression: ;
     ElementType.ObjectLiteralExpression: ;
@@ -484,11 +585,6 @@ begin
   else
     raise new EcmacriptException(aExpression.PositionPair.File, aExpression.PositionPair, EcmaScriptErrorKind.EInternalError, 'Unknown type: '+aExpression.Type);
   end; // case
-end;
-
-method EcmaScriptCompiler.UnrwapPossibleReference;
-begin
-
 end;
 
 method EcmaScriptCompiler.CallGetValue(aFromElement: ElementType);

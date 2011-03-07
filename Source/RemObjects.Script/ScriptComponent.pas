@@ -128,7 +128,6 @@ type
 
     [Browsable(false)]
     property CallStack: ReadOnlyCollection<ScriptStackFrame> read fStackItems;
-
 		[Browsable(false)]
 		property Globals: ScriptScope read; abstract;
 		[Browsable(false)]
@@ -526,7 +525,7 @@ begin
 	  if Source = nil then Source := '';
     
     var lCallback := fCompiler.Parse(SourceFileName, Source);
-    exit lCallback(fRoot, fGlobalObject, []);
+    result := lCallback(fRoot, fGlobalObject, []);
   except
     on e: ScriptAbortException do
       exit Undefined.Instance;
