@@ -83,6 +83,7 @@ type
     fExecutionContext: LocalBuilder;
     fILG: ILGenerator;
     fLocals: List<LocalBuilder>;
+    fLoops: List<IterationStatement>;
     method Parse(aFilename, aData: string; aEval: Boolean := false): List<SourceElement>; // eval throws different exception
     method Parse(aOutside, aEval: Boolean; aScopeName: string; aElements: List<SourceElement>): InternalDelegate;
     method PushDebugStack;
@@ -94,6 +95,13 @@ type
     method PushExpression(aExpression: ExpressionElement);
     method RecursiveFindFuncAndVars(aElements: sequence of SourceElement): sequence of SourceElement; iterator;
     method WriteIfStatement(el: IfStatement);
+    method WriteDoStatement(el: DoStatement);
+    method WriteWhileStatement(el: WhileStatement);
+    method WriteForStatement(el: ForStatement);
+    method WriteForInstatement(el: ForInStatement);
+    method WriteContinue(el: ContinueStatement);
+    method WriteBreak(el: BreakStatement);
+    method WriteLabelled(aLabel: LabelledStatement);
   public
     constructor(aOptions: EcmaScriptCompilerOptions);
 
@@ -199,6 +207,8 @@ end;
 method EcmaScriptCompiler.Parse(aOutside, aEval: Boolean; aScopeName: string; aElements: List<SourceElement>): InternalDelegate;
 begin
   var lUseStrict := fUseStrict;
+  var lLoops := fLoops;
+  fLoops := new List<IterationStatement>;
   try
     if aElements.Count <> 0 then begin
       if aElements[aElements.Count-1].Type <> ElementType.ExpressionStatement then
@@ -323,6 +333,7 @@ begin
     exit InternalDelegate(lMethod.CreateDelegate(typeof(InternalDelegate)));
   finally
     fUseStrict := lUseStrict;
+    fLoops := lLoops;
   end;
 end;
 
@@ -376,14 +387,16 @@ begin
       for each subitem in BlockStatement(el).Items do EmitElement(subitem);
     end;
     ElementType.IfStatement: WriteIfStatement(IfStatement(El));
+    ElementType.BreakStatement: WriteBreak(BreakStatement(El));
+    ElementType.ContinueStatement: WriteContinue(ContinueStatement(el));
+    ElementType.DoStatement: WriteDoStatement(DoStatement(el));
+    ElementType.ForInStatement: WriteForInstatement(ForInStatement(el));
+    ElementType.ForStatement: WriteForStatement(ForStatement(el));
+    ElementType.WhileStatement: WriteWhileStatement(WhileStatement(el));
+    
     (*
-    ElementType.BreakStatement: ;
     ElementType.CaseClause: ;
     ElementType.CatchBlock: ;
-    ElementType.ContinueStatement: ;
-    ElementType.DoStatement: ;
-    ElementType.ForInStatement: ;
-    ElementType.ForStatement: ;
     ElementType.FunctionDeclaration: ;
     ElementType.LabelledStatement: ;
     ElementType.ParameterDeclaration: ;
@@ -392,7 +405,6 @@ begin
     ElementType.SwitchStatement: ;
     ElementType.ThrowStatement: ;
     ElementType.TryStatement: ;
-    ElementType.WhileStatement: ;
     ElementType.WithStatement: ;;*)
   else
     raise new EcmascriptException(El.PositionPair.File, el.PositionPair, EcmaScriptErrorKind.EInternalError, 'Unkwown type: '+el.Type);
@@ -1026,6 +1038,36 @@ begin
     EmitElement(el.False);
     fILG.MarkLabel(lExit);
   end;
+end;
+
+method EcmaScriptCompiler.WriteDoStatement(el: DoStatement);
+begin
+
+end;
+
+method EcmaScriptCompiler.WriteWhileStatement(el: WhileStatement);
+begin
+end;
+
+method EcmaScriptCompiler.WriteForStatement(el: ForStatement);
+begin
+end;
+
+method EcmaScriptCompiler.WriteForInstatement(el: ForInStatement);
+begin
+end;
+
+method EcmaScriptCompiler.WriteContinue(el: ContinueStatement);
+begin
+end;
+
+method EcmaScriptCompiler.WriteBreak(el: BreakStatement);
+begin
+end;
+
+method EcmaScriptCompiler.WriteLabelled(aLabel: LabelledStatement);
+begin
+
 end;
 
 end.

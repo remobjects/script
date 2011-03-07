@@ -153,8 +153,14 @@ type
 
     property &Type: ElementType read ElementType.IfStatement; override;
   end;
-  IterationStatement  = public abstract class(Statement);
-  
+  IterationStatement  = public abstract class(Statement)
+  private
+  public
+    property ContinueLabel: Label;
+    property BreakLabel: Label;
+    property LabelName: string;
+  end;
+
   ForStatement  = public class(IterationStatement)
   private
     fBody: Statement;
