@@ -368,7 +368,7 @@ begin
   lCurrent.Value := aValue.Value;
   lCurrent.Set := aValue.Set;
   lCurrent.Get := aValue.Get;
-  lCurrent.Attributes := aValue.Attributes;
+  lCurrent.Attributes := lCurrent.Attributes or aValue.Attributes;
 
   exit true;
 end;

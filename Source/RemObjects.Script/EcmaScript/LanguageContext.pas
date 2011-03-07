@@ -529,6 +529,13 @@ begin
           filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call,  Reference.Method_SetValue);
         end;
+        BinaryOperator.Plus: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_Add);
+        end
         (*BinaryOperator.And: ;
         BinaryOperator.AndAssign: ;
         BinaryOperator.Assign: ;
@@ -554,7 +561,6 @@ begin
         BinaryOperator.NotEqual: ;
         BinaryOperator.Or: ;
         BinaryOperator.OrAssign: ;
-        BinaryOperator.Plus: ;
         BinaryOperator.PlusAssign: ;
         BinaryOperator.ShiftLeft: ;
         BinaryOperator.ShiftLeftAssign: ;

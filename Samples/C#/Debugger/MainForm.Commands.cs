@@ -124,6 +124,7 @@ namespace Debugger
 		void cmdRun ()
 		{
             tabs.TabIndex = 1;
+            ScriptEngine.Clear();
             ScriptEngine.Source = tbMain.Text;
             try
             {
