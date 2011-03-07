@@ -535,55 +535,318 @@ begin
           PushExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
           filg.Emit(Opcodes.Call, Operators.Method_Add);
-        end
-        (*BinaryOperator.And: ;
-        BinaryOperator.AndAssign: ;
-        BinaryOperator.Assign: ;
-        BinaryOperator.BitwiseNot: ;
-        BinaryOperator.Divide: ;
-        BinaryOperator.DivideAssign: ;
-        BinaryOperator.DoubleAnd: ;
-        BinaryOperator.DoubleOr: ;
-        BinaryOperator.DoubleXor: ;
-        BinaryOperator.Equal: ;
-        BinaryOperator.Greater: ;
-        BinaryOperator.GreaterOrEqual: ;
-        BinaryOperator.In: ;
-        BinaryOperator.InstanceOf: ;
-        BinaryOperator.Less: ;
-        BinaryOperator.LessOrEqual: ;
-        BinaryOperator.Minus: ;
-        BinaryOperator.MinusAssign: ;
-        BinaryOperator.Modulus: ;
-        BinaryOperator.ModulusAssign: ;
-        BinaryOperator.Multiply: ;
-        BinaryOperator.MultiplyAssign: ;
-        BinaryOperator.NotEqual: ;
-        BinaryOperator.Or: ;
-        BinaryOperator.OrAssign: ;
-        BinaryOperator.PlusAssign: ;
-        BinaryOperator.ShiftLeft: ;
-        BinaryOperator.ShiftLeftAssign: ;
-        BinaryOperator.ShiftRightSigned: ;
-        BinaryOperator.ShiftRightSignedAssign: ;
-        BinaryOperator.ShiftRightUnsigned: ;
-        BinaryOperator.ShiftRightUnsignedAssign: ;
-        BinaryOperator.StrictEqual: ;
-        BinaryOperator.StrictNotEqual: ;
-        BinaryOperator.Xor: ;
-        BinaryOperator.XorAssign: ;*)
+        end;
+        BinaryOperator.PlusAssign: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          filg.Emit(Opcodes.Dup);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_Add);
+          filg.Emit(OpCodes.Ldloc, fExecutionContext);
+          fILG.Emit(Opcodes.Call, Reference.Method_SetValue);
+        end;
+        BinaryOperator.Divide: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_Divide);
+        end;
+        BinaryOperator.DivideAssign: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          filg.Emit(Opcodes.Dup);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_Divide);
+          filg.Emit(OpCodes.Ldloc, fExecutionContext);
+          fILG.Emit(Opcodes.Call, Reference.Method_SetValue);
+        end;
+        BinaryOperator.Minus: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_Minus);
+        end;
+        BinaryOperator.MinusAssign: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          filg.Emit(Opcodes.Dup);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_Minus);
+          filg.Emit(OpCodes.Ldloc, fExecutionContext);
+          fILG.Emit(Opcodes.Call, Reference.Method_SetValue);
+        end;
+
+        BinaryOperator.Modulus: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_Modulus);
+        end;
+        BinaryOperator.ModulusAssign: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          filg.Emit(Opcodes.Dup);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_Modulus);
+          filg.Emit(OpCodes.Ldloc, fExecutionContext);
+          fILG.Emit(Opcodes.Call, Reference.Method_SetValue);
+        end;
+
+        BinaryOperator.Multiply: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_Multiply);
+        end;
+        BinaryOperator.MultiplyAssign: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          filg.Emit(Opcodes.Dup);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_Multiply);
+          filg.Emit(OpCodes.Ldloc, fExecutionContext);
+          fILG.Emit(Opcodes.Call, Reference.Method_SetValue);
+        end;
+
+        BinaryOperator.ShiftLeft: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_ShiftLeft);
+        end;
+        BinaryOperator.ShiftLeftAssign: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          filg.Emit(Opcodes.Dup);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_ShiftLeft);
+          filg.Emit(OpCodes.Ldloc, fExecutionContext);
+          fILG.Emit(Opcodes.Call, Reference.Method_SetValue);
+        end;
+
+        BinaryOperator.ShiftRightSigned: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_ShiftRight);
+        end;
+        BinaryOperator.ShiftRightSignedAssign: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          filg.Emit(Opcodes.Dup);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_ShiftRight);
+          filg.Emit(OpCodes.Ldloc, fExecutionContext);
+          fILG.Emit(Opcodes.Call, Reference.Method_SetValue);
+        end;
+
+        BinaryOperator.ShiftRightUnsigned: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_ShiftRightUnsigned);
+        end;
+        BinaryOperator.ShiftRightUnsignedAssign: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          filg.Emit(Opcodes.Dup);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_ShiftRightUnsigned);
+          filg.Emit(OpCodes.Ldloc, fExecutionContext);
+          fILG.Emit(Opcodes.Call, Reference.Method_SetValue);
+        end;
+        BinaryOperator.And: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_And);
+        end;
+        BinaryOperator.AndAssign: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          filg.Emit(Opcodes.Dup);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_And);
+          filg.Emit(OpCodes.Ldloc, fExecutionContext);
+          fILG.Emit(Opcodes.Call, Reference.Method_SetValue);
+        end;
+        BinaryOperator.Or: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_Or);
+        end;
+        BinaryOperator.OrAssign: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          filg.Emit(Opcodes.Dup);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_OR);
+          filg.Emit(OpCodes.Ldloc, fExecutionContext);
+          fILG.Emit(Opcodes.Call, Reference.Method_SetValue);
+        end;
+        BinaryOperator.Xor, BinaryOperator.DoubleXor: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_XOr);
+        end;
+        BinaryOperator.XorAssign: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          filg.Emit(Opcodes.Dup);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_XOr);
+          filg.Emit(OpCodes.Ldloc, fExecutionContext);
+          fILG.Emit(Opcodes.Call, Reference.Method_SetValue);
+        end;
+
+        BinaryOperator.Equal: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_Equal);
+        end;
+
+        BinaryOperator.NotEqual: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_NotEqual);
+        end;
+
+        BinaryOperator.StrictEqual: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_StrictEqual);
+        end;
+
+        BinaryOperator.StrictNotEqual: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_StrictNotEqual);
+        end;
+
+        BinaryOperator.Less: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_LessThan);
+        end;
+        BinaryOperator.Greater: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_GreaterThan);
+        end;
+        BinaryOperator.LessOrEqual: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_LessThanOrEqual);
+        end;
+        BinaryOperator.GreaterOrEqual: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_GreaterThanOrEqual);
+        end;        
+        BinaryOperator.InstanceOf: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_InstanceOf);
+        end;
+        BinaryOperator.In: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Call, Operators.Method_In);
+        end;
+        BinaryOperator.DoubleAnd: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          filg.Emit(Opcodes.Dup);
+          filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
+          var lGotIt := filg.DefineLabel;
+          filg.Emit(OpCodes.Brfalse, lGotIt);
+          filg.Emit(Opcodes.Pop);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.MarkLabel(lGotIt);
+        end;
+        BinaryOperator.DoubleOr: begin
+          PushExpression(BinaryExpression(aExpression).LeftSide);
+          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
+          filg.Emit(Opcodes.Dup);
+          filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
+          var lGotIt := filg.DefineLabel;
+          filg.Emit(OpCodes.Brtrue, lGotIt);
+          filg.Emit(Opcodes.Pop);
+          PushExpression(BinaryExpression(aExpression).RightSide);
+          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.MarkLabel(lGotIt);
+        end;
       else
         raise new EcmacriptException(aExpression.PositionPair.File, aExpression.PositionPair, EcmaScriptErrorKind.EInternalError, 'Unknown type: '+aExpression.Type);
       end; // case
-    end
+    end;
+    ElementType.ConditionalExpression: begin
+      PushExpression(ConditionalExpression(aExpression).Condition);
+      CallGetValue(ConditionalExpression(aExpression).Condition.Type);
+      filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
+      var lFalse := filg.DefineLabel;
+      var lExit := filg.DefineLabel;
+      filg.Emit(Opcodes.Brfalse, lFalse);
+      PushExpression(ConditionalExpression(aExpression).True);
+      CallGetValue(ConditionalExpression(aExpression).True.Type);
+      filg.Emit(Opcodes.Br, lExit);
+      filg.MarkLabel(lFAlse);
+      PushExpression(ConditionalExpression(aExpression).False);
+      CallGetValue(ConditionalExpression(aExpression).false.Type);
+      filg.MarkLabel(lExit);
+    end;
     (*ElementType.ArrayAccessExpression: ;
     ElementType.ArrayLiteralExpression: ;
     ElementType.CallExpression: ;
     ElementType.CommaSeparatedExpression: ;
-    ElementType.ConditionalExpression: ;
+    : ;
     ElementType.FunctionExpression: ;
     
-    : ;
+    ElementType.SubExpression: ;
     ElementType.NewExpression: ;
     ElementType.ObjectLiteralExpression: ;
     ElementType.ParameterDeclaration: ;

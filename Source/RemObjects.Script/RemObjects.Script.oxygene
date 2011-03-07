@@ -82,6 +82,7 @@
   <ItemGroup>
     <Compile Include="Common.pas" />
     <Compile Include="EcmaScript\Bindings\AdditiveOperators.pas" />
+    <Compile Include="EcmaScript\Bindings\BitwiseOperators.pas" />
     <Compile Include="EcmaScript\Bindings\MultiplicativeOperators.pas" />
     <Compile Include="EcmaScript\Bindings\Operators.pas" />
     <Compile Include="EcmaScript\Bindings\PrePostfixOperators.pas" />

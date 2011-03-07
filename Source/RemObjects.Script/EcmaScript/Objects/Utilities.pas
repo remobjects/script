@@ -35,6 +35,8 @@ type
     class method GetObjAsBoolean(arg: Object): Boolean;
     class method GetObjAsString(arg: object): string;
 
+    class var method_GetObjAsBoolean: System.Reflection.MethodInfo := typeof(Utilities).GetMethod('GetObjAsBoolean'); readonly;
+
     class method GetPrimitive(aExecutionContext: ExecutionContext; arg: EcmaScriptObject): Object;
 
     class method IsCallable(o: Object): Boolean;
