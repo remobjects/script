@@ -61,7 +61,7 @@ type
     property Msg: String; readonly;
   end;
 
-  EcmacriptException = public ScriptParsingException;
+  EcmaScriptException = public ScriptParsingException;
   
   EcmaScriptCompilerOptions = public class
   private
@@ -355,46 +355,27 @@ begin
       end;
     end
     (*
-    ElementType.ArrayAccessExpression: ;
-    ElementType.ArrayLiteralExpression: ;
-    ElementType.BinaryExpression: ;
     ElementType.BlockStatement: ;
-    ElementType.BooleanExpression: ;
     ElementType.BreakStatement: ;
-    ElementType.CallExpression: ;
     ElementType.CaseClause: ;
     ElementType.CatchBlock: ;
-    ElementType.CommaSeparatedExpression: ;
-    ElementType.ConditionalExpression: ;
     ElementType.ContinueStatement: ;
-    ElementType.DecimalExpression: ;
     ElementType.DoStatement: ;
     ElementType.ForInStatement: ;
     ElementType.ForStatement: ;
     ElementType.FunctionDeclaration: ;
-    ElementType.FunctionExpression: ;
-    ElementType.IdentifierExpression: ;
     ElementType.IfStatement: ;
-    ElementType.IntegerExpression: ;
     ElementType.LabelledStatement: ;
-    ElementType.NewExpression: ;
-    ElementType.NullExpression: ;
-    ElementType.ObjectLiteralExpression: ;
     ElementType.ParameterDeclaration: ;
     ElementType.Program: ;
     ElementType.PropertyAssignment: ;
-    ElementType.RegExExpression: ;
-    ElementType.StringExpression: ;
-    ElementType.SubExpression: ;
     ElementType.SwitchStatement: ;
-    ElementType.ThisExpression: ;
     ElementType.ThrowStatement: ;
     ElementType.TryStatement: ;
-    ElementType.UnaryExpression: ;
     ElementType.WhileStatement: ;
     ElementType.WithStatement: ;;*)
   else
-    raise new EcmacriptException(El.PositionPair.File, el.PositionPair, EcmaScriptErrorKind.EInternalError, 'Unkwown type: '+el.Type);
+    raise new EcmascriptException(El.PositionPair.File, el.PositionPair, EcmaScriptErrorKind.EInternalError, 'Unkwown type: '+el.Type);
   end; // case
 end;
 
@@ -508,7 +489,7 @@ begin
           filg.Emit(Opcodes.Pop);
           filg.Emit(OpCodes.Call, Undefined.Method_Instance);
         end;
-        else raise new EcmacriptException(aExpression.PositionPair.File, aExpression.PositionPair, EcmaScriptErrorKind.EInternalError, 'Unknown type: '+aExpression.Type);
+        else raise new EcmaScriptException(aExpression.PositionPair.File, aExpression.PositionPair, EcmaScriptErrorKind.EInternalError, 'Unknown type: '+aExpression.Type);
       end; // case
     end;
     ElementType.IdentifierExpression: begin
@@ -821,7 +802,7 @@ begin
           filg.MarkLabel(lGotIt);
         end;
       else
-        raise new EcmacriptException(aExpression.PositionPair.File, aExpression.PositionPair, EcmaScriptErrorKind.EInternalError, 'Unknown type: '+aExpression.Type);
+        raise new EcmaScriptException(aExpression.PositionPair.File, aExpression.PositionPair, EcmaScriptErrorKind.EInternalError, 'Unknown type: '+aExpression.Type);
       end; // case
     end;
     ElementType.ConditionalExpression: begin
@@ -839,8 +820,33 @@ begin
       CallGetValue(ConditionalExpression(aExpression).false.Type);
       filg.MarkLabel(lExit);
     end;
+    ElementType.ArrayLiteralExpression: begin
+      filg.Emit(Opcodes.Ldc_I4, ArrayLiteralExpression(aExpression).Items.Count);
+      filg.Emit(Opcodes.Ldloc, fExecutionContext);
+      filg.Emit(Opcodes.Call, ExecutionContext.Method_get_Global);
+      filg.Emit(Opcodes.Newobj, EcmaScriptArrayObject.Constructor);
+      for each el in ArrayLiteralExpression(aExpression).Items do begin
+        filg.Emit(Opcodes.Dup);
+        PushExpression(el);
+        CallGetValue(el.Type);
+        filg.Emit(Opcodes.Call, EcmaScriptArrayObject.Method_AddValue);
+      end;
+    end;
+    ElementType.ObjectLiteralExpression: begin
+      filg.Emit(Opcodes.Ldloc, fExecutionContext);
+      filg.Emit(Opcodes.Call, ExecutionContext.Method_get_Global);
+      filg.Emit(Opcodes.Newobj, EcmaScriptObject.Constructor);
+      for each el in ObjectLiteralExpression(aExpression).Items do begin
+        PushExpression(el.Name);
+        filg.Emit(Opcodes.Call, Utilities.Method_GetObjAsString);
+        filg.Emit(OpCodes.Ldc_I4, Integer(el.Mode));
+        PushExpression(el.Value);
+        CallGetValue(El.Value.Type);
+        filg.Emit(Opcodes.Ldc_I4, if fUseStrict then 1 else 0);
+        filg.Emit(Opcodes.Call, EcmaScriptObject.Method_ObjectLiteralSet);
+      end;
+    end
     (*ElementType.ArrayAccessExpression: ;
-    ElementType.ArrayLiteralExpression: ;
     ElementType.CallExpression: ;
     ElementType.CommaSeparatedExpression: ;
     : ;
@@ -848,11 +854,10 @@ begin
     
     ElementType.SubExpression: ;
     ElementType.NewExpression: ;
-    ElementType.ObjectLiteralExpression: ;
     ElementType.ParameterDeclaration: ;
     : ;*)
   else
-    raise new EcmacriptException(aExpression.PositionPair.File, aExpression.PositionPair, EcmaScriptErrorKind.EInternalError, 'Unknown type: '+aExpression.Type);
+    raise new EcmaScriptException(aExpression.PositionPair.File, aExpression.PositionPair, EcmaScriptErrorKind.EInternalError, 'Unknown type: '+aExpression.Type);
   end; // case
 end;
 

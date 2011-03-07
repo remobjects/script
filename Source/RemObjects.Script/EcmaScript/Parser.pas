@@ -943,12 +943,15 @@ begin
           else begin
             var lName: ExpressionElement;
             var lValue: ExpressionElement;
-            (*if fTok.Token in [TokenKind.K_set, TokenKind.K_get] then begin
+            var lMode: FunctionDeclarationType := FunctionDeclarationType.None;
+            if fTok.Token in [TokenKind.K_set, TokenKind.K_get] then begin
               lName := nil;
+              lMode := if ftok.Token = TokenKind.K_set then FunctionDeclarationType.Set else FunctionDeclarationType.Get;
               var lTmp := FunctionDeclarationElement(ParseStatement(ParseStatementFlags.AllowGetSet));
               if lTmp = nil then exit;
+              lName := new StringExpression(lTmp.PositionPair, lTmp.Identifier);
               lValue := new FunctionExpression(lTmp.PositionPair, lTmp);
-            end else *)begin
+            end else begin
               lName := ParseLeftHandSideExpression(false);
               if lName = nil then exit;
               if lName is not PropertyBaseExpression then begin
@@ -965,10 +968,10 @@ begin
             end;
             lSub := new PropertyAssignment(
             iif(lName = nil, lValue.PositionPair, 
-            new PositionPair(lName.PositionPair.StartRow, lName.PositionPair.StartCol, fTok.LastEndPosition.Row, fTok.LastEndPosition.Col, lName.PositionPair.File)), PropertyBaseExpression(lName), lValue);
+            new PositionPair(lName.PositionPair.StartRow, lName.PositionPair.StartCol, fTok.LastEndPosition.Row, fTok.LastEndPosition.Col, lName.PositionPair.File)), lMode, PropertyBaseExpression(lName), lValue);
           end;
           lArgs.Add(lSub);
-          if fTok.Token = TokenKind.Comma then fTok.Next else 
+          if fTok.Token = TokenKind.Comma then fTok.Next;
           if fTok.Token = TokenKind.CurlyClose then break else
           begin
             Error(ParserErrorKind.ClosingBraceExpected, '');

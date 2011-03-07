@@ -602,12 +602,15 @@ type
   
   PropertyAssignment = public class(ExpressionElement)
   private
+    fMode: FunctionDeclarationType;
     fValue: ExpressionElement;
     fName: PropertyBaseExpression;
   public
-    constructor (aPositionPair: PositionPair; aName: PropertyBaseExpression; aValue: ExpressionElement);
+    constructor (aPositionPair: PositionPair; aMode: FunctionDeclarationType; aName: PropertyBaseExpression; aValue: ExpressionElement);
     property Name: PropertyBaseExpression read fName;
     property Value: ExpressionElement read fValue;
+
+    property Mode: FunctionDeclarationType read fMode;
     property &Type: ElementType read ElementType.PropertyAssignment; override;
   end;
 
@@ -1053,10 +1056,11 @@ begin
   fFunction := aFunction;
 end;
 
-constructor PropertyAssignment(aPositionPair: PositionPair; aName: PropertyBaseExpression; aValue: ExpressionElement);
+constructor PropertyAssignment(aPositionPair: PositionPair; aMode: FunctionDeclarationType; aName: PropertyBaseExpression; aValue: ExpressionElement);
 begin
   inherited constructor(aPositionPair);
   fName := aName;
+  fMode := aMode;
   fValue := aValue;
 end;
 

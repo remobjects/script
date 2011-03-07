@@ -36,6 +36,7 @@ type
     class method GetObjAsString(arg: object): string;
 
     class var method_GetObjAsBoolean: System.Reflection.MethodInfo := typeof(Utilities).GetMethod('GetObjAsBoolean'); readonly;
+    class var Method_GetObjAsString: System.Reflection.MethodInfo := typeof(UtilitieS).GetMethod('GetObjAsString'); readonly;
 
     class method GetPrimitive(aExecutionContext: ExecutionContext; arg: EcmaScriptObject): Object;
 

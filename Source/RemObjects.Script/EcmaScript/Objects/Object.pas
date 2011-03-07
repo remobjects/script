@@ -45,8 +45,12 @@ type
     constructor(obj: GlobalObject); 
     constructor(obj: GlobalObject; aProto: EcmaScriptObject);
 
+    class var &Constructor: System.Reflection.ConstructorInfo := typeof(EcmaScriptObject).GetConstructor([typeof(GlobalObject)]); readonly;
+    class var Method_ObjectLiteralSet: System.Reflection.MethodInfo := typeof(EcmaScriptObject).GetMethod('ObjectLiteralSet'); readonly;
+
     method AddValue(aValue: string; aData: Object): EcmaScriptObject;
     method AddValues(aValue: array of string; aData: array of Object): EcmaScriptObject;
+    method ObjectLiteralSet(aName: string; aMode: RemObjects.Script.EcmaScript.Internal.FunctionDeclarationType; aData: Object; aStrict: Boolean): EcmaScriptObject;
     
 
     property Values: Dictionary<String, PropertyValue> read fValues;
@@ -89,6 +93,7 @@ implementation
 constructor EcmaScriptObject(obj: GlobalObject);
 begin
   fGlobal := obj;
+  if fGlobal <> nil then Prototype := obj.ObjectPrototype;
 end;
 
 constructor EcmaScriptObject(obj: GlobalObject; aProto: EcmaScriptObject);
@@ -371,6 +376,30 @@ begin
   lCurrent.Attributes := lCurrent.Attributes or aValue.Attributes;
 
   exit true;
+end;
+
+method EcmaScriptObject.ObjectLiteralSet(aName: string; aMode: RemObjects.Script.EcmaScript.Internal.FunctionDeclarationType; aData: Object; aStrict: Boolean): EcmaScriptObject;
+begin
+  var lDescr: PropertyValue;
+  case aMode of
+    RemObjects.Script.EcmaScript.Internal.FunctionDeclarationType.Get: lDescr := new PropertyValue(PropertyAttributes.Configurable or PropertyAttributes.Enumerable, EcmaScriptFunctionObject(aData), nil);
+    
+    RemObjects.Script.EcmaScript.Internal.FunctionDeclarationType.Set: lDescr := new PropertyValue(PropertyAttributes.Configurable or PropertyAttributes.Enumerable, nil, EcmaScriptFunctionObject(aData));
+    else // RemObjects.Script.EcmaScript.Internal.FunctionDeclarationType.None
+      lDescr := new PropertyValue(PropertyAttributes.All, aData);
+  end; // case
+  if aStrict and ((aName = 'eval') or (aName = 'arguments')) then begin
+    Root.RaiseNativeError(NativeErrorType.SyntaxError, 'eval and arguments not allowed as object literals when using strict mode');
+  end;
+  var lOwn := GetOwnProperty(aName);
+  if lOwn <> nil then begin
+    if aStrict and IsDataDescriptor(lOwn) and IsDataDescriptor(lDescr) then Root.RaiseNativeError(NativeErrorType.SyntaxError, 'Duplicate property');
+    if IsDataDescriptor(lOwn) and IsAccessorDescriptor( lDescr) then Root.RaiseNativeError(NativeErrorType.SyntaxError, 'Duplicate property');
+    if IsAccessorDescriptor(lOwn) and IsDataDescriptor(lDescr) then Root.RaiseNativeError(NativeErrorType.SyntaxError, 'Duplicate property');
+    if IsAccessorDescriptor(lOwn) and IsAccessorDescriptor(lDescr) and (((lOwn.Get <> nil) = (lDescr.Get <> nil)) or (lOwn.Set <> nil) = (lDescr.Set <> nil)) then Root.RaiseNativeError(NativeErrorType.SyntaxError, 'Duplicate property');
+  end;
+  DefineOwnProperty(aName, lDescr, false);
+  exit self;
 end;
 
 constructor PropertyValue(aAttributes: PropertyAttributes; aValue: Object);

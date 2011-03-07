@@ -40,7 +40,12 @@ type
     fItems: List<Object> := new List<Object>;
   public
     constructor(aRoot: GlobalObject; aLength: Integer);
+    constructor(aCapacity: Integer; aRoot: GlobalObject);
+
+    class var &Constructor: System.Reflection.ConstructorInfo := typeof(EcmaScriptArrayObject).GetConstructor([typeof(Integer), typeof(GlobalObject)]); readonly; 
+    class var Method_AddValue: System.Reflection.MethodInfo := typeof(EcmaScriptArrayObject).GetMethod('AddValue'); readonly;
     method AddValues(aItems: Array of Object): EcmaScriptArrayObject;
+    method AddValue(aItem: Object);
     method Put(aExecutionContext: ExecutionContext; aName: String; aValue: Object; aThrow: Boolean): Object; override;
     method Get(aExecutionContext: ExecutionContext; aName: String): Object; override;
     method PutIndex(aName: Int32; aValue: Object): Object; override;
@@ -337,5 +342,16 @@ begin
   result := self;
 end;
 
+
+constructor EcmaScriptArrayObject(aCapacity: Integer; aRoot: GlobalObject);
+begin
+  constructor(aRoot, 0);
+  fItems.Capacity := aCapacity;
+end;
+
+method EcmaScriptArrayObject.AddValue(aITem: Object);
+begin
+  fItems.Add(aItem);
+end;
 
 end.
