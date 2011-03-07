@@ -92,6 +92,8 @@ type
     method CallGetValue(aFromElement: ElementType);
     method CallSetValue;
     method PushExpression(aExpression: ExpressionElement);
+    method RecursiveFindFuncAndVars(aElements: sequence of SourceElement): sequence of SourceElement; iterator;
+    method WriteIfStatement(el: IfStatement);
   public
     constructor(aOptions: EcmaScriptCompilerOptions);
 
@@ -240,11 +242,27 @@ begin
     filg.Emit(Opcodes.Call, Undefined.Method_Instance);
     filg.Emit(Opcodes.Stloc, fResultVar);
 
-    for i: Integer := 0 to aElements.Count -1 do begin
-      if aElements[i].Type = ElementType.FunctionDeclaration then begin
+    if not aEval and not aOutside then begin
+      filg.Emit(Opcodes.Ldarg_1); // this
+      var lIsNull := filg.DefineLabel;
+      filg.Emit(Opcodes.Brfalse, lIsNull);
+      filg.Emit(Opcodes.Ldarg_1); // this
+      filg.Emit(OpCodes.Call, Undefined.Method_Instance);
+      filg.Emit(opcodes.Beq, lIsnull);
+      var lGotThis := filg.DefineLabel;
+      filg.Emit(Opcodes.Br, lGotThis);
+      filg.MarkLabel(lIsNull);
+      filg.Emit(OpCodes.Ldloc, fExecutionContext);
+      filg.Emit(Opcodes.Call, ExecutionContext.Method_get_Global);
+      filg.Emit(Opcodes.Starg, 1); // this
+      filg.MarkLabel(lGotThis);
+    end;
+
+    for each el in RecursiveFindFuncAndVars(aElements) do begin
+      if el.Type = ElementType.FunctionDeclaration then begin
         filg.Emit(Opcodes.Ldloc, fExecutionContext);
         filg.Emit(Opcodes.Call, ExecutionContext.Method_get_VariableScope);
-        filg.Emit(Opcodes.Ldstr, FunctionDeclarationElement(aElements[i]).Identifier);
+        filg.Emit(Opcodes.Ldstr, FunctionDeclarationElement(el).Identifier);
         if aEval then
           filg.Emit(Opcodes.Ldc_I4_1) 
         else
@@ -252,18 +270,18 @@ begin
         filg.Emit(Opcodes.Call, EnvironmentRecord.Method_CreateMutableBindingNoFail);
         filg.Emit(Opcodes.Ldloc, fExecutionContext);
         filg.Emit(Opcodes.Call, ExecutionContext.Method_get_VariableScope);
-        filg.Emit(Opcodes.Ldstr, FunctionDeclarationElement(aElements[i]).Identifier);
-        PushExpression(new FunctionExpression(aElements[i].PositionPair, FunctionDeclarationElement(aElements[i])));
+        filg.Emit(Opcodes.Ldstr, FunctionDeclarationElement(el).Identifier);
+        PushExpression(new FunctionExpression(el.PositionPair, FunctionDeclarationElement(el)));
         if fUseStrict then
           filg.Emit(Opcodes.Ldc_I4_1) 
         else
           filg.Emit(Opcodes.Ldc_I4_0);
         filg.Emit(Opcodes.Callvirt, EnvironmentRecord.Method_SetMutableBinding);
-      end else if aElements[i].Type = ElementType.VariableStatement then begin
-        for each el in VariableStatement(aElements.Item[i]).Items do begin
+      end else if el.Type = ElementType.VariableStatement then begin
+        for each en in VariableStatement(el).Items do begin
           filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, ExecutionContext.Method_get_VariableScope);
-          filg.Emit(Opcodes.Ldstr, el.Identifier);
+          filg.Emit(Opcodes.Ldstr, en.Identifier);
           if aEval then
             filg.Emit(Opcodes.Ldc_I4_1) 
           else
@@ -353,9 +371,12 @@ begin
           PushExpression(new BinaryExpression(lItem.PositionPair, new IdentifierExpression(lItem.PositionPair, lItem.Identifier), lItem.Initializer, BinaryOperator.Assign));
         end;
       end;
-    end
+    end;
+    ElementType.BlockStatement: begin
+      for each subitem in BlockStatement(el).Items do EmitElement(subitem);
+    end;
+    ElementType.IfStatement: WriteIfStatement(IfStatement(El));
     (*
-    ElementType.BlockStatement: ;
     ElementType.BreakStatement: ;
     ElementType.CaseClause: ;
     ElementType.CatchBlock: ;
@@ -364,7 +385,6 @@ begin
     ElementType.ForInStatement: ;
     ElementType.ForStatement: ;
     ElementType.FunctionDeclaration: ;
-    ElementType.IfStatement: ;
     ElementType.LabelledStatement: ;
     ElementType.ParameterDeclaration: ;
     ElementType.Program: ;
@@ -927,8 +947,6 @@ begin
     : ;
     ElementType.FunctionExpression: ;
     
-    ElementType.NewExpression: ;
-    ElementType.ParameterDeclaration: ;
     : ;*)
   else
     raise new EcmaScriptException(aExpression.PositionPair.File, aExpression.PositionPair, EcmaScriptErrorKind.EInternalError, 'Unknown type: '+aExpression.Type);
@@ -938,7 +956,6 @@ end;
 method EcmaScriptCompiler.CallGetValue(aFromElement: ElementType);
 begin
   case aFromElement of
-
     ElementType.SubExpression,
     ElementType.CallExpression,
     ElementType.IdentifierExpression: ;
@@ -959,6 +976,56 @@ begin
   // Returns: Object value
   filg.Emit(Opcodes.Ldloc, fExecutionContext);
   filg.Emit(Opcodes.Call, Reference.Method_SetValue);
+end;
+
+method EcmaScriptCompiler.RecursiveFindFuncAndVars(aElements: sequence of SourceElement): sequence of SourceElement;
+begin
+  for each el in aElements do begin
+    if el = nil then continue;
+    case el.Type of
+      ElementType.BlockStatement: yield RecursiveFindFuncAndVars(BlockStatement(el).Items.Cast<SourceElement>);
+      ElementType.IfStatement: yield RecursiveFindFuncAndVars([IfStatement(el).True, IfStatement(el).False]);
+      ElementType.LabelledStatement: yield RecursiveFindFuncAndVars([LabelledStatement(el).Statement]);
+      ElementType.SwitchStatement: RecursiveFindFuncAndVars(SwitchStatement(el).Clauses.SelectMany(a->a.Body.Cast<SourceElement>()));
+      ElementType.TryStatement: RecursiveFindFuncAndVars([TryStatement(el).Body, TryStatement(el).Finally, TryStatement(el).Catch:Body]);
+      ElementType.VariableStatement: yield el;
+      ElementType.WithStatement: yield RecursiveFindFuncAndVars([WithStatement(el).Body]);
+      ElementType.DoStatement: yield RecursiveFindFuncAndVars([DoStatement(el).Body]);
+      ElementType.ForInStatement: yield RecursiveFindFuncAndVars([ForInStatement(el).ExpressionElement, ForInStatement(el).Body]);
+      ElementType.ForStatement: yield RecursiveFindFuncAndVars([ForStatement(el).Initializer, ForStatement(el).Increment, ForStatement(el).Comparison, ForStatement(el).Body]);
+      ElementType.WhileStatement: yield RecursiveFindFuncAndVars([WhileStatement(el).Body]);
+    end; // case
+  end;
+end;
+
+method EcmaScriptCompiler.WriteIfStatement(el: IfStatement);
+begin
+  if el.False = nil then begin
+    PushExpression(el.ExpressionElement);
+    filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
+    var lFalse := filg.DefineLabel;
+    filg.Emit(Opcodes.Brfalse, lFalse);
+    EmitElement(el.True);
+    filg.MarkLabel(lFalse);
+  end else if el.True = nil then begin
+    PushExpression(el.ExpressionElement);
+    filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
+    var lTrue := filg.DefineLabel;
+    filg.Emit(Opcodes.Brtrue, lTrue);
+    EmitElement(el.FAlse);
+    filg.MarkLabel(lTrue);
+  end else begin
+    PushExpression(el.ExpressionElement);
+    filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
+    var lFalse := filg.DefineLabel;
+    filg.Emit(Opcodes.Brfalse, lFalse);
+    EmitElement(el.True);
+    var lExit := filg.DefineLabel;
+    filg.Emit(Opcodes.Br, lExit);
+    filg.MarkLabel(lFalse);
+    EmitElement(el.False);
+    fILG.MarkLabel(lExit);
+  end;
 end;
 
 end.
