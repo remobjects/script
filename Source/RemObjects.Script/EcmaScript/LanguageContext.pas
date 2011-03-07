@@ -837,7 +837,11 @@ begin
       filg.Emit(Opcodes.Call, ExecutionContext.Method_get_Global);
       filg.Emit(Opcodes.Newobj, EcmaScriptObject.Constructor);
       for each el in ObjectLiteralExpression(aExpression).Items do begin
-        PushExpression(el.Name);
+        case el.Name.Type of 
+          ElementType.IdentifierExpression: filg.Emit(Opcodes.Ldstr, IdentifierExpression(el.Name).Identifier);
+        else
+          PushExpression(el.Name);
+        end; // case
         filg.Emit(Opcodes.Call, Utilities.Method_GetObjAsString);
         filg.Emit(OpCodes.Ldc_I4, Integer(el.Mode));
         PushExpression(el.Value);
@@ -845,14 +849,84 @@ begin
         filg.Emit(Opcodes.Ldc_I4, if fUseStrict then 1 else 0);
         filg.Emit(Opcodes.Call, EcmaScriptObject.Method_ObjectLiteralSet);
       end;
+    end;
+    ElementType.SubExpression: begin
+      PushExpression(SubExpression(aExpression).Member);
+      CallGetValue(SubExpression(aExpression).Member.Type);
+      filg.emit(Opcodes.Ldstr, SubExpression(aExpression).Identifier);
+      filg.Emit(Opcodes.Ldloc, fExecutionContext);
+      filg.Emit(Opcodes.Ldc_I4, if fUseStrict then 1 else 0);
+      filg.Emit(Opcodes.Call, Reference.Method_Create);
+    end;
+    ElementType.ArrayAccessExpression: begin
+      PushExpression(ArrayAccessExpression(aExpression).Member);
+      CallGetValue(ArrayAccessExpression(aExpression).Member.Type);
+      PushExpression(ArrayAccessExpression(aExpression).Parameter);
+      CallGetValue(ArrayAccessExpression(aExpression).Parameter.Type);
+      filg.Emit(Opcodes.Ldc_I4, if fUseStrict then 1 else 0);
+      filg.Emit(Opcodes.Call, Reference.Method_Create);
+    end;
+    ElementType.NewExpression: begin
+      PushExpression(NewExpression(aExpression).Member);
+      CallGetValue(NewExpression(aExpression).Member.Type);
+      filg.Emit(Opcodes.Isinst, typeof(EcmaScriptObject));
+      filg.Emit(Opcodes.Dup);
+      var lIsObject := filg.DefineLabel;
+      filg.Emit(Opcodes.Brtrue, lIsObject);
+      filg.Emit(OpCodes.Ldloc, fExecutionContext);
+      filg.Emit(Opcodes.Call, ExecutionContext.Method_get_Global);
+      filg.Emit(Opcodes.Ldc_I4, Integer(NativeErrorType.TypeError));
+      filg.Emit(Opcodes.Ldstr, 'Cannot instantiate non-object value');
+      filg.Emit(Opcodes.Call, GlobalObject.Method_RaiseNativeError);
+      filg.MarkLabel(lIsObject);
+      filg.Emit(Opcodes.Ldloc, fExecutionContext);
+      filg.Emit(Opcodes.Ldc_I4, NewExpression(aExpression).Parameters.Count);
+      filg.Emit(Opcodes.Newarr, typeof(Object));
+      for each el in NewExpression(aExpression).Parameters index n do begin
+        filg.Emit(OpCodes.Dup);
+        filg.Emit(Opcodes.Ldc_I4, n);
+        PushExpression(el);
+        CallGetValue(el.Type);
+        filg.Emit(Opcodes.Stelem_Ref);
+      end;
+
+      filg.Emit(Opcodes.Callvirt, EcmaScriptObject.Method_Construct);
+    end;
+
+    ElementType.CallExpression: begin
+      PushExpression(CallExpression(aExpression).Member);
+      filg.Emit(Opcodes.Dup);   
+
+      CallGetValue(CallExpression(aExpression).Member.Type);
+      filg.Emit(Opcodes.Isinst, typeof(EcmaScriptObject));
+      filg.Emit(Opcodes.Dup);
+      var lIsObject := filg.DefineLabel;
+      filg.Emit(Opcodes.Brtrue, lIsObject);
+      filg.Emit(OpCodes.Ldloc, fExecutionContext);
+      filg.Emit(Opcodes.Call, ExecutionContext.Method_get_Global);
+      filg.Emit(Opcodes.Ldc_I4, Integer(NativeErrorType.TypeError));
+      filg.Emit(Opcodes.Ldstr, 'Cannot call non-object value');
+      filg.Emit(Opcodes.Call, GlobalObject.Method_RaiseNativeError);
+      filg.MarkLabel(lIsObject);
+      
+      filg.Emit(Opcodes.Ldc_I4, CallExpression(aExpression).Parameters.Count);
+      filg.Emit(Opcodes.Newarr, typeof(Object));
+      for each el in CallExpression(aExpression).Parameters index n do begin
+        filg.Emit(OpCodes.Dup);
+        filg.Emit(Opcodes.Ldc_I4, n);
+        PushExpression(el);
+        CallGetValue(el.Type);
+        filg.Emit(Opcodes.Stelem_Ref);
+      end;
+      filg.Emit(Opcodes.Ldloc, fExecutionContext);
+      filg.Emit(Opcodes.Call, EcmaScriptObject.Method_CallHelper);
     end
-    (*ElementType.ArrayAccessExpression: ;
-    ElementType.CallExpression: ;
+    (*: ;
+    
     ElementType.CommaSeparatedExpression: ;
     : ;
     ElementType.FunctionExpression: ;
     
-    ElementType.SubExpression: ;
     ElementType.NewExpression: ;
     ElementType.ParameterDeclaration: ;
     : ;*)
@@ -864,7 +938,9 @@ end;
 method EcmaScriptCompiler.CallGetValue(aFromElement: ElementType);
 begin
   case aFromElement of
-    ElementType.CallExpression:;
+
+    ElementType.SubExpression,
+    ElementType.CallExpression,
     ElementType.IdentifierExpression: ;
   else
     exit; // not needed

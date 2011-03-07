@@ -43,7 +43,7 @@ type
     constructor(aCapacity: Integer; aRoot: GlobalObject);
 
     class var &Constructor: System.Reflection.ConstructorInfo := typeof(EcmaScriptArrayObject).GetConstructor([typeof(Integer), typeof(GlobalObject)]); readonly; 
-    class var Method_AddValue: System.Reflection.MethodInfo := typeof(EcmaScriptArrayObject).GetMethod('AddValue'); readonly;
+    class var Method_AddValue: System.Reflection.MethodInfo := typeof(EcmaScriptArrayObject).GetMethod('AddValue', [typeof(Object)]); readonly;
     method AddValues(aItems: Array of Object): EcmaScriptArrayObject;
     method AddValue(aItem: Object);
     method Put(aExecutionContext: ExecutionContext; aName: String; aValue: Object; aThrow: Boolean): Object; override;

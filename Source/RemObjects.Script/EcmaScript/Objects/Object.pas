@@ -85,6 +85,12 @@ type
     method ToPropertyDescriptor(aProp: EcmaScriptObject): PropertyValue;
 
     property Names: sequence of string read Values.Keys;
+
+    class method CallHelper(Ref: Object; Func: EcmaSCriptObject; arg: array of Object; ec: ExecutionContext): Object;
+    class var Method_Construct: System.Reflection.MethodInfo := typeof(EcmaScriptObject).GetMethod('Construct'); readonly;
+    class var Method_Call: System.Reflection.MethodInfo := typeof(EcmaScriptObject).GetMethod('Call'); readonly;
+    class var Method_CallEx: System.Reflection.MethodInfo := typeof(EcmaScriptObject).GetMethod('CallEx'); readonly;
+    class var Method_CallHelper: System.Reflection.MethodInfo := typeof(EcmaScriptObject).GetMethod('CallHelper'); readonly;
   end;
 
   
@@ -400,6 +406,21 @@ begin
   end;
   DefineOwnProperty(aName, lDescr, false);
   exit self;
+end;
+
+class method EcmaScriptObject.CallHelper(Ref: Object; Func: EcmaSCriptObject; arg: array of Object; ec: ExecutionContext): Object;
+begin
+  var lRef := Reference(Ref);
+  var lThis: Object;
+  if lRef <> nil then begin
+    var lEr := EnvironmentRecord(lRef.Base);
+    if lEr <> nil then 
+      lThis := lEr.ImplicitThisValue
+    else
+      lThis := lRef.Base;
+  end else
+    lThis := nil;
+  exit Func.CallEx(ec, lThis, arg);
 end;
 
 constructor PropertyValue(aAttributes: PropertyAttributes; aValue: Object);

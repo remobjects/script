@@ -35,6 +35,7 @@ type
     method NativeErrorCtor(proto: EcmaScriptObject; arg: string): EcmaScriptObject;
 
     method RaiseNativeError(e: NativeErrorType; msg: string);
+    class var Method_RaiseNativeError: System.Reflection.MethodInfo := typeof(GlobalObject).GetMethod('RaiseNativeError'); readonly;
   end;  
 implementation
 

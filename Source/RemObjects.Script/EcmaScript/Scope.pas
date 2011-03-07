@@ -17,10 +17,12 @@ type
     class method GetValue(aReference: Object; aExecutionContext: ExecutionContext): Object;
     class method SetValue(aReference: Object; aValue: Object; aExecutionContext: ExecutionContext): Object;
     class method Delete(aReference: Object; aExecutionContext: ExecutionContext): Boolean;
+    class method CreateReference(aBase, aSub: Object; aExecutionContext: ExecutionContext; aStrict: Boolean): Reference;
 
     class var Method_GetValue: System.Reflection.MethodInfo := typeof(Reference).GetMethod('GetValue'); readonly;
     class var Method_SetValue: System.Reflection.MethodInfo := typeof(Reference).GetMethod('SetValue'); readonly;
     class var Method_Delete: System.Reflection.MethodInfo := typeof(Reference).GetMethod('Delete'); readonly;
+    class var Method_Create: System.Reflection.MethodInfo := typeof(Reference).GetMethod('CreateReference'); readonly;
   end;
 
   ExecutionContext = public class
@@ -274,6 +276,13 @@ begin
   end;
   if lRef.Strict then
     aExecutionContext.Global.RaiseNativeError(NativeErrorType.SyntaxError, 'Cannot delete transient object');
+end;
+
+class method Reference.CreateReference(aBase, aSub: Object; aExecutionContext: ExecutionContext; aStrict: Boolean): Reference;
+begin
+  if (aBase = nil) then aExecutionContext.Global.RaiseNativeError(NativeErrorType.TypeError, 'Cannot get property on null');
+  if (aBase = Undefined.Instance) then aExecutionContext.Global.RaiseNativeError(NativeErrorType.TypeError, 'Cannot get property of undefined');
+  exit new Reference(aBase, Utilities.GetObjAsString(aSub), aStrict);
 end;
 
 class method EnvironmentRecord.GetIdentifier(aLex: EnvironmentRecord; aName: String; aStrict: Boolean): Reference;
