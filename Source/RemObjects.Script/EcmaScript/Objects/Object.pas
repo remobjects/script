@@ -35,8 +35,6 @@ type
   EcmaScriptObject = public class 
   private
     fValues: Dictionary<string, PropertyValue> := new Dictionary<String,PropertyValue>;
-    method set_Prototype(avalue: EcmaScriptObject);
-    method get_Prototype: EcmaScriptObject;
     fGlobal: GlobalObject;
   protected
   public
@@ -55,7 +53,7 @@ type
 
     property Values: Dictionary<String, PropertyValue> read fValues;
 
-    property Prototype: EcmaScriptObject read get_Prototype write set_Prototype;
+    property Prototype: EcmaScriptObject;
     property &Class: string := 'Object';
     property Value: Object;
 
@@ -202,24 +200,6 @@ end;
 method EcmaScriptObject.Call(context: ExecutionContext; params args: array of Object): Object;
 begin
   root:RaiseNativeError(NativeErrorType.TypeError, 'object is not a function');
-end;
-
-
-method EcmaScriptObject.get_Prototype: EcmaScriptObject;
-begin
-  var lObj: PropertyValue;
-  fValues.TryGetValue('prototype', out lObj);
-  exit EcmaScriptObject(lObj.Value);
-end;
-
-method EcmaScriptObject.set_Prototype(avalue: EcmaScriptObject);
-begin
-  var lValue := aValue;
-  while assigned (lValue) and (lValue <> self) do begin
-    lValue := lValue.Prototype;
-  end;
-  if lValue = self  then exit;
-  fValues['prototype'] := new PropertyValue(PropertyAttributes.writable, aValue);
 end;
 
 method EcmaScriptObject.CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object;

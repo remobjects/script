@@ -30,9 +30,14 @@ type
   GlobalObject = public partial class(EcmaScriptObject)
   assembly
     fParser: EcmaScriptCompiler;
+    fDelegates: List<InternalDelegate> := new List<InternalDelegate>;
   public
     constructor (aParser: EcmaScriptCompiler);
 		constructor;
+
+    method StoreFunction(aDelegate: InternalDelegate): Integer;
+    class var Method_GetFunction: System.Reflection.MethodInfo := typeof(GlobalObject).GetMethod('GetFunction'); readonly;
+    method GetFunction(i: Integer): InternalDelegate;
 
     property Parser: EcmaScriptCompiler read fParser write fParser;
 
@@ -47,6 +52,7 @@ type
     property BooleanPrototype: EcmaScriptObject;
     property RegExpPrototype:EcmaScriptObject;
     property ErrorPrototype:EcmaScriptObject;
+    property Thrower: EcmaScriptFunctionObject;
     
     method eval(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
     method parseInt(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
@@ -108,6 +114,10 @@ begin
   CreateRegExp;
   CreateError;
   CreateNativeError;
+
+  Thrower := new EcmaScriptFunctionObject(self, 'ThrowTypeError', method begin
+    RaiseNativeError(NativeErrorType.TypeError, 'caller/arguments not available in strict mode')
+  end, 0, false);
 
   // Add function prototype here first!
   Values.Add('eval', PropertyValue.NotEnum(new EcmaScriptEvalFunctionObject(self, 'eval', @eval, 1)));
@@ -361,6 +371,17 @@ method GlobalObject.get_Debug: IDebugSink;
 begin
   if fDebug = nil then fDebug := new DebugSink; // dummy one
   exit fDebug;
+end;
+
+method GlobalObject.StoreFunction(aDelegate: InternalDelegate): Integer;
+begin
+  result := fDelegates.Count;
+  fDelegates.Add(aDelegate);
+end;
+
+method GlobalObject.GetFunction(i: Integer): InternalDelegate;
+begin
+  exit fDelegates[i];
 end;
 
 method Undefined.ToString: String;

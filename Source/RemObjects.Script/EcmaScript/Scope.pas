@@ -97,6 +97,9 @@ type
     method ImplicitThisValue: Object; empty; override;
     method CreateImmutableBinding(aName: string); virtual;
     method InitializeImmutableBinding(aName: string; aValue: Object); virtual;
+    class method SetAndInitializeImmutable(val: EcmaScriptFunctionObject; aName: string): EcmaScriptFunctionObject;
+    class var &Constructor: System.Reflection.ConstructorInfo := typeof(DeclarativeEnvironmentRecord).GetConstructor([typeof(EnvironmentRecord), Typeof(GlobalObject)]); readonly;
+    class var Method_SetAndInitializeImmutable: System.Reflection.MethodInfo := typeof(DeclarativeEnvironmentRecord).GetMethod('SetAndInitializeImmutable'); readonly;
   end;
 
 implementation
@@ -205,6 +208,14 @@ begin
   if PropertyAttributes.Configurable <> lVal.Attributes then fGlobal.RaiseNativeError(NativeErrorType.TypeError, 'Property not an unitialized immutable: '+aName);
   lVal.Attributes := PropertyAttributes.None;
   lVal.Value := aValue;
+end;
+
+class method DeclarativeEnvironmentRecord.SetAndInitializeImmutable(val: EcmaScriptFunctionObject; aName: string): EcmaScriptFunctionObject;
+begin
+  var lSelf := (val.Scope as DeclarativeEnvironmentRecord);
+  lSelf.CreateImmutableBinding(aName);
+  lSelf.InitializeImmutableBinding(aName, val);
+  exit val;
 end;
 
 constructor Reference(aBase: Object; aName: string; aStrict: Boolean);

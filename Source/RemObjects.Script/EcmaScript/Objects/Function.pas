@@ -32,8 +32,12 @@ type
     fDelegate: InternalDelegate;
     fOriginalName: string;
   public
-    constructor (aScope: GlobalObject; aOriginalName: String; aDelegate: InternalDelegate; aLength: Integer);
+    constructor (aScope: GlobalObject; aOriginalName: String; aDelegate: InternalDelegate; aLength: Integer; aStrict: Boolean := false);
     property &Delegate: InternalDelegate read fDelegate;
+    property Scope: EnvironmentRecord;
+
+    class var Method_set_Scope: System.Reflection.MethodInfo := typeof(EcmaScriptFunctionObject).GetMethod('set_Scope'); readonly;
+    class var &Constructor: System.Reflection.ConstructorInfo := typeof(EcmaScriptFunctionObject).GetConstructor([typeof(GlobalObject), typeof(string), typeof(InternalDelegate), typeof(Integer),typeof(Boolean)]); readonly;
     property OriginalName: String read fOriginalName;
     method Call(context: ExecutionContext; params args: array of Object): Object; override;
     method CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object; override;
@@ -100,14 +104,20 @@ begin
   exit EcmaScriptObject(aSelf).CallEx(aCaller, self, lSelf, lArgs);
 end;
 
-constructor EcmaScriptFunctionObject(aScope: GlobalObject; aOriginalName: String; aDelegate: InternalDelegate; aLength: Integer);
+constructor EcmaScriptFunctionObject(aScope: GlobalObject; aOriginalName: String; aDelegate: InternalDelegate; aLength: Integer; aStrict: Boolean := false);
 begin 
   inherited constructor(aScope, new EcmaScriptObject(aScope, aScope.Root.FunctionPrototype));
-  Values['constructor'] := new PropertyValue(PropertyAttributes.Configurable, Prototype);
   &Class := 'Function';
+  var lProto := new EcmaScriptObject(aScope);
+  lProto.DefineOwnProperty('constructor', new PropertyValue(PropertyAttributes.writable or PropertyAttributes.Configurable, self));
   fOriginalName := aOriginalName;
   fDelegate := aDelegate;
   Values.Add('length', PropertyValue.NotAllFlags(aLength));
+  DefineOwnProperty('prototype', new PropertyValue(PropertyAttributes.writable, lProto));
+  if aStrict then begin
+    DefineOwnProperty('caller', new PropertyValue(PropertyAttributes.None, aScope.Thrower, aScope.Thrower));
+    DefineOwnProperty('arguments', new PropertyValue(PropertyAttributes.None, aScope.Thrower, aScope.Thrower));
+  end;
   //Values.Add('
 end;
 
@@ -115,10 +125,10 @@ end;
 method EcmaScriptFunctionObject.Construct(context: ExecutionContext; params args: array of Object): Object;
 begin
   var lRes := new EcmaScriptObject(Root);
-  if Prototype <> nil then lRes.Prototype := Prototype else lRes.Prototype := Root.ObjectPrototype;
-  var lFunc := (*coalesce(EcmaScriptFunctionObject(Get('constructor'):fDelegate, *)fDelegate;
+  lRes.Prototype := coalesce(EcmaScriptObject(Get(context, 'prototype')), Root.ObjectPrototype);
+  var lFunc := fDelegate;
   result := lFunc(context, lRes, args);
-  if Result is not EcmaScriptObject then exit lRes;
+  if Result is not EcmaScriptObject then result := lRes;
 end;
 
 
