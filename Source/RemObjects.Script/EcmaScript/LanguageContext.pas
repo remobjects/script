@@ -83,9 +83,10 @@ type
     fExecutionContext: LocalBuilder;
     fILG: ILGenerator;
     fLocals: List<LocalBuilder>;
-    fLoops: List<IterationStatement>;
+    fStatementStack: List<Statement>;
     method Parse(aFilename, aData: string; aEval: Boolean := false): List<SourceElement>; // eval throws different exception
-    method Parse(aOutside, aEval: Boolean; aScopeName: string; aElements: List<SourceElement>): InternalDelegate;
+    method Parse(aFunction: FunctionDeclarationElement; aEval: Boolean; aScopeName: string; aElements: List<SourceElement>): InternalDelegate;
+    method MarkLabelled(aBreak, aContinue: nullable Label);
     method PushDebugStack;
     method EmitElement(El: SourceElement);
     method AllocateLocal(aType: &Type): LocalBuilder;
@@ -101,7 +102,7 @@ type
     method WriteForInstatement(el: ForInStatement);
     method WriteContinue(el: ContinueStatement);
     method WriteBreak(el: BreakStatement);
-    method WriteLabelled(aLabel: LabelledStatement);
+    method PushFunction(el: FunctionDeclarationElement);
   public
     constructor(aOptions: EcmaScriptCompilerOptions);
 
@@ -196,19 +197,19 @@ end;
 
 method EcmaScriptCompiler.EvalParse(aData: string): InternalDelegate;
 begin
-  exit Parse(false, true, '<eval>', Parse('<eval>', aData, true));
+  exit Parse(nil, true, '<eval>', Parse('<eval>', aData, true));
 end;
 
 method EcmaScriptCompiler.Parse(aFilename, aData: string): InternalDelegate;
 begin
-  exit Parse(true, false, aFilename, Parse( aFilename, aData, false));
+  exit Parse(nil, false, aFilename, Parse( aFilename, aData, false));
 end;
 
-method EcmaScriptCompiler.Parse(aOutside, aEval: Boolean; aScopeName: string; aElements: List<SourceElement>): InternalDelegate;
+method EcmaScriptCompiler.Parse(aFunction: FunctionDeclarationElement; aEval: Boolean; aScopeName: string; aElements: List<SourceElement>): InternalDelegate;
 begin
   var lUseStrict := fUseStrict;
-  var lLoops := fLoops;
-  fLoops := new List<IterationStatement>;
+  var lLoops := fStatementStack;
+  fStatementStack := new List<Statement>;
   try
     if aElements.Count <> 0 then begin
       if aElements[aElements.Count-1].Type <> ElementType.ExpressionStatement then
@@ -242,7 +243,7 @@ begin
       filg.Emit(Opcodes.Ldloc, fExecutionContext);
       filg.Emit(Opcodes.Callvirt, DebugSink.Method_EnterScope);
       fILG.BeginExceptionBlock; // finally
-      if aOutside then
+      if aFunction = nil then
         fILG.BeginExceptionBlock; // except
     end;
     var lOldExitLabel := fExitLabel;
@@ -252,7 +253,7 @@ begin
     filg.Emit(Opcodes.Call, Undefined.Method_Instance);
     filg.Emit(Opcodes.Stloc, fResultVar);
 
-    if not aEval and not aOutside then begin
+    if not aEval and (aFunction = nil) then begin
       filg.Emit(Opcodes.Ldarg_1); // this
       var lIsNull := filg.DefineLabel;
       filg.Emit(Opcodes.Brfalse, lIsNull);
@@ -311,7 +312,7 @@ begin
       filg.Emit(Opcodes.Ldloc, fExecutionContext);
       filg.Emit(Opcodes.Callvirt, DebugSink.Method_ExitScope);
       filg.EndExceptionBlock();
-      if aOutside then begin
+      if aFunction = nil then begin
         filg.BeginCatchBlock(typeof(Exception));
         var lTemp := AllocateLocal(typeof(Exception));
         filg.Emit(Opcodes.Stloc, lTemp);
@@ -333,7 +334,7 @@ begin
     exit InternalDelegate(lMethod.CreateDelegate(typeof(InternalDelegate)));
   finally
     fUseStrict := lUseStrict;
-    fLoops := lLoops;
+    fStatementStack := lLoops;
   end;
 end;
 
@@ -345,6 +346,7 @@ end;
 
 method EcmaScriptCompiler.EmitElement(El: SourceElement);
 begin
+  if el = nil then exit;
   if fDebug and (el.PositionPair.StartRow> 0) then begin
     PushDebugStack;
     var lPos := el.PositionPair;
@@ -355,7 +357,7 @@ begin
     filg.Emit(Opcodes.Ldc_I4, lPos.EndCol);
     filg.Emit(Opcodes.Callvirt, DebugSink.Method_DebugLine);
   end;
-
+  if el is Statement then fStatementStack.Add(Statement(el));
   case el.Type of
     ElementType.EmptyStatement: begin
       filg.Emit(Opcodes.Nop);
@@ -393,11 +395,18 @@ begin
     ElementType.ForInStatement: WriteForInstatement(ForInStatement(el));
     ElementType.ForStatement: WriteForStatement(ForStatement(el));
     ElementType.WhileStatement: WriteWhileStatement(WhileStatement(el));
-    
+    ElementType.LabelledStatement: begin
+      LabelledStatement(el).Break := fILG.DefineLabel;
+      EmitElement(LabelledStatement(el).Statement);
+      filg.MarkLabel(LabelledStatement(el).Break);
+    end;
+    ElementType.FunctionDeclaration: begin
+      PushFunction(FunctionDeclarationElement(el));
+      filg.Emit(Opcodes.Pop);
+    end;
     (*
     ElementType.CaseClause: ;
     ElementType.CatchBlock: ;
-    ElementType.FunctionDeclaration: ;
     ElementType.LabelledStatement: ;
     ElementType.ParameterDeclaration: ;
     ElementType.Program: ;
@@ -409,6 +418,7 @@ begin
   else
     raise new EcmascriptException(El.PositionPair.File, el.PositionPair, EcmaScriptErrorKind.EInternalError, 'Unkwown type: '+el.Type);
   end; // case
+  fStatementStack.Remove(Statement(el));
 end;
 
 method EcmaScriptCompiler.AllocateLocal(aType: &Type): LocalBuilder;
@@ -952,14 +962,16 @@ begin
       end;
       filg.Emit(Opcodes.Ldloc, fExecutionContext);
       filg.Emit(Opcodes.Call, EcmaScriptObject.Method_CallHelper);
-    end
-    (*: ;
-    
-    ElementType.CommaSeparatedExpression: ;
-    : ;
-    ElementType.FunctionExpression: ;
-    
-    : ;*)
+    end;
+    ElementType.CommaSeparatedExpression: // only for for
+    begin
+      for i: Integer := 0 to CommaSeparatedExpression(aExpression).Parameters.Count -1 do begin
+        if i <> 0 then filg.Emit(Opcodes.Pop);
+        PushExpression(CommaSeparatedExpression(aExpression).Parameters[i]);
+      end;
+    end;
+
+    ElementType.FunctionExpression: PushFunction(FunctionExpression(aExpression).Function);
   else
     raise new EcmaScriptException(aExpression.PositionPair.File, aExpression.PositionPair, EcmaScriptErrorKind.EInternalError, 'Unknown type: '+aExpression.Type);
   end; // case
@@ -1040,6 +1052,71 @@ begin
   end;
 end;
 
+method EcmaScriptCompiler.WriteContinue(el: ContinueStatement);
+begin
+  if el.Identifier = nil then begin
+    for i: Integer := fStatementStack.Count -1 downto 0 do begin
+      var lIt := IterationStatement(fStatementStack[i]);
+      if assigned(lIt) and (lIt.Type <> ElementType.LabelledStatement) and (lIt.Continue <> nil) then begin
+        filg.Emit(Opcodes.Leave, lIt.Continue);
+        exit;
+      end;
+    end;
+    raise new ScriptParsingException(el.PositionPair.File, el.PositionPair, EcmaScriptErrorKind.CannotContinueHere);
+  end else begin
+    for i: Integer := fStatementStack.Count -1 downto 0 do begin
+      var lIt := LabelledStatement(fStatementStack[i]);
+      if (lIt.Identifier = el.Identifier) then begin
+        if lIt.Continue  = nil then
+          filg.Emit(Opcodes.Leave, fExitLabel)
+        else
+          filg.Emit(Opcodes.Leave, lIt.Continue);
+        exit;
+      end;
+    end;
+    raise new ScriptParsingException(el.PositionPair.File, el.PositionPair, EcmaScriptErrorKind.UnknownLabelTarget, el.Identifier);
+  end;
+end;
+
+method EcmaScriptCompiler.WriteBreak(el: BreakStatement);
+begin
+  if el.Identifier = nil then begin
+    for i: Integer := fStatementStack.Count -1 downto 0 do begin
+      var lIt := IterationStatement(fStatementStack[i]);
+      if assigned(lIt) and (lIt.Type <> ElementType.LabelledStatement) and (lIt.Break <> nil) then begin
+        filg.Emit(Opcodes.Leave, lIt.Break);
+        exit;
+      end;
+    end;
+    raise new ScriptParsingException(el.PositionPair.File, el.PositionPair, EcmaScriptErrorKind.CannotBreakHere);
+  end else begin
+    for i: Integer := fStatementStack.Count -1 downto 0 do begin
+      var lIt := LabelledStatement(fStatementStack[i]);
+      if lIt.Identifier = el.Identifier then begin
+        filg.Emit(Opcodes.Leave, lIt.Break);
+        exit;
+      end;
+    end;
+    raise new ScriptParsingException(el.PositionPair.File, el.PositionPair, EcmaScriptErrorKind.UnknownLabelTarget, el.Identifier);
+  end;
+end;
+
+
+method EcmaScriptCompiler.MarkLabelled(aBreak, aContinue: nullable Label);
+begin
+  for i: Integer := fStatementStack.Count -2 downto 0 do begin // -1 = current
+    var lItem := LabelledStatement(fStatementStack[i]);
+    if lItem = nil then exit;
+    lItem.Break := coalesce(aBreak, lItem.Break);
+    lItem.Continue := coalesce(aContinue, lItem.Continue)
+  end;
+end;
+
+method EcmaScriptCompiler.PushFunction(el: FunctionDeclarationElement);
+begin
+
+end;
+
 method EcmaScriptCompiler.WriteDoStatement(el: DoStatement);
 begin
 
@@ -1055,19 +1132,6 @@ end;
 
 method EcmaScriptCompiler.WriteForInstatement(el: ForInStatement);
 begin
-end;
-
-method EcmaScriptCompiler.WriteContinue(el: ContinueStatement);
-begin
-end;
-
-method EcmaScriptCompiler.WriteBreak(el: BreakStatement);
-begin
-end;
-
-method EcmaScriptCompiler.WriteLabelled(aLabel: LabelledStatement);
-begin
-
 end;
 
 end.

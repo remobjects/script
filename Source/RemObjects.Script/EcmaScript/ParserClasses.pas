@@ -8,6 +8,7 @@ namespace RemObjects.Script.EcmaScript.Internal;
 interface
 uses
   RemObjects.Script,
+  System.Reflection.Emit,
   System.Collections.ObjectModel,
   System.Collections.Generic;
 
@@ -156,9 +157,8 @@ type
   IterationStatement  = public abstract class(Statement)
   private
   public
-    property ContinueLabel: Label;
-    property BreakLabel: Label;
-    property LabelName: string;
+    property &Break: Label;
+    property &Continue: Label;
   end;
 
   ForStatement  = public class(IterationStatement)
@@ -262,7 +262,7 @@ type
     property &Type: ElementType read ElementType.WithStatement; override;  
   end;
 
-  LabelledStatement  = public class(Statement)
+  LabelledStatement  = public class(IterationStatement)
   private
     fStatement: Statement;
     fIdentifier: String;
