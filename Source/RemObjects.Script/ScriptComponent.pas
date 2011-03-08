@@ -506,12 +506,12 @@ end;
 
 method EcmaScriptComponent.HasFunction(aName: String): Boolean;
 begin
-	exit fGlobalObject.Get(aName) is RemObjects.Script.EcmaScript.EcmaScriptFunctionObject;
+	exit fGlobalObject.Get(aName) is RemObjects.Script.EcmaScript.EcmaScriptBaseFunctionObject;
 end;
 
 method EcmaScriptComponent.RunFunction(aName: String; params args: Array of object): Object;
 begin
-	var lItem := fGlobalObject.Get(aName) as RemObjects.Script.EcmaScript.EcmaScriptFunctionObject;
+	var lItem := fGlobalObject.Get(aName) as RemObjects.Script.EcmaScript.EcmaScriptBaseFunctionObject;
 	if lItem = nil then raise new ScriptComponentException(String.Format(RemObjects.Script.Properties.Resources.eNoSuchFunction, aName));
   exit lItem.Call(fRoot, Args);
 end;

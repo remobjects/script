@@ -90,6 +90,7 @@
     <Compile Include="EcmaScript\Bindings\ShiftOperators.pas" />
     <Compile Include="EcmaScript\Bindings\UnaryOperators.pas" />
     <Compile Include="EcmaScript\LanguageContext.pas" />
+    <Compile Include="EcmaScript\Objects\Argument.pas" />
     <Compile Include="EcmaScript\Objects\Array.pas" />
     <Compile Include="EcmaScript\Objects\Boolean.pas" />
     <Compile Include="EcmaScript\Objects\Date.pas" />

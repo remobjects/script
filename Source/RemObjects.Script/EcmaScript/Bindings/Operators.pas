@@ -190,7 +190,7 @@ begin
   end;
 
   if lObj <> nil then begin
-    if lObj is EcmaScriptFunctionObject then 
+    if lObj is EcmaScriptBaseFunctionObject then 
     exit 'function';
     exit 'object';
   end;

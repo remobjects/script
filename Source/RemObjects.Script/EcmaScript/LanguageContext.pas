@@ -19,6 +19,7 @@ uses
 type
   
   InternalDelegate = public delegate (aScope: ExecutionContext; aSelf: Object; params args: Array of Object): Object;
+  InternalFunctionDelegate = public delegate(aScope: ExecutionContext; aSelf: Object; params args: array of Object; aFunc: EcmaScriptInternalFunctionObject): Object;
   EcmaScriptErrorKind = public enum
   (
     FatalErrorWhileCompiling,
@@ -85,7 +86,7 @@ type
     fLocals: List<LocalBuilder>;
     fStatementStack: List<Statement>;
     method Parse(aFilename, aData: string; aEval: Boolean := false): List<SourceElement>; // eval throws different exception
-    method Parse(aFunction: FunctionDeclarationElement; aEval: Boolean; aScopeName: string; aElements: List<SourceElement>): InternalDelegate;
+    method Parse(aFunction: FunctionDeclarationElement; aEval: Boolean; aScopeName: string; aElements: List<SourceElement>): Object;
     method MarkLabelled(aBreak, aContinue: nullable Label);
     method WriteDebugStack;
     method EmitElement(El: SourceElement);
@@ -197,15 +198,15 @@ end;
 
 method EcmaScriptCompiler.EvalParse(aData: string): InternalDelegate;
 begin
-  exit Parse(nil, true, '<eval>', Parse('<eval>', aData, true));
+  exit InternalDelegate(Parse(nil, true, '<eval>', Parse('<eval>', aData, true)));
 end;
 
 method EcmaScriptCompiler.Parse(aFilename, aData: string): InternalDelegate;
 begin
-  exit Parse(nil, false, aFilename, Parse( aFilename, aData, false));
+  exit InternalDelegate(Parse(nil, false, aFilename, Parse( aFilename, aData, false)));
 end;
 
-method EcmaScriptCompiler.Parse(aFunction: FunctionDeclarationElement; aEval: Boolean; aScopeName: string; aElements: List<SourceElement>): InternalDelegate;
+method EcmaScriptCompiler.Parse(aFunction: FunctionDeclarationElement; aEval: Boolean; aScopeName: string; aElements: List<SourceElement>): Object;
 begin
   var lUseStrict := fUseStrict;
   var lLoops := fStatementStack;
@@ -231,8 +232,12 @@ begin
 
     var lOldLocals := fLocals;
     fLocals := new List<LocalBuilder>;
-    var lMethod := new System.Reflection.Emit.DynamicMethod(aSCopeName, typeof(Object), [typeof(ExecutionContext), typeof(object), Typeof(array of Object)], typeof(DynamicMethods), true);
-
+    var lMethod: DynamicMethod;
+    if aFunction <> nil then
+      lMethod := new System.Reflection.Emit.DynamicMethod(aSCopeName, typeof(Object), [typeof(ExecutionContext), typeof(object), Typeof(array of Object), typeof(EcmaScriptInternalFunctionObject)], typeof(DynamicMethods), true)
+    else
+      lMethod := new System.Reflection.Emit.DynamicMethod(aSCopeName, typeof(Object), [typeof(ExecutionContext), typeof(object), Typeof(array of Object)], typeof(DynamicMethods), true);
+    
     var lOldILG := fIlg;
     fILG := lMethod.GetILGenerator();
     var lOldExecutionContext := fExecutionContext;
@@ -243,6 +248,38 @@ begin
       filg.Emit(Opcodes.Call, ExecutionContext.Method_get_Global);
       filg.Emit(Opcodes.Newobj, DeclarativeEnvironmentRecord.Constructor);
       filg.Emit(Opcodes.Stloc, fExecutionContext);
+
+      for i: Integer := 0 to aFunction.Parameters.Count -1 do begin
+        filg.Emit(Opcodes.Ldloc, fExecutionContext);
+        filg.Emit(Opcodes.Ldloc_3);
+        filg.Emit(opcodes.Ldc_I4, i);
+        filg.Emit(Opcodes.Ldstr, aFunction.Parameters[i].Name);
+        filg.Emit(opcodes.Ldc_I4, if fUseStrict then 1 else 0);
+        filg.Emit(Opcodes.Call, ExecutionContext.Method_StoreParameter);
+      end;
+      // public delegate(aScope: ExecutionContext; aSelf: Object; params args: array of Object; aFunc: EcmaScriptInternalFunctionObject): Object;
+      filg.Emit(Opcodes.Ldloc, fExecutionContext);
+      filg.Emit(Opcodes.Call, ExecutionContext.Method_get_VariableScope);
+      filg.Emit(Opcodes.Ldstr, 'arguments');
+      filg.emit(Opcodes.Callvirt, EnvironmentRecord.Method_HasBinding);
+      var lAlreadyHaveArguments := filg.DefineLabel;
+      filg.Emit(Opcodes.Brtrue, lAlreadyHaveArguments);
+      filg.Emit(Opcodes.Ldloc, fExecutionContext);
+      filg.Emit(Opcodes.ldarg_3);
+      filg.Emit(Opcodes.ldarg, 4);
+      //eecution context, object[], function
+      filg.Emit(Opcodes.Ldc_I4, if fUseStrict then 1 else 0);
+      filg.Emit(Opcodes.Newobj, EcmaScriptArgumentObject.Constructor);
+      filg.Emit(Opcodes.Ldstr, 'arguments');
+      filg.Emit(Opcodes.Ldloc, fExecutionContext);
+      filg.Emit(Opcodes.Call, ExecutionContext.Method_get_VariableScope);
+      filg.Emit(Opcodes.Ldc_I4, if fUseStrict then 1 else 0);
+      filg.Emit(Opcodes.Ldc_I4_0);
+      filg.Emit(Opcodes.Call, EnvironmentRecord.Method_CreateAndSetMutableBindingNoFail);
+
+      if fUseStrict then 
+      filg.Emit(Opcodes.Call, EnvironmentRecord.Method_CreateMutableBindingNoFail);
+      filg.MarkLabel(lAlreadyHaveArguments);
     end else begin
       fILG.Emit(OpCodes.Ldarg_0);  // first execution context
       fILG.Emit(Opcodes.Stloc, fExecutionContext);
@@ -344,7 +381,9 @@ begin
     fIlg := lOldILG;
     fExecutionContext := lOldExecutionContext;
     fLocals := lOldLocals;
-    exit InternalDelegate(lMethod.CreateDelegate(typeof(InternalDelegate)));
+    if aFunction <> nil then 
+    exit lMethod.CreateDelegate(typeof(InternalFunctionDelegate));
+    exit lMethod.CreateDelegate(typeof(InternalDelegate));
   finally
     fUseStrict := lUseStrict;
     fStatementStack := lLoops;
@@ -1127,7 +1166,7 @@ end;
 
 method EcmaScriptCompiler.WriteFunction(el: FunctionDeclarationElement; aRegister: Boolean);
 begin
-  var lDelegate: InternalDelegate := Parse(el, false, el.Identifier, el.Items);
+  var lDelegate: InternalFunctionDelegate := InternalFunctionDelegate(Parse(el, false, el.Identifier, el.Items));
   filg.Emit(Opcodes.Ldloc, fExecutionContext);
   filg.Emit(Opcodes.call, ExecutionContext.Method_get_Global);
   if el.Identifier = nil then 
@@ -1141,7 +1180,7 @@ begin
   
   filg.Emit(Opcodes.Ldc_I4, el.Parameters.Count);
   filg.Emit(Opcodes.Ldc_I4, if fUseStrict then 1 else 0);
-  filg.Emit(Opcodes.Newobj, EcmaScriptFunctionObject.Constructor);
+  filg.Emit(Opcodes.Newobj, EcmaScriptInternalFunctionObject.Constructor);
 
   filg.Emit(Opcodes.Dup);
   if el.Identifier = nil then begin

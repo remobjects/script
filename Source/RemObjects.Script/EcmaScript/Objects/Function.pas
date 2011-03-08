@@ -27,18 +27,33 @@ type
     method FunctionCall(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
   end;
 
-  EcmaScriptFunctionObject = public class(EcmaScriptObject)
-  private
-    fDelegate: InternalDelegate;
+  EcmaScriptBaseFunctionObject = public class(EcmaScriptObject)
+  protected
     fOriginalName: string;
   public
-    constructor (aScope: GlobalObject; aOriginalName: String; aDelegate: InternalDelegate; aLength: Integer; aStrict: Boolean := false);
-    property &Delegate: InternalDelegate read fDelegate;
     property Scope: EnvironmentRecord;
 
     class var Method_set_Scope: System.Reflection.MethodInfo := typeof(EcmaScriptFunctionObject).GetMethod('set_Scope'); readonly;
-    class var &Constructor: System.Reflection.ConstructorInfo := typeof(EcmaScriptFunctionObject).GetConstructor([typeof(GlobalObject), typeof(string), typeof(InternalDelegate), typeof(Integer),typeof(Boolean)]); readonly;
     property OriginalName: String read fOriginalName;
+  end;
+
+  EcmaScriptFunctionObject = public class(EcmaScriptBaseFunctionObject)
+  private
+    fDelegate: InternalDelegate;
+  public
+    constructor (aScope: GlobalObject; aOriginalName: String; aDelegate: InternalDelegate; aLength: Integer; aStrict: Boolean := false);
+    property &Delegate: InternalDelegate read fDelegate;
+    method Call(context: ExecutionContext; params args: array of Object): Object; override;
+    method CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object; override;
+    method Construct(context: ExecutionContext; params args: array of Object): Object; override;
+  end;
+  EcmaScriptInternalFunctionObject = public class(EcmaScriptBaseFunctionObject)
+  private
+    fDelegate: InternalFunctionDelegate;
+  public
+    constructor (aScope: GlobalObject; aOriginalName: String; aDelegate: InternalFunctionDelegate; aLength: Integer; aStrict: Boolean := false);
+    property &Delegate: InternalFunctionDelegate read fDelegate;
+    class var &Constructor: System.Reflection.ConstructorInfo := typeof(EcmaScriptInternalFunctionObject).GetConstructor([typeof(GlobalObject), typeof(string), typeof(InternalFunctionDelegate), typeof(Integer),typeof(Boolean)]); readonly;
     method Call(context: ExecutionContext; params args: array of Object): Object; override;
     method CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object; override;
     method Construct(context: ExecutionContext; params args: array of Object): Object; override;
@@ -142,6 +157,41 @@ end;
 method EcmaScriptFunctionObject.Call(context: ExecutionContext; params args: array of Object): Object;
 begin
   exit fDelegate(context, self, args);
+end;
+
+constructor EcmaScriptInternalFunctionObject(aScope: GlobalObject; aOriginalName: String; aDelegate: InternalFunctionDelegate; aLength: Integer; aStrict: Boolean := false);
+begin
+  inherited constructor(aScope, new EcmaScriptObject(aScope, aScope.Root.FunctionPrototype));
+  &Class := 'Function';
+  var lProto := new EcmaScriptObject(aScope);
+  lProto.DefineOwnProperty('constructor', new PropertyValue(PropertyAttributes.writable or PropertyAttributes.Configurable, self));
+  fOriginalName := aOriginalName;
+  fDelegate := aDelegate;
+  Values.Add('length', PropertyValue.NotAllFlags(aLength));
+  DefineOwnProperty('prototype', new PropertyValue(PropertyAttributes.writable, lProto));
+  if aStrict then begin
+    DefineOwnProperty('caller', new PropertyValue(PropertyAttributes.None, aScope.Thrower, aScope.Thrower));
+    DefineOwnProperty('arguments', new PropertyValue(PropertyAttributes.None, aScope.Thrower, aScope.Thrower));
+  end;
+end;
+
+method EcmaScriptInternalFunctionObject.Call(context: ExecutionContext; params args: array of Object): Object;
+begin
+  exit fDelegate(context, self, args, self);
+end;
+
+method EcmaScriptInternalFunctionObject.CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object;
+begin
+  exit fDelegate(context, aSelf, args, self);
+end;
+
+method EcmaScriptInternalFunctionObject.Construct(context: ExecutionContext; params args: array of Object): Object;
+begin
+  var lRes := new EcmaScriptObject(Root);
+  lRes.Prototype := coalesce(EcmaScriptObject(Get(context, 'prototype')), Root.ObjectPrototype);
+  var lFunc := fDelegate;
+  result := lFunc(context, lRes, args, self);
+  if Result is not EcmaScriptObject then result := lRes;
 end;
 
 end.

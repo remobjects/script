@@ -242,7 +242,7 @@ class method Utilities.IsCallable(o: Object): Boolean;
 begin
   result := (o is &MulticastDelegate);
   if result and (o is EcmaScriptObject) then
-    result := result and (o is EcmaScriptFunctionObject);
+    result := result and (o is EcmaScriptBaseFunctionObject);
 end;
 
 class method Utilities.GetPrimitive(aExecutionContext: ExecutionContext; arg: EcmaScriptObject): Object;
@@ -253,7 +253,7 @@ begin
   if arg is EcmaScriptDateObject then
     exit arg.ToString()
   else 
-    exit if EcmaScriptFunctionObject(arg.Get('valueOf')) <> nil then EcmaScriptFunctionObject(arg.Get('valueOf')).Call(aExecutionContext) else arg.ToString();
+    exit if EcmaScriptBaseFunctionObject(arg.Get('valueOf')) <> nil then EcmaScriptBaseFunctionObject(arg.Get('valueOf')).Call(aExecutionContext) else arg.ToString();
 end;
 
 class method Utilities.UrlEncode(s: String): String;

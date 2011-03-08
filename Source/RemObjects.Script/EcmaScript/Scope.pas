@@ -35,12 +35,14 @@ type
     
     property Global: GlobalObject read LexicalScope.Global;
 
+    method StoreParameter(Args: array of Object; index: Integer; name: string; aStrict: Boolean);
     method GetDebugSink: IDebugSink;
 
     class var Method_GetDebugSink: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('GetDebugSink'); readonly;
     class var Method_get_LexicalScope: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('get_LexicalScope'); readonly;
     class var Method_get_VariableScope: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('get_VariableScope'); readonly;
     class var Method_get_Global: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('get_Global'); readonly;
+    class var Method_StoreParameter: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('StoreParameter'); readonly;
   end;
 
   EnvironmentRecord = public abstract class
@@ -62,8 +64,12 @@ type
     method DeleteBinding(aName: string): Boolean;  abstract;
     method ImplicitThisValue: Object; abstract;
 
+    class method CreateAndSetMutableBindingNoFail(aVal: Object; aName: string; Ex: EnvironmentRecord; aMutable, aDeleteAfter: Boolean);
+
+    class var Method_CreateAndSetMutableBindingNoFail: System.Reflection.MethodInfo := typeof(EnvironmentRecord).GetMethod('CreateAndSetMutableBindingNoFail'); readonly;
     class var Method_CreateMutableBindingNoFail: System.Reflection.MethodInfo := typeof(EnvironmentRecord).GetMethod('CreateMutableBindingNoFail'); readonly;
     class var Method_SetMutableBinding: System.Reflection.MethodInfo := typeof(EnvironmentRecord).GetMethod('SetMutableBinding'); readonly;
+    class var Method_HasBinding: System.Reflection.MethodInfo := typeof(EnvironmentRecord).GetMethod('HasBinding'); readonly;
   end;
   ObjectEnvironmentRecord = public class(EnvironmentRecord)
   private
@@ -97,7 +103,7 @@ type
     method ImplicitThisValue: Object; empty; override;
     method CreateImmutableBinding(aName: string); virtual;
     method InitializeImmutableBinding(aName: string; aValue: Object); virtual;
-    class method SetAndInitializeImmutable(val: EcmaScriptFunctionObject; aName: string): EcmaScriptFunctionObject;
+    class method SetAndInitializeImmutable(val: EcmaScriptBaseFunctionObject; aName: string): EcmaScriptBaseFunctionObject;
     class var &Constructor: System.Reflection.ConstructorInfo := typeof(DeclarativeEnvironmentRecord).GetConstructor([typeof(EnvironmentRecord), Typeof(GlobalObject)]); readonly;
     class var Method_SetAndInitializeImmutable: System.Reflection.MethodInfo := typeof(DeclarativeEnvironmentRecord).GetMethod('SetAndInitializeImmutable'); readonly;
   end;
@@ -210,7 +216,7 @@ begin
   lVal.Value := aValue;
 end;
 
-class method DeclarativeEnvironmentRecord.SetAndInitializeImmutable(val: EcmaScriptFunctionObject; aName: string): EcmaScriptFunctionObject;
+class method DeclarativeEnvironmentRecord.SetAndInitializeImmutable(val: EcmaScriptBaseFunctionObject; aName: string): EcmaScriptBaseFunctionObject;
 begin
   var lSelf := (val.Scope as DeclarativeEnvironmentRecord);
   lSelf.CreateImmutableBinding(aName);
@@ -319,6 +325,20 @@ begin
   if not HasBinding(aName) then CreateMutableBinding(aName, aDeleteAfter);
 end;
 
+class method EnvironmentRecord.CreateAndSetMutableBindingNoFail(aVal: Object; aName: string; Ex: EnvironmentRecord; aMutable, aDeleteAfter: Boolean);
+begin
+  if aMutable then begin
+    var lDec := DeclarativeEnvironmentRecord(Ex);
+    if lDec <> nil then begin
+      lDec.CreateImmutableBinding(aName);
+      lDec.InitializeImmutableBinding(aName, aVal);
+      exit;
+    end;
+  end;
+  Ex.CreateMutableBinding(aname, aDeleteAfter);
+  ex.SetMutableBinding(aName, aVal, false);
+end;
+
 constructor ExecutionContext(aScope: EnvironmentRecord);
 begin
   LexicalScope := aScope;
@@ -328,6 +348,15 @@ end;
 method ExecutionContext.GetDebugSink: IDebugSink;
 begin
   exit &Global.Debug;
+end;
+
+method ExecutionContext.StoreParameter(Args: array of Object; &index: Integer; name: string; aStrict: Boolean);
+begin
+  var lVal := if Index < Args.Length then args[Index] else Undefined.Instance;
+  if not VariableScope.HasBinding(name) then begin
+    VariableScope.CreateMutableBinding(name, false);
+    VariableScope.SetMutableBinding(name, lVal, aStrict);
+  end;
 end;
 
 end.

@@ -21,13 +21,13 @@ type
   private
   public
     constructor(aAttributes: PropertyAttributes; aValue: Object);
-    constructor(aAttributes: PropertyAttributes; aGet, aSet: EcmaScriptFunctionObject);
+    constructor(aAttributes: PropertyAttributes; aGet, aSet: EcmaScriptBaseFunctionObject);
     class method NotEnum(aValue: Object): PropertyValue;
     class method NotAllFlags(aValue: Object): PropertyValue;
     class method NotDeleteAndReadOnly(aValue: Object): PropertyValue;
     property Value: Object;
-    property Get: EcmaScriptFunctionObject;
-    property &Set: EcmaScriptFunctionObject;
+    property Get: EcmaScriptBaseFunctionObject;
+    property &Set: EcmaScriptBaseFunctionObject;
     property Attributes: PropertyAttributes;
   end;
 
@@ -281,13 +281,13 @@ begin
     if Utilities.GetObjAsBoolean(aProp.Get('writable')) then result.Attributes := result.Attributes or PropertyAttributes.writable;
   if aProp.HasProperty('get') then begin
     var lGet := aProp.Get('get');
-    if lGet is not EcmaScriptFunctionObject then Root.RaiseNativeError(NativeErrorType.TypeError, 'get not callable');
-    result.Get := EcmaScriptFunctionObject(lGet);
+    if lGet is not EcmaScriptBaseFunctionObject then Root.RaiseNativeError(NativeErrorType.TypeError, 'get not callable');
+    result.Get := EcmaScriptBaseFunctionObject(lGet);
   end;
   if aProp.HasProperty('set') then begin
     var lset := aProp.Get('set');
-    if lset is not EcmaScriptFunctionObject then Root.RaiseNativeError(NativeErrorType.TypeError, 'set not callable');
-    result.Set := EcmaScriptFunctionObject(lset);
+    if lset is not EcmaScriptBaseFunctionObject then Root.RaiseNativeError(NativeErrorType.TypeError, 'set not callable');
+    result.Set := EcmaScriptBaseFunctionObject(lset);
   end;
   if IsAccessorDescriptor(result) and IsDataDescriptor(result) then
     Root.RaiseNativeError(NativeErrorType.TypeError, 'both get/set and data/writable is set');
@@ -368,9 +368,9 @@ method EcmaScriptObject.ObjectLiteralSet(aName: string; aMode: RemObjects.Script
 begin
   var lDescr: PropertyValue;
   case aMode of
-    RemObjects.Script.EcmaScript.Internal.FunctionDeclarationType.Get: lDescr := new PropertyValue(PropertyAttributes.Configurable or PropertyAttributes.Enumerable, EcmaScriptFunctionObject(aData), nil);
+    RemObjects.Script.EcmaScript.Internal.FunctionDeclarationType.Get: lDescr := new PropertyValue(PropertyAttributes.Configurable or PropertyAttributes.Enumerable, EcmaScriptBaseFunctionObject(aData), nil);
     
-    RemObjects.Script.EcmaScript.Internal.FunctionDeclarationType.Set: lDescr := new PropertyValue(PropertyAttributes.Configurable or PropertyAttributes.Enumerable, nil, EcmaScriptFunctionObject(aData));
+    RemObjects.Script.EcmaScript.Internal.FunctionDeclarationType.Set: lDescr := new PropertyValue(PropertyAttributes.Configurable or PropertyAttributes.Enumerable, nil, EcmaScriptBaseFunctionObject(aData));
     else // RemObjects.Script.EcmaScript.Internal.FunctionDeclarationType.None
       lDescr := new PropertyValue(PropertyAttributes.All, aData);
   end; // case
@@ -424,7 +424,7 @@ begin
   result := new PropertyValue(PropertyAttributes.All and not PropertyAttributes.writable and not PropertyAttributes.Configurable, aValue);
 end;
 
-constructor PropertyValue(aAttributes: PropertyAttributes; aGet, aSet: EcmaScriptFunctionObject);
+constructor PropertyValue(aAttributes: PropertyAttributes; aGet, aSet: EcmaScriptBaseFunctionObject);
 begin
   Attributes := aAttributes;
   Get := aGet;

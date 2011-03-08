@@ -30,14 +30,14 @@ type
   GlobalObject = public partial class(EcmaScriptObject)
   assembly
     fParser: EcmaScriptCompiler;
-    fDelegates: List<InternalDelegate> := new List<InternalDelegate>;
+    fDelegates: List<InternalFunctionDelegate> := new List<InternalFunctionDelegate>;
   public
     constructor (aParser: EcmaScriptCompiler);
 		constructor;
 
-    method StoreFunction(aDelegate: InternalDelegate): Integer;
+    method StoreFunction(aDelegate: InternalFunctionDelegate): Integer;
     class var Method_GetFunction: System.Reflection.MethodInfo := typeof(GlobalObject).GetMethod('GetFunction'); readonly;
-    method GetFunction(i: Integer): InternalDelegate;
+    method GetFunction(i: Integer): InternalFunctionDelegate;
 
     property Parser: EcmaScriptCompiler read fParser write fParser;
 
@@ -373,13 +373,13 @@ begin
   exit fDebug;
 end;
 
-method GlobalObject.StoreFunction(aDelegate: InternalDelegate): Integer;
+method GlobalObject.StoreFunction(aDelegate: InternalFunctionDelegate): Integer;
 begin
   result := fDelegates.Count;
   fDelegates.Add(aDelegate);
 end;
 
-method GlobalObject.GetFunction(i: Integer): InternalDelegate;
+method GlobalObject.GetFunction(i: Integer): InternalFunctionDelegate;
 begin
   exit fDelegates[i];
 end;
