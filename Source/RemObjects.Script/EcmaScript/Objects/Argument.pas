@@ -11,15 +11,14 @@ uses
 type
   EcmaScriptArgumentObject = class(EcmaScriptObject)
   public
-    constructor(ex: ExecutionContext; aArgs: array of Object; aCaller: EcmaScriptFunctionObject; aStrict: Boolean);
-    //eecution context, object[], function
-
-    class var &Constructor: System.Reflection.ConstructorInfo := typeof (EcmaScriptArgumentObject).GetConstructors()[0];
+    constructor(ex: ExecutionContext; aArgs: array of Object; aArgNames: array of string; aCaller: EcmaScriptFunctionObject; aStrict: Boolean);
+    
+    class var &Constructor: System.Reflection.ConstructorInfo := typeof (EcmaScriptArgumentObject).GetConstructors()[0]; readonly;
   end;
   
 implementation
 
-constructor EcmaScriptArgumentObject(ex: ExecutionContext; aArgs: array of Object; aCaller: EcmaScriptFunctionObject; aStrict: Boolean);
+constructor EcmaScriptArgumentObject(ex: ExecutionContext; aArgs: array of Object; aArgNames: array of string; aCaller: EcmaScriptFunctionObject; aStrict: Boolean);
 begin
   inherited constructor(ex.Global, ex.Global.ObjectPrototype);
   &Class := 'Arguments';

@@ -266,6 +266,15 @@ begin
       filg.Emit(Opcodes.Brtrue, lAlreadyHaveArguments);
       filg.Emit(Opcodes.Ldloc, fExecutionContext);
       filg.Emit(Opcodes.ldarg_3);
+      filg.Emit(Opcodes.Ldc_I4, aFunction.Parameters.Count);
+      filg.Emit(Opcodes.Newarr, typeof(String));
+      for i: Integer := 0 to aFunction.Parameters.Count -1 do begin
+        filg.Emit(Opcodes.Dup);
+        filg.Emit(Opcodes.Ldc_I4, i);
+        filg.Emit(Opcodes.Ldstr, aFunction.Parameters[i]);
+        filg.Emit(Opcodes.Stelem_Ref);
+      end;
+
       filg.Emit(Opcodes.ldarg, 4);
       //eecution context, object[], function
       filg.Emit(Opcodes.Ldc_I4, if fUseStrict then 1 else 0);
