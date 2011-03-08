@@ -157,8 +157,6 @@ type
   IterationStatement  = public abstract class(Statement)
   private
   public
-    property &Break: Label;
-    property &Continue: Label;
   end;
 
   ForStatement  = public class(IterationStatement)
@@ -270,6 +268,8 @@ type
     constructor (aPositionPair: PositionPair; anIdentifier: String; aStatement: Statement);
     property Identifier: String read fIdentifier;
     property Statement: Statement read fStatement;
+    property &Break: Label;
+    property &Continue: Label;
     property &Type: ElementType read ElementType.LabelledStatement; override;
   end;
 

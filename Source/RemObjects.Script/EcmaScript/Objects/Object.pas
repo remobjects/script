@@ -82,6 +82,8 @@ type
     method FromPropertyDescriptor(aProp: PropertyValue): EcmaScriptObject;
     method ToPropertyDescriptor(aProp: EcmaScriptObject): PropertyValue;
 
+    method GetNames: array of String; // recursive, but unique
+
     property Names: sequence of string read Values.Keys;
 
     class method CallHelper(Ref: Object; Func: EcmaSCriptObject; arg: array of Object; ec: ExecutionContext): Object;
@@ -401,6 +403,21 @@ begin
   end else
     lThis := nil;
   exit Func.CallEx(ec, lThis, arg);
+end;
+
+method EcmaScriptObject.GetNames: array of String;
+begin
+  var lItems := new List<string>;
+  var lCurr := self;
+  while assigned(lCurr) do begin
+    for each el in lCurr.Values do begin
+      if PropertyAttributes.Enumerable in el.Value.Attributes then begin
+        if not lItems.Contains(el.Key) then lItems.Add(el.Key);
+      end;
+    end;
+    lCurr := lCurr.Prototype;
+  end;
+  exit lItems.ToArray;
 end;
 
 constructor PropertyValue(aAttributes: PropertyAttributes; aValue: Object);
