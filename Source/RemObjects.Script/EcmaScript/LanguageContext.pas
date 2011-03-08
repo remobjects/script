@@ -252,12 +252,13 @@ begin
 
       for i: Integer := 0 to aFunction.Parameters.Count -1 do begin
         filg.Emit(Opcodes.Ldloc, fExecutionContext);
-        filg.Emit(Opcodes.Ldloc_3);
+        filg.Emit(Opcodes.Ldarg_2);
         filg.Emit(opcodes.Ldc_I4, i);
         filg.Emit(Opcodes.Ldstr, aFunction.Parameters[i].Name);
         filg.Emit(opcodes.Ldc_I4, if fUseStrict then 1 else 0);
         filg.Emit(Opcodes.Call, ExecutionContext.Method_StoreParameter);
       end;
+      
       // public delegate(aScope: ExecutionContext; aSelf: Object; params args: array of Object; aFunc: EcmaScriptInternalFunctionObject): Object;
       filg.Emit(Opcodes.Ldloc, fExecutionContext);
       filg.Emit(Opcodes.Call, ExecutionContext.Method_get_VariableScope);
@@ -392,6 +393,7 @@ begin
     fIlg := lOldILG;
     fExecutionContext := lOldExecutionContext;
     fLocals := lOldLocals;
+    
     if aFunction <> nil then 
     exit lMethod.CreateDelegate(typeof(InternalFunctionDelegate));
     exit lMethod.CreateDelegate(typeof(InternalDelegate));
