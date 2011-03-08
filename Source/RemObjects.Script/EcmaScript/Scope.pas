@@ -38,6 +38,7 @@ type
     method StoreParameter(Args: array of Object; index: Integer; name: string; aStrict: Boolean);
     method GetDebugSink: IDebugSink;
 
+    class var &Constructor: System.Reflection.ConstructorInfo := typeof(ExecutionContext).GetConstructor([typeof(EnvironmentRecord)]); readonly;
     class var Method_GetDebugSink: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('GetDebugSink'); readonly;
     class var Method_get_LexicalScope: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('get_LexicalScope'); readonly;
     class var Method_get_VariableScope: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('get_VariableScope'); readonly;
@@ -64,7 +65,7 @@ type
     method DeleteBinding(aName: string): Boolean;  abstract;
     method ImplicitThisValue: Object; abstract;
 
-    class method CreateAndSetMutableBindingNoFail(aVal: Object; aName: string; Ex: EnvironmentRecord; aMutable, aDeleteAfter: Boolean);
+    class method CreateAndSetMutableBindingNoFail(aVal: Object; aName: string; Ex: EnvironmentRecord; aImmutable, aDeleteAfter: Boolean);
 
     class var Method_CreateAndSetMutableBindingNoFail: System.Reflection.MethodInfo := typeof(EnvironmentRecord).GetMethod('CreateAndSetMutableBindingNoFail'); readonly;
     class var Method_CreateMutableBindingNoFail: System.Reflection.MethodInfo := typeof(EnvironmentRecord).GetMethod('CreateMutableBindingNoFail'); readonly;
@@ -325,9 +326,9 @@ begin
   if not HasBinding(aName) then CreateMutableBinding(aName, aDeleteAfter);
 end;
 
-class method EnvironmentRecord.CreateAndSetMutableBindingNoFail(aVal: Object; aName: string; Ex: EnvironmentRecord; aMutable, aDeleteAfter: Boolean);
+class method EnvironmentRecord.CreateAndSetMutableBindingNoFail(aVal: Object; aName: string; Ex: EnvironmentRecord; aImmutable, aDeleteAfter: Boolean);
 begin
-  if aMutable then begin
+  if aImmutable then begin
     var lDec := DeclarativeEnvironmentRecord(Ex);
     if lDec <> nil then begin
       lDec.CreateImmutableBinding(aName);

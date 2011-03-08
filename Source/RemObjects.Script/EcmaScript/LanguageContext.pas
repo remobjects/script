@@ -247,6 +247,7 @@ begin
       fILG.Emit(OpCodes.Ldarg_0);
       filg.Emit(Opcodes.Call, ExecutionContext.Method_get_Global);
       filg.Emit(Opcodes.Newobj, DeclarativeEnvironmentRecord.Constructor);
+      filg.Emit(Opcodes.Newobj, ExecutionContext.Constructor);
       filg.Emit(Opcodes.Stloc, fExecutionContext);
 
       for i: Integer := 0 to aFunction.Parameters.Count -1 do begin
@@ -264,30 +265,31 @@ begin
       filg.emit(Opcodes.Callvirt, EnvironmentRecord.Method_HasBinding);
       var lAlreadyHaveArguments := filg.DefineLabel;
       filg.Emit(Opcodes.Brtrue, lAlreadyHaveArguments);
+      
       filg.Emit(Opcodes.Ldloc, fExecutionContext);
-      filg.Emit(Opcodes.ldarg_3);
+      filg.Emit(Opcodes.ldarg_2);
       filg.Emit(Opcodes.Ldc_I4, aFunction.Parameters.Count);
       filg.Emit(Opcodes.Newarr, typeof(String));
       for i: Integer := 0 to aFunction.Parameters.Count -1 do begin
         filg.Emit(Opcodes.Dup);
         filg.Emit(Opcodes.Ldc_I4, i);
-        filg.Emit(Opcodes.Ldstr, aFunction.Parameters[i]);
+        filg.Emit(Opcodes.Ldstr, aFunction.Parameters[i].Name);
         filg.Emit(Opcodes.Stelem_Ref);
       end;
 
-      filg.Emit(Opcodes.ldarg, 4);
+      filg.Emit(Opcodes.ldarg, 3);
       //eecution context, object[], function
       filg.Emit(Opcodes.Ldc_I4, if fUseStrict then 1 else 0);
       filg.Emit(Opcodes.Newobj, EcmaScriptArgumentObject.Constructor);
+      
       filg.Emit(Opcodes.Ldstr, 'arguments');
       filg.Emit(Opcodes.Ldloc, fExecutionContext);
       filg.Emit(Opcodes.Call, ExecutionContext.Method_get_VariableScope);
-      filg.Emit(Opcodes.Ldc_I4, if fUseStrict then 1 else 0);
+      
+      filg.Emit(Opcodes.Ldc_I4, if fUseStrict then 11 else 0);
       filg.Emit(Opcodes.Ldc_I4_0);
       filg.Emit(Opcodes.Call, EnvironmentRecord.Method_CreateAndSetMutableBindingNoFail);
 
-      if fUseStrict then 
-      filg.Emit(Opcodes.Call, EnvironmentRecord.Method_CreateMutableBindingNoFail);
       filg.MarkLabel(lAlreadyHaveArguments);
     end else begin
       fILG.Emit(OpCodes.Ldarg_0);  // first execution context
