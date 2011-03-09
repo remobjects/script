@@ -82,11 +82,12 @@ type
     method FromPropertyDescriptor(aProp: PropertyValue): EcmaScriptObject;
     method ToPropertyDescriptor(aProp: EcmaScriptObject): PropertyValue;
 
-    method GetNames: array of String; // recursive, but unique
+    method GetNames: IEnumerator<String>;  // recursive, but unique 
 
     property Names: sequence of string read Values.Keys;
 
     class method CallHelper(Ref: Object; Func: EcmaSCriptObject; arg: array of Object; ec: ExecutionContext): Object;
+    class var Method_GetNames: System.Reflection.MethodInfo := typeof(EcmaScriptObject).GetMethod('GetNames'); readonly;
     class var Method_Construct: System.Reflection.MethodInfo := typeof(EcmaScriptObject).GetMethod('Construct'); readonly;
     class var Method_Call: System.Reflection.MethodInfo := typeof(EcmaScriptObject).GetMethod('Call'); readonly;
     class var Method_CallEx: System.Reflection.MethodInfo := typeof(EcmaScriptObject).GetMethod('CallEx'); readonly;
@@ -405,7 +406,7 @@ begin
   exit Func.CallEx(ec, lThis, arg);
 end;
 
-method EcmaScriptObject.GetNames: array of String;
+method EcmaScriptObject.GetNames: IEnumerator<String>;
 begin
   var lItems := new List<string>;
   var lCurr := self;
@@ -417,7 +418,7 @@ begin
     end;
     lCurr := lCurr.Prototype;
   end;
-  exit lItems.ToArray;
+  exit System.Linq.Enumerable.Where(lItems, a-> HasProperty(a)).GetEnumerator;
 end;
 
 constructor PropertyValue(aAttributes: PropertyAttributes; aValue: Object);

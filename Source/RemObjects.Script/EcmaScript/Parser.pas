@@ -971,7 +971,10 @@ begin
             new PositionPair(lName.PositionPair.StartRow, lName.PositionPair.StartCol, fTok.LastEndPosition.Row, fTok.LastEndPosition.Col, lName.PositionPair.File)), lMode, PropertyBaseExpression(lName), lValue);
           end;
           lArgs.Add(lSub);
-          if fTok.Token = TokenKind.Comma then fTok.Next;
+          if fTok.Token = TokenKind.Comma then begin
+            fTok.Next;
+            if fTok.Token = TokenKind.CurlyClose then break;
+          end else 
           if fTok.Token = TokenKind.CurlyClose then break else
           begin
             Error(ParserErrorKind.ClosingBraceExpected, '');

@@ -511,6 +511,10 @@ begin
       filg.Emit(Opcodes.Ldarg_1); // this is arg nr 1
     end;
     ElementType.NullExpression: filg.Emit(Opcodes.Ldnull);
+    ElementType.StringExpression: begin
+      filg.Emit(Opcodes.Ldstr, StringExpression(aExpression).Value);
+    end;
+
     ElementType.BooleanExpression: begin
       if BooleanExpression(aExpression).Value then
         filg.Emit(Opcodes.Ldc_I4_1)
@@ -571,20 +575,24 @@ begin
         end;
         UnaryOperator.PostDecrement: begin
           WriteExpression(UnaryExpression(aExpressioN).Value);
-          filg.Emit(Opcodes.Ldloc, Operators.Method_PostDecrement);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
+          filg.Emit(Opcodes.call, Operators.Method_PostDecrement);
         end;
 
         UnaryOperator.PostIncrement: begin
           WriteExpression(UnaryExpression(aExpressioN).Value);
-          filg.Emit(Opcodes.Ldloc, Operators.Method_PostIncrement);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
+          filg.Emit(Opcodes.call, Operators.Method_PostIncrement);
         end;
         UnaryOperator.PreDecrement: begin
           WriteExpression(UnaryExpression(aExpressioN).Value);
-          filg.Emit(Opcodes.Ldloc, Operators.Method_PreDecrement);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
+          filg.Emit(Opcodes.call, Operators.Method_PreDecrement);
         end;
         UnaryOperator.PreIncrement: begin
           WriteExpression(UnaryExpression(aExpressioN).Value);
-          filg.Emit(Opcodes.Ldloc, Operators.Method_PreIncrement);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
+          filg.Emit(Opcodes.call, Operators.Method_PreIncrement);
         end;
         UnaryOperator.TypeOf: begin
           WriteExpression(UnaryExpression(aExpressioN).Value);
@@ -602,6 +610,7 @@ begin
     end;
     ElementType.IdentifierExpression: begin
       filg.Emit(OpCodes.Ldloc, fExecutionContext);
+      filg.Emit(Opcodes.Call, ExecutionContext.Method_get_LexicalScope);
       filg.Emit(Opcodes.Ldstr, IdentifierExpression(aExpression).Identifier);
       if fUseStrict then
         filg.Emit(Opcodes.Ldc_I4_1)
@@ -1080,9 +1089,10 @@ begin
       ElementType.SwitchStatement: RecursiveFindFuncAndVars(SwitchStatement(el).Clauses.SelectMany(a->a.Body.Cast<SourceElement>()));
       ElementType.TryStatement: RecursiveFindFuncAndVars([TryStatement(el).Body, TryStatement(el).Finally, TryStatement(el).Catch:Body]);
       ElementType.VariableStatement: yield el;
+      ElementType.VariableDeclaration: yield new VariableStatement(el.PositionPair, VariableDeclaration(el));
       ElementType.WithStatement: yield RecursiveFindFuncAndVars([WithStatement(el).Body]);
       ElementType.DoStatement: yield RecursiveFindFuncAndVars([DoStatement(el).Body]);
-      ElementType.ForInStatement: yield RecursiveFindFuncAndVars([ForInStatement(el).ExpressionElement, ForInStatement(el).Body]);
+      ElementType.ForInStatement: yield RecursiveFindFuncAndVars([ForInStatement(el).Initializer, ForInStatement(el).ExpressionElement, ForInStatement(el).Body]);
       ElementType.ForStatement: yield RecursiveFindFuncAndVars([ForStatement(el).Initializer, ForStatement(el).Increment, ForStatement(el).Comparison, ForStatement(el).Body]);
       ElementType.WhileStatement: yield RecursiveFindFuncAndVars([WhileStatement(el).Body]);
     end; // case
@@ -1243,45 +1253,68 @@ begin
   filg.MarkLabel(fContinue);
   WriteExpression(el.ExpressionElement);
   filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
-  filg.Emit(Opcodes.Brtrue, fContinue);
+  filg.Emit(Opcodes.Brfalse, fBreak);
 
 
   WriteStatement(el.Body);
 
   filg.Emit(Opcodes.Br, fContinue);
+  filg.MarkLabel(fBreak);
 
   fBreak := lOldBreak;
   fContinue := lOldContinue;
-end;
-
-method EcmaScriptCompiler.WriteForStatement(el: ForStatement);
-begin
 end;
 
 method EcmaScriptCompiler.WriteForInstatement(el: ForInStatement);
 begin
-  var lLocal := AllocateLocal(typeof(Array of String));
-  var lLocalInt := AllocateLocal(typeof(Integer));
+  var lLocal := AllocateLocal(typeof(IEnumerator<string>));
   var lOldContinue := fContinue;
   var lOldBreak := fBreak;
   fContinue := fILG.DefineLabel;
-  fBreak := filg.DefineLabel;
-  MarkLabelled(fBreak, fContinue);
-  filg.MarkLabel(fContinue);
-  WriteExpression(el.ExpressionElement);
-  filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
-  filg.Emit(Opcodes.Brtrue, fContinue);
 
+  var lCurrent := lLocal.LocalType.GetMethod('get_Current');
+  var lMoveNext :=  typeof(System.Collections.IEnumerator).GetMethod('MoveNext');
+  fBreak := filg.DefineLabel;
+  
+  var lWork := if assigned(el.Initializer:Identifier) then new IdentifierExpression(el.Initializer.PositionPair, el.Initializer.Identifier) else el.LeftExpression;
+
+  WriteExpression(el.ExpressionElement);
+  CallGetValue(el.ExpressionElement.Type);
+  filg.Emit(Opcodes.Isinst, typeOf(EcmaScriptObject));
+  filg.Emit(Opcodes.dup);
+  var lPopAndBreak := filg.DefineLabel;
+  filg.Emit(Opcodes.Brfalse, lPopAndBreak);
+  filg.Emit(Opcodes.CallVirt, EcmaScriptObject.Method_GetNames);
+  filg.Emit(Opcodes.Stloc, lLocal);
+ 
+   MarkLabelled(fBreak, fContinue);
+
+  filg.MarkLabel(fContinue);
+  filg.Emit(Opcodes.ldloc, lLocal);
+  filg.Emit(Opcodes.CallVirt, lMoveNext);
+  filg.Emit(Opcodes.Brfalse, fBreak);
+
+  WriteExpression(lWork);
+  filg.Emit(Opcodes.Ldloc, lLocal);
+  filg.Emit(Opcodes.callVirt, lCurrent);
+  CallSetValue();
+  filg.Emit(Opcodes.Pop); // set value returns something
 
   WriteStatement(el.Body);
 
   filg.Emit(Opcodes.Br, fContinue);
+  filg.MarkLabel(lPopAndBreak);
+  filg.Emit(Opcodes.Pop);
+  filg.MarkLabel(fBreak);
 
   fBreak := lOldBreak;
   fContinue := lOldContinue;
 
-  ReleaseLocal(lLocalInt);
   ReleaseLocal(lLocal);
+end;
+
+method EcmaScriptCompiler.WriteForStatement(el: ForStatement);
+begin
 end;
 
 end.
