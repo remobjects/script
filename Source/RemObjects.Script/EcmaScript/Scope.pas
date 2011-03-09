@@ -30,6 +30,9 @@ type
   public
     constructor; empty;
     constructor(aScope: EnvironmentRecord);
+    
+    method &With(aVal: Object): ExecutionContext;
+
     property LexicalScope: EnvironmentRecord;
     property VariableScope: EnvironmentRecord;
     
@@ -38,6 +41,7 @@ type
     method StoreParameter(Args: array of Object; index: Integer; name: string; aStrict: Boolean);
     method GetDebugSink: IDebugSink;
 
+    class var &Method_With: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('With'); readonly;
     class var &Constructor: System.Reflection.ConstructorInfo := typeof(ExecutionContext).GetConstructor([typeof(EnvironmentRecord)]); readonly;
     class var Method_GetDebugSink: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('GetDebugSink'); readonly;
     class var Method_get_LexicalScope: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('get_LexicalScope'); readonly;
@@ -237,7 +241,7 @@ begin
   var lRef := Reference(aReference);
   if lRef = nil then exit aReference;
   if lRef.Base = Undefined.Instance then
-     aExecutionContext.Global.RaiseNativeError(NativeErrorType.TypeError, 'Cannot call '+lRef.Name+' on undefined');
+     aExecutionContext.Global.RaiseNativeError(NativeErrorType.ReferenceError, lRef.Name +' is not defined');
   if lRef.Base = nil then exit aExecutionContext.Global.ObjectPrototype.Get(aExecutionContext, lRef.Name);
   var lObj := EcmaScriptObject(lRef.Base);
   if assigned(lObj) then 
@@ -358,6 +362,11 @@ begin
     VariableScope.CreateMutableBinding(name, false);
     VariableScope.SetMutableBinding(name, lVal, aStrict);
   end;
+end;
+
+method ExecutionContext.With(aVal: Object): ExecutionContext;
+begin
+  exit new ExecutionContext(new ObjectEnvironmentRecord(LexicalScope, Utilities.ToObject(self, aVal), true));
 end;
 
 end.

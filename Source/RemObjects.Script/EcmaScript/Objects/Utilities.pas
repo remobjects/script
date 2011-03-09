@@ -39,6 +39,7 @@ type
     class var Method_GetObjAsString: System.Reflection.MethodInfo := typeof(UtilitieS).GetMethod('GetObjAsString'); readonly;
 
     class method GetPrimitive(aExecutionContext: ExecutionContext; arg: EcmaScriptObject): Object;
+    class method ToObject(ec: ExecutionContext; o: Object): EcmaScriptObject;
 
     class method IsCallable(o: Object): Boolean;
   end;
@@ -322,6 +323,16 @@ if String.IsNullOrEmpty(s) then exit String.Empty;
     end; // case
   end;
   exit res.ToString;
+end;
+
+class method Utilities.ToObject(ec: ExecutionContext; o: Object): EcmaScriptObject;
+begin
+  result := EcmaScriptObject(o);
+  if result <> nil then exit;
+  if o is Boolean then exit ec.Global.BooleanCtor(ec, nil, [o]) as EcmaScriptObject;
+  if o is String then exit ec.Global.StringCtor(ec, nil, [o]) as EcmaScriptObject;
+  if (o is Int32) or (o is Double) then exit ec.Global.NumberCtor(ec, nil, [o]) as EcmaScriptObject;
+  ec.Global.RaiseNativeError(NativeErrorType.TypeError, 'Object expected');
 end;
 
 end.

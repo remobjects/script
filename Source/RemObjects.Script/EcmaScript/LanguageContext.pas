@@ -43,6 +43,7 @@ type
     OnlyOneVariableAllowed,
 
     EInternalError = 10001,
+    WithNotAllowedInStrict,
     CannotBreakHere,
     DuplicateIdentifier,
     CannotContinueHere,
@@ -105,6 +106,7 @@ type
     method WriteForInstatement(el: ForInStatement);
     method WriteContinue(el: ContinueStatement);
     method WriteBreak(el: BreakStatement);
+    method WriteWithStatement(el: WithStatement);
     method WriteFunction(el: FunctionDeclarationElement; aRegister: Boolean);
   public
     constructor(aOptions: EcmaScriptCompilerOptions);
@@ -158,6 +160,7 @@ begin
     ParserErrorKind.InvalidEscapeSequence: Result := Resources.eInvalidEscapeSequence;
     ParserErrorKind.UnknownCharacter: Result := Resources.eUnknownCharacter;
     ParserErrorKind.OnlyOneVariableAllowed: result := Resources.eOnlyOneVariableAllowed;
+    EcmaScriptErrorKind.WithNotAllowedInStrict: result := Resources.eWithNotAllowedInStrict;
     EcmaScriptErrorKind.CannotBreakHere: result := String.Format(Resources.eCannotBreakHere, aMsg);
     EcmaScriptErrorKind.CannotContinueHere: result := String.Format(Resources.eCannotBreakHere, aMsg);
     EcmaScriptErrorKind.DuplicateIdentifier: result := String.Format(Resources.eDuplicateIdentifier, aMsg);
@@ -449,6 +452,7 @@ begin
         var lItem := VariableStatement(el).Items[i];
         if lItem.Initializer <> nil then begin
           WriteExpression(new BinaryExpression(lItem.PositionPair, new IdentifierExpression(lItem.PositionPair, lItem.Identifier), lItem.Initializer, BinaryOperator.Assign));
+          filg.Emit(Opcodes.Pop);
         end;
       end;
     end;
@@ -470,15 +474,19 @@ begin
     ElementType.FunctionDeclaration: begin
       // Do nothing here; this is done elsewhere
     end;
+    ElementType.ThrowStatement: begin
+      WriteExpression(ThrowStatement(el).ExpressionElement);
+      filg.Emit(Opcodes.Call, ScriptRuntimeException.Method_Wrap);
+      filg.Emit(Opcodes.Throw);
+    end;
+    ElementType.WithStatement: begin
+      if fUseStrict then new ScriptParsingException(El.PositionPair.File, el.PositionPair, EcmaScriptErrorKind.WithNotAllowedInStrict);
+      WriteWithStatement(WithStatement(el));
+    end
     (*
     ElementType.CaseClause: ;
     ElementType.CatchBlock: ;
-    ElementType.LabelledStatement: ;
-    ElementType.ParameterDeclaration: ;
-    ElementType.Program: ;
-    ElementType.PropertyAssignment: ;
     ElementType.SwitchStatement: ;
-    ElementType.ThrowStatement: ;
     ElementType.TryStatement: ;
     ElementType.WithStatement: ;;*)
   else
@@ -503,7 +511,7 @@ method EcmaScriptCompiler.ReleaseLocal(aLocal: LocalBuilder);
 begin
   fLocals.Add(aLocal);
 end;
-
+{$REGION write expression}
 method EcmaScriptCompiler.WriteExpression(aExpression: ExpressionElement);
 begin
   case aExpression.Type of
@@ -1051,6 +1059,7 @@ begin
     raise new EcmaScriptException(aExpression.PositionPair.File, aExpression.PositionPair, EcmaScriptErrorKind.EInternalError, 'Unknown type: '+aExpression.Type);
   end; // case
 end;
+{$ENDREGION write expression}
 
 method EcmaScriptCompiler.CallGetValue(aFromElement: ElementType);
 begin
@@ -1315,6 +1324,64 @@ end;
 
 method EcmaScriptCompiler.WriteForStatement(el: ForStatement);
 begin
+  var lOldContinue := fContinue;
+  var lOldBreak := fBreak;
+  fContinue := fILG.DefineLabel;
+  fBreak := filg.DefineLabel;
+  MarkLabelled(fBreak, fContinue);
+
+  if el.Initializer <> nil then
+    WriteExpression(el.Initializer);
+  for each eli in el.Initializers do begin
+    if eli.Initializer <> nil then
+      WriteExpression(new BinaryExpression(eli.PositionPair, new IdentifierExpression(eli.PositionPair, eli.Identifier), eli.Initializer, BinaryOperator.Assign));
+  end;
+  var lLoopStart := filg.DefineLabel;
+  filg.MarkLabel(lLoopStart);
+  if el.Comparison <> nil then begin
+    WriteExpression(el.Comparison);
+    filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
+    filg.Emit(Opcodes.Brfalse, fBreak);
+  end;
+
+  WriteStatement(el.Body);
+
+  filg.MarkLabel(fContinue);
+  
+  if assigned(el.Increment) then begin
+    WriteExpression(el.Increment);
+    filg.Emit(Opcodes.Pop);
+  end;
+
+  filg.Emit(Opcodes.Br, lLoopStart);
+
+  filg.MarkLabel(fBreak);
+
+  fBreak := lOldBreak;
+  fContinue := lOldContinue;
+end;
+
+method EcmaScriptCompiler.WriteWithStatement(el: WithStatement);
+begin
+  var lOld := AllocateLocal(typeof(ExecutionContext));
+  filg.Emit(Opcodes.Ldloc, fExecutionContext);
+  filg.Emit(Opcodes.Stloc, lOld);
+  filg.BeginExceptionBlock;
+
+  filg.Emit(Opcodes.Ldloc, fExecutionContext);
+  WriteExpression(el.ExpressionElement);
+  CallGetValue(el.ExpressionElement.Type);
+  filg.Emit(Opcodes.Call, ExecutionContext.Method_With);
+  filg.Emit(Opcodes.Stloc, fExecutionContext);
+
+  WriteStatement(el.Body);
+
+  filg.BeginFinallyBlock();
+  filg.Emit(Opcodes.Ldloc, lOld);
+  filg.Emit(Opcodes.Stloc, fExecutionContext);
+  filg.EndExceptionBlock();
+
+  ReleaseLocal(lOld);
 end;
 
 end.

@@ -32,6 +32,9 @@ type
   public
     class method SafeEcmaScriptToObject(o: RemObjects.Script.EcmaScript.EcmaScriptObject): string;
     class method Wrap(arg: Object): Exception;
+
+    class var Method_Wrap: MethodInfo := typeof(ScriptRuntimeException).GetMethod('Wrap'); readonly;
+
     constructor(aOriginal: RemObjects.Script.EcmaScript.EcmaScriptObject);
     property Original: RemObjects.Script.EcmaScript.EcmaScriptObject read fOriginal;
     method ToString: String; override;

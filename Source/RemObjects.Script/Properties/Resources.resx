@@ -161,4 +161,5 @@
   <data name="eRunInThreadCannotBeModifiedWhenScriptIsRunning" xml:space="preserve"><value>runInThread cannot be modified when the script is running</value></data>
   <data name="eAlreadyRunning" xml:space="preserve"><value>Engine already running</value></data>
   <data name="eRuntimeUncaughtReference" xml:space="preserve"><value>{0} is not defined</value></data>
+  <data name="eWithNotAllowedInStrict" xml:space="preserve"><value>with statements are not allowed in a strict context</value></data>
 </root>
