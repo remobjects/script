@@ -1032,19 +1032,7 @@ begin
 
     ElementType.CallExpression: begin
       WriteExpression(CallExpression(aExpression).Member);
-      filg.Emit(Opcodes.Dup);   
-
-      CallGetValue(CallExpression(aExpression).Member.Type);
-      filg.Emit(Opcodes.Isinst, typeof(EcmaScriptObject));
-      filg.Emit(Opcodes.Dup);
-      var lIsObject := filg.DefineLabel;
-      filg.Emit(Opcodes.Brtrue, lIsObject);
-      filg.Emit(OpCodes.Ldloc, fExecutionContext);
-      filg.Emit(Opcodes.Call, ExecutionContext.Method_get_Global);
-      filg.Emit(Opcodes.Ldc_I4, Integer(NativeErrorType.TypeError));
-      filg.Emit(Opcodes.Ldstr, 'Cannot call non-object value');
-      filg.Emit(Opcodes.Call, GlobalObject.Method_RaiseNativeError);
-      filg.MarkLabel(lIsObject);
+      
       
       filg.Emit(Opcodes.Ldc_I4, CallExpression(aExpression).Parameters.Count);
       filg.Emit(Opcodes.Newarr, typeof(Object));

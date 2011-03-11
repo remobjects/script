@@ -87,7 +87,7 @@ type
 
     property Names: sequence of string read Values.Keys;
 
-    class method CallHelper(Ref: Object; Func: EcmaSCriptObject; arg: array of Object; ec: ExecutionContext): Object;
+    class method CallHelper(Ref: Object; arg: array of Object; ec: ExecutionContext): Object;
     class var Method_GetNames: System.Reflection.MethodInfo := typeof(EcmaScriptObject).GetMethod('GetNames'); readonly;
     class var Method_Construct: System.Reflection.MethodInfo := typeof(EcmaScriptObject).GetMethod('Construct'); readonly;
     class var Method_Call: System.Reflection.MethodInfo := typeof(EcmaScriptObject).GetMethod('Call'); readonly;
@@ -392,7 +392,7 @@ begin
   exit self;
 end;
 
-class method EcmaScriptObject.CallHelper(Ref: Object; Func: EcmaSCriptObject; arg: array of Object; ec: ExecutionContext): Object;
+class method EcmaScriptObject.CallHelper(Ref: Object; arg: array of Object; ec: ExecutionContext): Object;
 begin
   var lRef := Reference(Ref);
   var lThis: Object;
@@ -404,7 +404,18 @@ begin
       lThis := lRef.Base;
   end else
     lThis := nil;
-  exit Func.CallEx(ec, lThis, arg);
+  var lVal := Reference.GetValue(Ref, ec);
+  if (lVal = nil) or (lVal = Undefined.Instance) then begin
+    if lRef = nil then ec.Global.RaiseNativeError(NativeErrorType.TypeError, 'Cannot call non-object value');
+    ec.Global.RaiseNativeError(NativeErrorType.TypeError, 'Object '+lRef.Base:ToString()+' has no method '''+lRef.Name+'''');
+  end;
+  var lFunc := EcmaScriptBaseFunctionObject(lVal);
+  if lFunc = nil then begin
+    if lRef = nil then ec.Global.RaiseNativeError(NativeErrorType.TypeError, 'Cannot call non-object value');
+    ec.Global.RaiseNativeError(NativeErrorType.TypeError, 'Property '''+lRef.Name+''' of object '+lRef.Base:ToString()+' is not callable');
+  end;
+
+  exit lFunc.CallEx(ec, lThis, arg);
 end;
 
 method EcmaScriptObject.GetNames: IEnumerator<String>;
