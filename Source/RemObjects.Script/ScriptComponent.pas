@@ -94,7 +94,6 @@ type
 		fTracing: boolean; volatile;
 		fStatus: ScriptStatus;
     fStackItems: System.Collections.ObjectModel.ReadOnlyCollection<ScriptStackFrame>;
-    fExceptionResult: Exception;
     fDebugLastPos: PositionPair;
     fLastFrame: Integer;
     method DebugLine(aFilename: string; aStartRow, aStartCol, aEndRow, aEndCol: Integer); 
@@ -109,6 +108,7 @@ type
 		method set_RunInThread(value: Boolean);
     method CheckShouldPause;
   protected
+    fExceptionResult: Exception;
     fStackList: List<ScriptStackFrame> := new List<ScriptStackFrame>;
 		fGlobals: ScriptScope;
     fEntryStatus: ScriptStatus := ScriptStatus.Running;
@@ -527,6 +527,8 @@ begin
     var lCallback := fCompiler.Parse(SourceFileName, Source);
     result := lCallback(fRoot, fGlobalObject, []);
   except
+    on e: ScriptRuntimeException where EcmaScriptObjectWrapper(e.Original):Value is Exception do 
+      fExceptionResult := Exception(EcmaScriptObjectWrapper(e.Original).Value);
     on e: ScriptAbortException do
       exit Undefined.Instance;
   finally

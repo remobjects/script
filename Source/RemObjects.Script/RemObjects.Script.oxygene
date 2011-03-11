@@ -110,6 +110,7 @@
     </Compile>
     <Compile Include="EcmaScript\Tokenizer.pas" />
     <None Include="PascalScript\LanguageContext.pas" />
+    <Compile Include="EcmaScript\Wrappers.pas" />
     <Compile Include="PascalScript\Parser.pas" />
     <Compile Include="PascalScript\ParserClasses.pas" />
     <Compile Include="PascalScript\Tokenizer.pas" />

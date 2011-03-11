@@ -36,6 +36,7 @@ type
         class method get_ResourceManager: System.Resources.ResourceManager;
         class method get_Culture: System.Globalization.CultureInfo;
         class method set_Culture(value: System.Globalization.CultureInfo);
+        class method get_Ambigious_overloaded_method_0_with_1_parameters: System.String;
         class method get_eAlreadyRunning: System.String;
         class method get_eBeginExpected: System.String;
         class method get_eCannotAssignValueToExpression: System.String;
@@ -84,11 +85,13 @@ type
         class method get_eUntilExpected: System.String;
         class method get_eWhileExpected: System.String;
         class method get_eWithNotAllowedInStrict: System.String;
+        class method get_No_overloaded_method_0_with_1_parameters: System.String;
     assembly 
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
         class property ResourceManager: System.Resources.ResourceManager read get_ResourceManager;
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
         class property Culture: System.Globalization.CultureInfo read get_Culture write set_Culture;
+        class property Ambigious_overloaded_method_0_with_1_parameters: System.String read get_Ambigious_overloaded_method_0_with_1_parameters;
         class property eAlreadyRunning: System.String read get_eAlreadyRunning;
         class property eBeginExpected: System.String read get_eBeginExpected;
         class property eCannotAssignValueToExpression: System.String read get_eCannotAssignValueToExpression;
@@ -137,6 +140,7 @@ type
         class property eUntilExpected: System.String read get_eUntilExpected;
         class property eWhileExpected: System.String read get_eWhileExpected;
         class property eWithNotAllowedInStrict: System.String read get_eWithNotAllowedInStrict;
+        class property No_overloaded_method_0_with_1_parameters: System.String read get_No_overloaded_method_0_with_1_parameters;
     assembly and protected 
         [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('Microsoft.Performance', 'CA1811:AvoidUncalledPrivateCode')]
         constructor;
@@ -167,6 +171,11 @@ end;
 class method Resources.set_Culture(value: System.Globalization.CultureInfo);
 begin
     resourceCulture := value;
+end;
+
+class method Resources.get_Ambigious_overloaded_method_0_with_1_parameters: System.String;
+begin
+    exit(ResourceManager.GetString('Ambigious_overloaded_method_0_with_1_parameters', resourceCulture));
 end;
 
 class method Resources.get_eAlreadyRunning: System.String;
@@ -407,6 +416,11 @@ end;
 class method Resources.get_eWithNotAllowedInStrict: System.String;
 begin
     exit(ResourceManager.GetString('eWithNotAllowedInStrict', resourceCulture));
+end;
+
+class method Resources.get_No_overloaded_method_0_with_1_parameters: System.String;
+begin
+    exit(ResourceManager.GetString('No_overloaded_method_0_with_1_parameters', resourceCulture));
 end;
 
 end.
