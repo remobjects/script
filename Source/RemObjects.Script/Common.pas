@@ -83,7 +83,12 @@ type
     method SetVariable(name: String; value: Object);
     method TryGetVariable(name: String; out value: Object): Boolean;
     method TryGetVariable<T>(name: String; out value: T): Boolean;
+
+    method SetMutableBinding(aName: String; aValue: Object; aStrict: Boolean); override;
+
+    method TryWrap(aValue: Object): Object; virtual; 
   end;
+
 implementation
 
 constructor PositionPair(aStart, aEnd: Position);
@@ -321,6 +326,16 @@ method ScriptScope.TryGetVariable<T>(name: String; out value: T): Boolean;
 begin
   result := bag.ContainsKey(name);
   if result then Value := GetVariable<T>(Name) else Value := default(T);
+end;
+
+method ScriptScope.SetMutableBinding(aName: String; aValue: Object; aStrict: Boolean);
+begin
+  inherited SetMutableBinding(aName, TryWrap(aValue), aStrict);
+end;
+
+method ScriptScope.TryWrap(aValue: Object): Object;
+begin
+  exit aValue;
 end;
 
 end.

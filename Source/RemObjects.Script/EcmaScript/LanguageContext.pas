@@ -253,11 +253,13 @@ begin
     fILG := lMethod.GetILGenerator();
     var lOldExecutionContext := fExecutionContext;
     fExecutionContext := fILG.DeclareLocal(typeof(ExecutionContext));
+    
     if aFunction <> nil then begin
       fILG.Emit(OpCodes.Ldarg_0);
       fILG.Emit(OpCodes.Ldarg_0);
       filg.Emit(Opcodes.Call, ExecutionContext.Method_get_Global);
       filg.Emit(Opcodes.Newobj, DeclarativeEnvironmentRecord.Constructor);
+      filg.Emit(Opcodes.Ldc_I4, if fUseStrict then 1 else 0);
       filg.Emit(Opcodes.Newobj, ExecutionContext.Constructor);
       filg.Emit(Opcodes.Stloc, fExecutionContext);
 
@@ -306,6 +308,11 @@ begin
     end else begin
       fILG.Emit(OpCodes.Ldarg_0);  // first execution context
       fILG.Emit(Opcodes.Stloc, fExecutionContext);
+      if not aEval then begin
+        filg.Emit(opcodes.Ldloc, fExecutionContext);
+        filg.Emit(Opcodes.Ldc_I4, if fUseStrict then 1 else 0);
+        filg.Emit(Opcodes.Call, ExecutionContext.method_SetStrict);
+      end;
     end;
 
     if fDebug then begin

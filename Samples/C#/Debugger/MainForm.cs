@@ -53,11 +53,13 @@ namespace Debugger
                     case RemObjects.Script.ScriptStatus.StepOver: Text = "Script Editor [Running (Step Over)]"; break;
                     case RemObjects.Script.ScriptStatus.Stopping: Text = "Script Editor [Stopping]"; break;
                     default:
-						if (ScriptEngine.RunException != null)
-						{
-							edOutput.AppendText("\r\nException: \r\n"+ScriptEngine.RunException.ToString());
-							this.tabs.SelectedTab = tbOutput;		
-						}
+                        if (ScriptEngine.RunException != null)
+                        {
+                            edOutput.AppendText("\r\nException: \r\n" + ScriptEngine.RunException.ToString());
+                            this.tabs.SelectedTab = tbOutput;
+                        }
+                        else
+                            edOutput.AppendText("\r\nResult: \r\n" + ScriptEngine.RunResult);
                         Text = "Script Editor"; // done running
 						break;
                    

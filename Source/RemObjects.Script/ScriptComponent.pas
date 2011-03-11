@@ -137,7 +137,7 @@ type
     method ExposeType(&type: &Type; Name: String := nil); abstract;
 		//method UseNamespace(ns: String); virtual;
 		/// <summary>Clears all assemblies and exposed variables</summary>
-		method Clear; abstract;
+		method Clear(aGlobals: Boolean := false); abstract;
 
 		/// <summary>starts the script,
 		///	 this should be ran from another thread
@@ -189,7 +189,7 @@ type
 		method SetDebug(b: Boolean); override;
 		method IntRun: Object; override;
 	public
-    method Clear; override;
+    method Clear(aGlobals: Boolean := false); override;
     property Globals: ScriptScope read fScope; override;
 		property GlobalObject: RemObjects.Script.EcmaScript.GlobalObject read fGlobalObject;
     method ExposeType(&type: &Type; Name: String); override;
@@ -548,15 +548,18 @@ begin
   end;
 end;
 
-method EcmaScriptComponent.Clear;
+method EcmaScriptComponent.Clear(aGlobals: Boolean := false);
 begin
   fGlobalObject := new GlobalObject();
-  fScope := new ScriptScope(nil, fGlobalObject);
+  if aGlobals or (fScope = nil) then
+    fScope := new EcmaScriptScope(nil, fGlobalObject)
+  else
+    fScope.Global := fGlobalObject;
   if Debug then
     fGlobalObject.Debug := self;
   var lRoot := new ObjectEnvironmentRecord(fScope, fGlobalObject, false);
 
-  froot := new ExecutionContext(lRoot);
+  froot := new ExecutionContext(lRoot, false);
   fCompiler := new EcmaScriptCompiler(new EcmaScriptCompilerOptions(EmitDebugCalls := Debug, GlobalObject := fGlobalObject, Context := fRoot.LexicalScope));
   fGlobalObject.Parser := fCompiler;
 end;

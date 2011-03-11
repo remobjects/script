@@ -19,9 +19,9 @@ type
   private
     class var 
       Epoch: Int64 := new DateTime(1970, 1, 1).Ticks;
+  public
     class method DateTimeToUnix(d: DateTime): Int64;
     class method UnixToDateTime(dt: Int64): DateTime;
-  public
     method CreateDate: EcmaScriptObject;
     method DateCall(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method DateCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;

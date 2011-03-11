@@ -29,11 +29,12 @@ type
   private
   public
     constructor; empty;
-    constructor(aScope: EnvironmentRecord);
+    constructor(aScope: EnvironmentRecord; aStrict: Boolean);
     
     method &With(aVal: Object): ExecutionContext;
     class method Catch(aVal: Object; ex: ExecutionContext; aName: string): ExecutionContext;
 
+    property Strict: Boolean;
     property LexicalScope: EnvironmentRecord;
     property VariableScope: EnvironmentRecord;
     
@@ -42,9 +43,10 @@ type
     method StoreParameter(Args: array of Object; index: Integer; name: string; aStrict: Boolean);
     method GetDebugSink: IDebugSink;
 
+    class var method_SetStrict: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('set_Strict'); readonly;
     class var &Method_Catch: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('Catch'); readonly;
     class var &Method_With: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('With'); readonly;
-    class var &Constructor: System.Reflection.ConstructorInfo := typeof(ExecutionContext).GetConstructor([typeof(EnvironmentRecord)]); readonly;
+    class var &Constructor: System.Reflection.ConstructorInfo := typeof(ExecutionContext).GetConstructor([typeof(EnvironmentRecord), typeof(Boolean)]); readonly;
     class var Method_GetDebugSink: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('GetDebugSink'); readonly;
     class var Method_get_LexicalScope: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('get_LexicalScope'); readonly;
     class var Method_get_VariableScope: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('get_VariableScope'); readonly;
@@ -99,7 +101,7 @@ type
     fBag: Dictionary<string, PropertyValue> := new Dictionary<String,PropertyValue>();
   public
     constructor(aPrevious: EnvironmentRecord; aGlobal: GlobalObject);
-    property Global: GlobalObject read fGlobal; override;
+    property Global: GlobalObject read fGlobal write fGlobal; override;
     property Bag: Dictionary<string, PropertyValue> read fBag;
     property IsDeclarative: Boolean read true; override;
     method HasBinding(aName: string): Boolean; override;
@@ -138,6 +140,10 @@ end;
 
 method ObjectEnvironmentRecord.GetBindingValue(aName: string; aStrict: Boolean): Object;
 begin
+  if (fObject = &Global) and (aName = 'eval') and not aStrict then begin
+    exit Global.NotStrictGlobalEvalFunc;
+  end;
+
   if fObject.HasProperty(aName) then begin
     exit fObject.Get(aName);
   end;
@@ -346,10 +352,11 @@ begin
   ex.SetMutableBinding(aName, aVal, false);
 end;
 
-constructor ExecutionContext(aScope: EnvironmentRecord);
+constructor ExecutionContext(aScope: EnvironmentRecord; aStrict: Boolean);
 begin
   LexicalScope := aScope;
   VariableScope := aScope;
+  Strict := aStrict;
 end;
 
 method ExecutionContext.GetDebugSink: IDebugSink;
@@ -368,12 +375,12 @@ end;
 
 method ExecutionContext.With(aVal: Object): ExecutionContext;
 begin
-  exit new ExecutionContext(new ObjectEnvironmentRecord(LexicalScope, Utilities.ToObject(self, aVal), true));
+  exit new ExecutionContext(new ObjectEnvironmentRecord(LexicalScope, Utilities.ToObject(self, aVal), true), false);
 end;
 
 class method ExecutionContext.Catch(aVal: Object; ex: ExecutionContext; aName: string): ExecutionContext;
 begin
-  result := new ExecutionContext(new DeclarativeEnvironmentRecord(ex.LexicalScope, ex.Global));
+  result := new ExecutionContext(new DeclarativeEnvironmentRecord(ex.LexicalScope, ex.Global), ex.Strict);
   result.LexicalScope.CreateMutableBinding(aName, false);
   result.LexicalScope.SetMutableBinding(aName, aVal, false);
 end;

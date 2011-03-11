@@ -53,8 +53,10 @@ type
     property RegExpPrototype:EcmaScriptObject;
     property ErrorPrototype:EcmaScriptObject;
     property Thrower: EcmaScriptFunctionObject;
-    
+    property NotStrictGlobalEvalFunc: EcmaScriptFunctionObject;
     method eval(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
+    method NotStrictGlobalEval(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
+    method InnerEval(aCaller: ExecutionContext; aStrict: Boolean; aSelf: Object; params args: Array of object): Object;
     method parseInt(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
     method parseFloat(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
     method isNaN(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
@@ -119,6 +121,7 @@ begin
     RaiseNativeError(NativeErrorType.TypeError, 'caller/arguments not available in strict mode')
   end, 0, false);
 
+  NotStrictGlobalEvalFunc := new EcmaScriptEvalFunctionObject(self, 'eval', @NotStrictGlobalEval, 1);
   // Add function prototype here first!
   Values.Add('eval', PropertyValue.NotEnum(new EcmaScriptEvalFunctionObject(self, 'eval', @eval, 1)));
   Values.Add('parseInt', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'parseInt', @parseInt, 2)));
@@ -134,24 +137,24 @@ end;
 
 method GlobalObject.eval(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
 begin
-  (*
-  if (Length(args) < 1) then exit Undefined.Instance;
-  var lScope := aCaller.Scope;
-  var lStr: Object;
-  if aSelf is IScopeObject then begin
-    lScope := aSelf as IScopeObject;
-    if (Length(args) < 1) then exit Undefined.Instance;
+  InnerEval(aCaller, true, aSelf, args); // strict; this is called through the 
+end;
+
+
+method GlobalObject.InnerEval(aCaller: ExecutionContext; aStrict: Boolean; aSelf: Object; params args: Array of object): Object;
+begin
+  if (args.Length < 0) or (args[0] is not String) then exit Undefined.Instance;
+  var lScript := string(args[0]);
+
+  var lEx := aCaller;
+  if aCaller.Strict or aStrict then begin
+    lEx := new ExecutionContext(new DeclarativeEnvironmentRecord(aCaller.LexicalScope, self), aCaller.Strict);
   end;
-  lStr := args[0];
-
-  if EcmaScriptObject(lStr):Value is String then 
-    lStr := EcmaScriptObject(lStr).Value;
-  if (lStr is not String) then exit lStr;
-
+  
   var lTokenizer := new Tokenizer;
   var lParser := new Parser;
   lTokenizer.Error += lParser.fTok_Error;
-  lTokenizer.SetData(lStr.ToString, '<eval>');
+  lTokenizer.SetData(lScript, '<eval>');
   lTokenizer.Error -= lParser.fTok_Error;
   
   var lElement := lParser.Parse(lTokenizer);
@@ -161,9 +164,8 @@ begin
   end;
   
   
-  var x := fParser.EvalParse(lScope, lElement);
-  result := InternalDelegate(x.Compile).Invoke(nil, lScope, args); // scope is really ignored here
-  *)
+  var lEval: InternalDelegate := InternalDelegate(fParser.EvalParse(lScript));
+  exit lEval(lEx, aSelf, []);
 end;
 
 method GlobalObject.parseInt(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
@@ -382,6 +384,11 @@ end;
 method GlobalObject.GetFunction(i: Integer): InternalFunctionDelegate;
 begin
   exit fDelegates[i];
+end;
+
+method GlobalObject.NotStrictGlobalEval(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
+begin
+  exit InnerEval(aCaller, false, aSelf, args);
 end;
 
 method Undefined.ToString: String;
