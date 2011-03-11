@@ -189,6 +189,7 @@ type
 		method SetDebug(b: Boolean); override;
 		method IntRun: Object; override;
 	public
+    property RootContext: ExecutionContext; 
     method Clear(aGlobals: Boolean := false); override;
     property Globals: ScriptScope read fScope; override;
 		property GlobalObject: RemObjects.Script.EcmaScript.GlobalObject read fGlobalObject;

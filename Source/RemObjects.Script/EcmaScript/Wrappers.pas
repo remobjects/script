@@ -228,6 +228,7 @@ end;
 class method EcmaScriptObjectWrapper.ConvertTo(val: Object; aType: &Type): Object;
 begin
   if val = nil then exit nil;
+  if aType = typeof(Object) then exit val;
   exit Convert.ChangeType(val, aType);
 end;
 

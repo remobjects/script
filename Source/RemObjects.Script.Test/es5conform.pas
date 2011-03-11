@@ -72,7 +72,10 @@ type
 
   Es5ConformanceFramework = public class
   private
+    fContext: RemObjects.Script.EcmaScript.ExecutionContext;
   public
+    constructor(aContext: RemObjects.Script.EcmaScript.ExecutionContext);
+    property Context: RemObjects.Script.EcmaScript.ExecutionContext read fContext  write fContext;
     method registerTest(o: RemObjects.Script.EcmaScript.EcmaScriptObject);
   end;
 implementation
@@ -110,7 +113,7 @@ end;
 method Es5ConformTests.RunTest(aName: string); 
 begin
   if fFramework = nil then
-    fFramework := new Es5ConformanceFramework;
+    fFramework := new Es5ConformanceFramework(nil);
   var lScriptFilename := Path.Combine(fTestRoot, aName);
   var lScript := fLibrary + File.ReadAllText(lScriptFilename);
   using se := new RemObjects.Script.EcmaScriptComponent() do begin
@@ -119,6 +122,7 @@ begin
     se.SourceFileName := aName;
     se.Source := lScript;
     se.Globals.SetVariable('ES5Harness', fFramework);
+    fFramework.Context := se.RootContext;
     se.Run;
   end;
 end;
@@ -184,15 +188,20 @@ begin
   var lPrecondition := o.Get('precondition');
 
   if (lPrecondition <> nil) and (lPrecondition <> RemObjects.Script.EcmaScript.Undefined.Instance) then begin
-    var lRes := RemObjects.Script.EcmaScript.EcmaScriptObject(lPrecondition).Call();
+    var lRes := RemObjects.Script.EcmaScript.EcmaScriptObject(lPrecondition).Call(fContext);
     Xunit.Assert.True(RemObjects.Script.EcmaScript.Utilities.GetObjAsBoolean(lRes), 'Precondition for '+RemObjects.Script.EcmaScript.Utilities.GetObjAsString(lName) +' failed. Description: '+RemObjects.Script.EcmaScript.Utilities.GetObjAsString(lDescription));
   end;
-  var lRes := RemObjects.Script.EcmaScript.EcmaScriptObject(lTest).Call();
+  var lRes := RemObjects.Script.EcmaScript.EcmaScriptObject(lTest).Call(fContext);
   Xunit.Assert.True(RemObjects.Script.EcmaScript.Utilities.GetObjAsBoolean(lRes), 'Testcase '+RemObjects.Script.EcmaScript.Utilities.GetObjAsString(lName) +' failed. Description: '+RemObjects.Script.EcmaScript.Utilities.GetObjAsString(lDescription));
 
   //lName.ToString();
   //test: A function that performs the actual test. The test harness will call this function to execute the test.  It must return true if the test passes. Any other return value indicates a failed test. The test function is called as a method with its this value set to its defining test case object.
   //precondition: (Optional) A function that is called before the test function to see if it is ok to run the test.  If all preconditions necessary to run the test are established it should return true. If it returns false, the test will not be run.  The precondition function is called as a method with its this value set to its defining test case object. This property is optional. If it is not present, the test function will always be executed.
+end;
+
+constructor Es5ConformanceFramework(aContext: RemObjects.Script.EcmaScript.ExecutionContext);
+begin
+  fContext := aContext;
 end;
 
 end.

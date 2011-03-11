@@ -16,8 +16,8 @@ type
     class method GreaterThan(aLeft, aRight: Object): Object;
     class method LessThanOrEqual(aLeft, aRight: Object): Object;
     class method GreaterThanOrEqual(aLeft, aRight: Object): Object;
-    class method InstanceOf(aLeft, aRight: Object): Boolean;
-    class method &In(aLeft, aRight: Object): Boolean;
+    class method InstanceOf(aLeft, aRight: Object): Object;
+    class method &In(aLeft, aRight: Object): Object;
 
     class var Method_LessThan: System.Reflection.MethodInfo := typeof(Operators).GetMethod('LessThan');
     class var Method_GreaterThan: System.Reflection.MethodInfo := typeof(Operators).GetMethod('GreaterThan');
@@ -29,7 +29,7 @@ type
 
 implementation
 
-class method Operators.InstanceOf(aLeft, aRight: Object): Boolean;
+class method Operators.InstanceOf(aLeft, aRight: Object): Object;
 begin
   var lRight := EcmaScriptObject(aRight);
   if lRight = nil then exit false;
@@ -59,7 +59,7 @@ begin
 end;
 
 
-class method Operators.In(aLeft, aRight: Object): Boolean;
+class method Operators.In(aLeft, aRight: Object): Object;
 begin
   var lObj := EcmaScriptObject(aRight);
   if lObj = nil then exit false;
