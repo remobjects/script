@@ -32,6 +32,7 @@ type
     constructor(aScope: EnvironmentRecord);
     
     method &With(aVal: Object): ExecutionContext;
+    class method Catch(aVal: Object; ex: ExecutionContext; aName: string): ExecutionContext;
 
     property LexicalScope: EnvironmentRecord;
     property VariableScope: EnvironmentRecord;
@@ -41,6 +42,7 @@ type
     method StoreParameter(Args: array of Object; index: Integer; name: string; aStrict: Boolean);
     method GetDebugSink: IDebugSink;
 
+    class var &Method_Catch: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('Catch'); readonly;
     class var &Method_With: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('With'); readonly;
     class var &Constructor: System.Reflection.ConstructorInfo := typeof(ExecutionContext).GetConstructor([typeof(EnvironmentRecord)]); readonly;
     class var Method_GetDebugSink: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('GetDebugSink'); readonly;
@@ -367,6 +369,13 @@ end;
 method ExecutionContext.With(aVal: Object): ExecutionContext;
 begin
   exit new ExecutionContext(new ObjectEnvironmentRecord(LexicalScope, Utilities.ToObject(self, aVal), true));
+end;
+
+class method ExecutionContext.Catch(aVal: Object; ex: ExecutionContext; aName: string): ExecutionContext;
+begin
+  result := new ExecutionContext(new DeclarativeEnvironmentRecord(ex.LexicalScope, ex.Global));
+  result.LexicalScope.CreateMutableBinding(aName, false);
+  result.LexicalScope.SetMutableBinding(aName, aVal, false);
 end;
 
 end.

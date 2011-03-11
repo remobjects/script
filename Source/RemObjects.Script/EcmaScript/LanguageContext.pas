@@ -108,6 +108,7 @@ type
     method WriteBreak(el: BreakStatement);
     method WriteWithStatement(el: WithStatement);
     method WriteFunction(el: FunctionDeclarationElement; aRegister: Boolean);
+    method WriteTryStatement(el: TryStatement);
   public
     constructor(aOptions: EcmaScriptCompilerOptions);
 
@@ -482,13 +483,14 @@ begin
     ElementType.WithStatement: begin
       if fUseStrict then new ScriptParsingException(El.PositionPair.File, el.PositionPair, EcmaScriptErrorKind.WithNotAllowedInStrict);
       WriteWithStatement(WithStatement(el));
-    end
+    end;
+    ElementType.TryStatement: WriteTryStatement(TryStatement(el));
     (*
     ElementType.CaseClause: ;
     ElementType.CatchBlock: ;
     ElementType.SwitchStatement: ;
     ElementType.TryStatement: ;
-    ElementType.WithStatement: ;;*)
+    ;*)
   else
     raise new EcmascriptException(El.PositionPair.File, el.PositionPair, EcmaScriptErrorKind.EInternalError, 'Unkwown type: '+el.Type);
   end; // case
@@ -1382,6 +1384,39 @@ begin
   filg.EndExceptionBlock();
 
   ReleaseLocal(lOld);
+end;
+
+method EcmaScriptCompiler.WriteTryStatement(el: TryStatement);
+begin
+  if el.Catch <> nil then filg.BeginExceptionBlock;
+  if el.Finally <> nil then filg.BeginExceptionBlock;
+
+  if el.Body <> nil then WriteStatement(el.Body);
+  
+  if el.Catch <> nil then begin
+    filg.BeginCatchBlock(typeof(Exception));
+    filg.Emit(Opcodes.Call, ScriptRuntimeException.Method_Unwrap);
+    filg.Emit(Opcodes.Ldloc, fExecutionContext);
+    filg.Emit(Opcodes.Ldstr, el.Catch.Identifier);
+    filg.Emit(Opcodes.Call, ExecutionContext.Method_Catch);
+    var lVar := AllocateLocal(typeof(fExecutionContext));
+    filg.Emit(Opcodes.Stloc,  lVar);
+    var lold := fExecutionContext;
+    fExecutionContext := lVar;
+
+    WriteStatement(el.Catch.Body);
+
+    ReleaseLocal(lVar);
+
+    fExecutionContext := lOld;
+    filg.EndExceptionBlock();
+  end;
+
+  if el.Finally <> nil then begin
+    filg.BeginFinallyBlock();
+    WriteStatement(el.Finally);
+    filg.EndExceptionBlock();
+  end;
 end;
 
 end.

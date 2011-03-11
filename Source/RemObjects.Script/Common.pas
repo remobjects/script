@@ -32,7 +32,9 @@ type
   public
     class method SafeEcmaScriptToObject(o: RemObjects.Script.EcmaScript.EcmaScriptObject): string;
     class method Wrap(arg: Object): Exception;
+    class method Unwrap(arg: Object): Object;
 
+    class var Method_Unwrap: MethodInfo := typeof(ScriptRuntimeException).GetMethod('Unwrap'); readonly;
     class var Method_Wrap: MethodInfo := typeof(ScriptRuntimeException).GetMethod('Wrap'); readonly;
 
     constructor(aOriginal: RemObjects.Script.EcmaScript.EcmaScriptObject);
@@ -261,6 +263,14 @@ begin
   
   if arg = nil then arg := 'empty exception';
   exit new Exception(arg.ToString);
+end;
+
+class method ScriptRuntimeException.Unwrap(arg: Object): Object;
+begin
+  if arg is ScriptRuntimeException then begin
+    exit ScriptRuntimeException(arg).Original;
+  end;
+  exit arg;
 end;
 
 method ScriptScope.ContainsVariable(name: String): Boolean;
