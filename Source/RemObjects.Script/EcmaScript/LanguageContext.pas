@@ -87,7 +87,7 @@ type
     fLocals: List<LocalBuilder>;
     fStatementStack: List<Statement>;
     fBreak,
-    fContinue: Label;
+    fContinue: nullable Label;
     method Parse(aFilename, aData: string; aEval: Boolean := false): List<SourceElement>; // eval throws different exception
     method Parse(aFunction: FunctionDeclarationElement; aEval: Boolean; aScopeName: string; aElements: List<SourceElement>): Object;
     method MarkLabelled(aBreak, aContinue: nullable Label);
@@ -109,6 +109,7 @@ type
     method WriteWithStatement(el: WithStatement);
     method WriteFunction(el: FunctionDeclarationElement; aRegister: Boolean);
     method WriteTryStatement(el: TryStatement);
+    method WriteSwitchstatement(el: SwitchStatement);
   public
     constructor(aOptions: EcmaScriptCompilerOptions);
 
@@ -244,6 +245,10 @@ begin
     else
       lMethod := new System.Reflection.Emit.DynamicMethod(aSCopeName, typeof(Object), [typeof(ExecutionContext), typeof(object), Typeof(array of Object)], typeof(DynamicMethods), true);
     
+    var lOldBreak := fBreak;
+    var lOldContinue := fContinue;
+    fBreak := nil;
+    fContinue := nil;
     var lOldILG := fIlg;
     fILG := lMethod.GetILGenerator();
     var lOldExecutionContext := fExecutionContext;
@@ -399,7 +404,8 @@ begin
     fIlg := lOldILG;
     fExecutionContext := lOldExecutionContext;
     fLocals := lOldLocals;
-    
+    fBreak := lOldBreak;
+    fContinue := lOldContinue;
     if aFunction <> nil then 
     exit lMethod.CreateDelegate(typeof(InternalFunctionDelegate));
     exit lMethod.CreateDelegate(typeof(InternalDelegate));
@@ -485,12 +491,7 @@ begin
       WriteWithStatement(WithStatement(el));
     end;
     ElementType.TryStatement: WriteTryStatement(TryStatement(el));
-    (*
-    ElementType.CaseClause: ;
-    ElementType.CatchBlock: ;
-    ElementType.SwitchStatement: ;
-    ElementType.TryStatement: ;
-    ;*)
+    ElementType.SwitchStatement: WriteSwitchstatement(SwitchStatement(el));
   else
     raise new EcmascriptException(El.PositionPair.File, el.PositionPair, EcmaScriptErrorKind.EInternalError, 'Unkwown type: '+el.Type);
   end; // case
@@ -1145,7 +1146,7 @@ begin
   if el.Identifier = nil then begin
     if fContinue = nil then 
      raise new ScriptParsingException(el.PositionPair.File, el.PositionPair, EcmaScriptErrorKind.CannotBreakHere);
-    filg.Emit(Opcodes.Leave, fContinue);
+    filg.Emit(Opcodes.Leave, Label(fContinue));
   end else begin
     for i: Integer := fStatementStack.Count -1 downto 0 do begin
       var lIt := LabelledStatement(fStatementStack[i]);
@@ -1166,7 +1167,7 @@ begin
   if el.Identifier = nil then begin
     if fBreak = nil then 
      raise new ScriptParsingException(el.PositionPair.File, el.PositionPair, EcmaScriptErrorKind.CannotBreakHere);
-    filg.Emit(Opcodes.Leave, fBreak);
+    filg.Emit(Opcodes.Leave, Label(fBreak));
   end else begin
     for i: Integer := fStatementStack.Count -1 downto 0 do begin
       var lIt := LabelledStatement(fStatementStack[i]);
@@ -1241,14 +1242,14 @@ begin
   fContinue := fILG.DefineLabel;
   fBreak := filg.DefineLabel;
   MarkLabelled(fBreak, fContinue);
-  filg.MarkLabel(fContinue);
+  filg.MarkLabel(Label(fContinue));
 
   WriteStatement(el.Body);
 
   WriteExpression(el.ExpressionElement);
   filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
-  filg.Emit(Opcodes.Brtrue, fContinue);
-  filg.MarkLabel(fBreak);
+  filg.Emit(Opcodes.Brtrue, Label(fContinue));
+  filg.MarkLabel(Label(fBreak));
 
   fBreak := lOldBreak;
   fContinue := lOldContinue;
@@ -1261,16 +1262,16 @@ begin
   fContinue := fILG.DefineLabel;
   fBreak := filg.DefineLabel;
   MarkLabelled(fBreak, fContinue);
-  filg.MarkLabel(fContinue);
+  filg.MarkLabel(Label(fContinue));
   WriteExpression(el.ExpressionElement);
   filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
-  filg.Emit(Opcodes.Brfalse, fBreak);
+  filg.Emit(Opcodes.Brfalse, Label(fBreak));
 
 
   WriteStatement(el.Body);
 
-  filg.Emit(Opcodes.Br, fContinue);
-  filg.MarkLabel(fBreak);
+  filg.Emit(Opcodes.Br, Label(fContinue));
+  filg.MarkLabel(Label(fBreak));
 
   fBreak := lOldBreak;
   fContinue := lOldContinue;
@@ -1300,10 +1301,10 @@ begin
  
    MarkLabelled(fBreak, fContinue);
 
-  filg.MarkLabel(fContinue);
+  filg.MarkLabel(Label(fContinue));
   filg.Emit(Opcodes.ldloc, lLocal);
   filg.Emit(Opcodes.CallVirt, lMoveNext);
-  filg.Emit(Opcodes.Brfalse, fBreak);
+  filg.Emit(Opcodes.Brfalse, Label(fBreak));
 
   WriteExpression(lWork);
   filg.Emit(Opcodes.Ldloc, lLocal);
@@ -1313,10 +1314,10 @@ begin
 
   WriteStatement(el.Body);
 
-  filg.Emit(Opcodes.Br, fContinue);
+  filg.Emit(Opcodes.Br, Label(fContinue));
   filg.MarkLabel(lPopAndBreak);
   filg.Emit(Opcodes.Pop);
-  filg.MarkLabel(fBreak);
+  filg.MarkLabel(Label(fBreak));
 
   fBreak := lOldBreak;
   fContinue := lOldContinue;
@@ -1343,12 +1344,12 @@ begin
   if el.Comparison <> nil then begin
     WriteExpression(el.Comparison);
     filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
-    filg.Emit(Opcodes.Brfalse, fBreak);
+    filg.Emit(Opcodes.Brfalse, Label(fBreak));
   end;
 
   WriteStatement(el.Body);
 
-  filg.MarkLabel(fContinue);
+  filg.MarkLabel(Label(fContinue));
   
   if assigned(el.Increment) then begin
     WriteExpression(el.Increment);
@@ -1357,7 +1358,7 @@ begin
 
   filg.Emit(Opcodes.Br, lLoopStart);
 
-  filg.MarkLabel(fBreak);
+  filg.MarkLabel(Label(fBreak));
 
   fBreak := lOldBreak;
   fContinue := lOldContinue;
@@ -1417,6 +1418,58 @@ begin
     WriteStatement(el.Finally);
     filg.EndExceptionBlock();
   end;
+end;
+
+method EcmaScriptCompiler.WriteSwitchstatement(el: SwitchStatement);
+begin
+  var lLabels: array of Label := new Label[el.Clauses.Count];
+  for i: Integer := 0 to lLabels.length -1 do begin
+    lLabels[i] := filg.DefineLabel;
+  end;
+
+  var lWork := AllocateLocal(typeof(Object));
+  WriteExpression(el.ExpressionElement);
+  CallGetValue(el.ExpressionElement.Type);
+  filg.Emit(Opcodes.Stloc, lWork);
+  
+  var lGotDefault := false;
+  for I: integer := 0 to el.Clauses.Count -1 do begin
+    if el.Clauses[i].ExpressionElement = nil then lGotDefault := true else begin
+      filg.Emit(opcodes.Ldloc, lWork);
+      WriteExpression(el.Clauses[i].ExpressionElement);
+      CallGetValue(el.ExpressionElement.Type);
+      filg.Emit(Opcodes.Call, Operators.Method_StrictEqual);
+      filg.Emit(Opcodes.Brtrue, lLabels[i]);
+    end;
+  end;
+  if lGotDefault then begin
+    for I: integer := 0 to el.Clauses.Count -1 do begin
+      if el.Clauses[i].ExpressionElement = nil then begin
+        filg.Emit(Opcodes.Br, lLabels[i]);
+        break;
+      end;
+    end;
+  end;
+
+  ReleaseLocal(lWork);
+
+  var lOldContinue := fContinue;
+  var lOldBreak := fBreak;
+  fBreak := filg.DefineLabel;
+  MarkLabelled(fBreak, nil);
+  if not lGotDefault then filg.Emit(Opcodes.Br, Label(fBreak));
+  
+
+  for i: Integer := 0 to el.Clauses.Count -1 do begin
+    filg.MarkLabel(lLabels[i]);
+    for each bodyelement in el.Clauses[i].Body do
+      WriteStatement(bodyelement);
+  end;
+
+  filg.MarkLabel(Label(fBreak));
+
+  fBreak := lOldBreak;
+  fContinue := lOldContinue;
 end;
 
 end.
