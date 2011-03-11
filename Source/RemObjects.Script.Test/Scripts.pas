@@ -119,7 +119,7 @@ begin
     for each el in args do fResult := fResult + RemObjects.Script.EcmaScript.Utilities.GetObjAsString(el) + #13#10;
   end;
   lComp.Globals.SetVariable("writeln", lDel);
-  lComp.Globals.SetVariable('lda', new LDA(self));
+  lComp.Globals.SetVariable('lda', new RemObjects.Script.EcmaScript.EcmaScriptObjectWrapper(new LDA(self), typeof(LDA), lComp.GlobalObject));
   lComp.Run();
   exit lComp.RunResult;
 end;
