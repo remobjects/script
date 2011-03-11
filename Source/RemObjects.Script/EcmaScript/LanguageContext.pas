@@ -215,6 +215,7 @@ end;
 
 method EcmaScriptCompiler.Parse(aFunction: FunctionDeclarationElement; aEval: Boolean; aScopeName: string; aElements: List<SourceElement>): Object;
 begin
+  if aSCopeName = nil then aScopeName := '<anonymous>';
   var lUseStrict := fUseStrict;
   var lLoops := fStatementStack;
   fStatementStack := new List<Statement>;
@@ -1204,7 +1205,21 @@ begin
   var lDelegate: InternalFunctionDelegate := InternalFunctionDelegate(Parse(el, false, el.Identifier, el.Items));
   filg.Emit(Opcodes.Ldloc, fExecutionContext);
   filg.Emit(Opcodes.call, ExecutionContext.Method_get_Global);
-  filg.Emit(Opcodes.Ldloc, fExecutionContext);
+  if el.Identifier = nil then begin
+    filg.Emit(Opcodes.Ldloc, fExecutionContext);
+    filg.Emit(Opcodes.Call, ExecutionContext.Method_get_LexicalScope);
+  end else begin
+    if aRegister then begin
+      filg.Emit(Opcodes.Ldloc, fExecutionContext);
+      filg.Emit(Opcodes.Call, ExecutionContext.Method_get_VariableScope);
+    end else begin
+      filg.Emit(Opcodes.Ldloc, fExecutionContext);
+      filg.Emit(Opcodes.Call, ExecutionContext.Method_get_LexicalScope);
+      filg.Emit(Opcodes.Ldloc, fExecutionContext);
+      filg.Emit(Opcodes.Call, ExecutionContext.Method_get_Global);
+      filg.Emit(Opcodes.Newobj, DeclarativeEnvironmentRecord.Constructor);
+    end;
+  end;
   if el.Identifier = nil then 
     filg.Emit(Opcodes.Ldnull)
   else
@@ -1218,30 +1233,14 @@ begin
   filg.Emit(Opcodes.Ldc_I4, if fUseStrict then 1 else 0);
   filg.Emit(Opcodes.Newobj, EcmaScriptInternalFunctionObject.Constructor);
 
-  filg.Emit(Opcodes.Dup);
-  if el.Identifier = nil then begin
-    filg.Emit(Opcodes.Ldloc, fExecutionContext);
-    filg.Emit(Opcodes.Call, ExecutionContext.Method_get_LexicalScope);
-    filg.Emit(Opcodes.Call, EcmaScriptFunctionObject.Method_set_Scope);
-  end else begin
-    if aRegister then begin
-      filg.Emit(Opcodes.Ldloc, fExecutionContext);
-      filg.Emit(Opcodes.Call, ExecutionContext.Method_get_VariableScope);
-      filg.Emit(Opcodes.Call, EcmaScriptFunctionObject.Method_set_Scope);
-    end else begin
-      filg.Emit(Opcodes.Ldloc, fExecutionContext);
-      filg.Emit(Opcodes.Call, ExecutionContext.Method_get_LexicalScope);
-      filg.Emit(Opcodes.Ldloc, fExecutionContext);
-      filg.Emit(Opcodes.Call, ExecutionContext.Method_get_Global);
-      filg.Emit(Opcodes.Newobj, DeclarativeEnvironmentRecord.Constructor);
-      filg.Emit(Opcodes.Call, EcmaScriptFunctionObject.Method_set_Scope);
-      //class method SetAndInitializeImmutable(val: EcmaScriptFunctionObject; aName: string): EcmaScriptFunctionObject;
-
-      filg.Emit(opcodes.Ldstr, el.Identifier);
-      filg.Emit(Opcodes.Call, DeclarativeEnvironmentRecord.Method_SetAndInitializeImmutable);
-    end;
-    
+  
+  if (el.Identifier<> nil) and not aRegister then begin
+    //class method SetAndInitializeImmutable(val: EcmaScriptFunctionObject; aName: string): EcmaScriptFunctionObject;
+    filg.Emit(opcodes.Ldstr, el.Identifier);
+    filg.Emit(Opcodes.Call, DeclarativeEnvironmentRecord.Method_SetAndInitializeImmutable);
   end;
+    
+  
 end;
 
 method EcmaScriptCompiler.WriteDoStatement(el: DoStatement);

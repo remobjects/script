@@ -190,8 +190,8 @@ end;
 class method Utilities.GetObjAsBoolean(arg: Object): Boolean;
 begin
     if arg is EcmaScriptObject then arg := EcmaScriptObject(arg).Value;
-
-  if (arg = nil)  then exit false;
+  
+  if (arg = nil) or (arg = Undefined.Instance)  then exit false;
   case &Type.GetTypeCode(arg.GetType) of
     TypeCode.Boolean: Result := boolean(arg);
     TypeCode.Byte: result := byte(arg) <> 0;
@@ -216,7 +216,7 @@ class method Utilities.GetObjAsString(arg: object): string;
 begin
   var lOrg := arg;
   if arg is EcmaScriptObject then arg := EcmaScriptObject(arg).Value;
-  if (arg = nil)  then exit lOrg:ToString();
+  if (arg = nil)  then exit coalesce(lOrg:ToString(), 'null');
   if arg = Undefined.Instance then exit 'undefined';
   case &Type.GetTypeCode(arg.GetType) of
     TypeCode.Boolean: Result := iif(boolean(arg), 'true', 'false');

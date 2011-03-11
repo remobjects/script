@@ -33,7 +33,6 @@ type
   public
     property Scope: EnvironmentRecord;
 
-    class var Method_set_Scope: System.Reflection.MethodInfo := typeof(EcmaScriptFunctionObject).GetMethod('set_Scope'); readonly;
     property OriginalName: String read fOriginalName;
   end;
 
@@ -51,11 +50,10 @@ type
   private
     fDelegate: InternalFunctionDelegate;
   public
-    constructor (aScope: GlobalObject; aScopeVar: ExecutionContext; aOriginalName: String; aDelegate: InternalFunctionDelegate; aLength: Integer; aStrict: Boolean := false);
-    property Scope: ExecutionContext;
+    constructor (aScope: GlobalObject; aScopeVar: EnvironmentRecord; aOriginalName: String; aDelegate: InternalFunctionDelegate; aLength: Integer; aStrict: Boolean := false);
     property &Delegate: InternalFunctionDelegate read fDelegate;
     class var &Constructor: System.Reflection.ConstructorInfo := typeof(EcmaScriptInternalFunctionObject).GetConstructor([
-      typeof(GlobalObject), typeof(ExecutionContext), typeof(string), typeof(InternalFunctionDelegate), typeof(Integer),typeof(Boolean)]); readonly;
+      typeof(GlobalObject), typeof(EnvironmentRecord), typeof(string), typeof(InternalFunctionDelegate), typeof(Integer),typeof(Boolean)]); readonly;
     method Call(context: ExecutionContext; params args: array of Object): Object; override;
     method CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object; override;
     method Construct(context: ExecutionContext; params args: array of Object): Object; override;
@@ -161,7 +159,7 @@ begin
   exit fDelegate(context, self, args);
 end;
 
-constructor EcmaScriptInternalFunctionObject(aScope: GlobalObject; aScopeVar: ExecutionContext; aOriginalName: String; aDelegate: InternalFunctionDelegate; aLength: Integer; aStrict: Boolean := false);
+constructor EcmaScriptInternalFunctionObject(aScope: GlobalObject; aScopeVar: EnvironmentRecord; aOriginalName: String; aDelegate: InternalFunctionDelegate; aLength: Integer; aStrict: Boolean := false);
 begin
   inherited constructor(aScope, new EcmaScriptObject(aScope, aScope.Root.FunctionPrototype));
   &Class := 'Function';
@@ -180,12 +178,12 @@ end;
 
 method EcmaScriptInternalFunctionObject.Call(context: ExecutionContext; params args: array of Object): Object;
 begin
-  exit fDelegate(Scope, self, args, self);
+  exit fDelegate(new ExecutionContext(Scope, false), self, args, self);
 end;
 
 method EcmaScriptInternalFunctionObject.CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object;
 begin
-  exit fDelegate(Scope, aSelf, args, self);
+  exit fDelegate(new ExecutionContext(Scope, false), aSelf, args, self);
 end;
 
 method EcmaScriptInternalFunctionObject.Construct(context: ExecutionContext; params args: array of Object): Object;

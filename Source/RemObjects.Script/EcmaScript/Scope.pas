@@ -254,7 +254,7 @@ begin
   var lObj := EcmaScriptObject(lRef.Base);
   if assigned(lObj) then 
     exit lObj.Get(aExecutionContext,lRef. Name);
-  var lExec := EnvironmentRecord(lRef.Base);
+  var lExec := EnvironmentRecord(lRef.Base); 
   if assigned(lExec) then
     exit lExec.GetBindingValue(lRef.Name, lRef.Strict);
   if lRef.Base is Boolean then exit aExecutionContext.Global.BooleanPrototype.Get(aExecutionContext, lRef.Name);

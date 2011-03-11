@@ -232,6 +232,7 @@ test2
 false
 null
 test2
+null
 undefined
 test2
 undefined";

@@ -155,7 +155,6 @@ class method EcmaScriptObjectWrapper.FindAndCallBestOverload(aMethods: array of 
 begin
   var lMethods := new List<System.Reflection.MethodBase>(aMethods);
   for i: Integer := 0 to length(aArgs) -1 do begin
-    if Aargs[i] = Undefined.Instance then aArgs[i] := nil;
     if aArgs[i] is EcmaScriptObjectWrapper then 
       aArgs[i] := EcmaScriptObjectWrapper(aArgs[i]).Value; // if these were wrapped before, we should unwrap
   end;
@@ -214,7 +213,7 @@ end;
 
 class method EcmaScriptObjectWrapper.IsCompatibleType(aInput: &Type; aTarget: &Type): Boolean;
 begin
-  if aInput = nil then begin
+  if (aInput = nil) or (aInput = typeof(Undefined)) then begin
     exit not aTarget.IsValueType;
   end;
   if aTarget.IsAssignableFrom(aInput) then exit true;
@@ -229,6 +228,7 @@ class method EcmaScriptObjectWrapper.ConvertTo(val: Object; aType: &Type): Objec
 begin
   if val = nil then exit nil;
   if aType = typeof(Object) then exit val;
+  if val = Undefined.Instance then exit nil;
   exit Convert.ChangeType(val, aType);
 end;
 

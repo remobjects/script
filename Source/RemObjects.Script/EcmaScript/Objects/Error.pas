@@ -58,7 +58,7 @@ end;
 
 method GlobalObject.ErrorCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lMessage := Utilities.GetArgAsString(args, 0);
+  var lMessage := if 0 = Length(args) then nil else Utilities.GetArgAsString(args, 0);
   result := new EcmaScriptObject(self, ErrorPrototype, &Class := 'Error');
   EcmaScriptObject(result).AddValue('message', lMessage);
 end;
@@ -66,7 +66,7 @@ end;
 method GlobalObject.ErrorToString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   var lSelf := Utilities.GetObjAsEcmaScriptObject(aSelf);
-  var lMsg := Utilities.GetObjAsString(lSelf.Get(aCaller, 'message'));
+  var lMsg := if lSelf.Get(aCaller, 'message') = nil then nil else Utilities.GetObjAsString(lSelf.Get(aCaller, 'message'));
   var lName := coalesce(Utilities.GetObjAsString(lSelf.Get(aCaller, 'name')), 'Error');
   if STring.IsNullOrEmpty(lMsg) then
     exit lName

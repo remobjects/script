@@ -91,7 +91,7 @@ begin
     end;
 
     fTok.Next;
-    var lName := '';
+    var lName: string := nil;
     if fTok.Token in [TokenKind.K_set, TokenKind.K_get, TokenKind.Identifier] then begin
       lName := fTok.TokenStr;
       fTok.Next;

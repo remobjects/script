@@ -14,7 +14,8 @@ uses
 
 type
   PropertyAttributes = public flags (
-  All = 1 +2 +4,
+    All = 1 +2 +4,
+    HasValue = 8,
     writable = 1, Enumerable = 2, Configurable = 4, None = 0);
 
   PropertyValue = public class
@@ -249,7 +250,7 @@ end;
 
 method EcmaScriptObject.IsDataDescriptor(aProp: PropertyValue): Boolean;
 begin
-  exit (PropertyAttributes.Writable in aProp.Attributes) or ((aProp.Value <> nil) and (aProp.Value <> Undefined.Instance));
+  exit (PropertyAttributes.Writable in aProp.Attributes) or (PropertyAttributes.HasValue in aProp.Attributes);
 end;
 
 method EcmaScriptObject.IsGenericDescriptor(aProp: PropertyValue): Boolean;
@@ -424,7 +425,7 @@ end;
 constructor PropertyValue(aAttributes: PropertyAttributes; aValue: Object);
 begin
   Value := aValue;
-  Attributes := aAttributes;
+  Attributes := aAttributes or PropertyAttributes.HasValue;
 end;
 
 class method PropertyValue.NotEnum(aValue: Object): PropertyValue;
