@@ -256,6 +256,7 @@ begin
     
     if aFunction <> nil then begin
       fILG.Emit(OpCodes.Ldarg_0);
+      Filg.Emit(Opcodes.Call, ExecutionContext.Method_get_LexicalScope);
       fILG.Emit(OpCodes.Ldarg_0);
       filg.Emit(Opcodes.Call, ExecutionContext.Method_get_Global);
       filg.Emit(Opcodes.Newobj, DeclarativeEnvironmentRecord.Constructor);
@@ -1203,6 +1204,7 @@ begin
   var lDelegate: InternalFunctionDelegate := InternalFunctionDelegate(Parse(el, false, el.Identifier, el.Items));
   filg.Emit(Opcodes.Ldloc, fExecutionContext);
   filg.Emit(Opcodes.call, ExecutionContext.Method_get_Global);
+  filg.Emit(Opcodes.Ldloc, fExecutionContext);
   if el.Identifier = nil then 
     filg.Emit(Opcodes.Ldnull)
   else

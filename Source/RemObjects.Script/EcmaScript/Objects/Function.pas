@@ -51,9 +51,11 @@ type
   private
     fDelegate: InternalFunctionDelegate;
   public
-    constructor (aScope: GlobalObject; aOriginalName: String; aDelegate: InternalFunctionDelegate; aLength: Integer; aStrict: Boolean := false);
+    constructor (aScope: GlobalObject; aScopeVar: ExecutionContext; aOriginalName: String; aDelegate: InternalFunctionDelegate; aLength: Integer; aStrict: Boolean := false);
+    property Scope: ExecutionContext;
     property &Delegate: InternalFunctionDelegate read fDelegate;
-    class var &Constructor: System.Reflection.ConstructorInfo := typeof(EcmaScriptInternalFunctionObject).GetConstructor([typeof(GlobalObject), typeof(string), typeof(InternalFunctionDelegate), typeof(Integer),typeof(Boolean)]); readonly;
+    class var &Constructor: System.Reflection.ConstructorInfo := typeof(EcmaScriptInternalFunctionObject).GetConstructor([
+      typeof(GlobalObject), typeof(ExecutionContext), typeof(string), typeof(InternalFunctionDelegate), typeof(Integer),typeof(Boolean)]); readonly;
     method Call(context: ExecutionContext; params args: array of Object): Object; override;
     method CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object; override;
     method Construct(context: ExecutionContext; params args: array of Object): Object; override;
@@ -159,10 +161,11 @@ begin
   exit fDelegate(context, self, args);
 end;
 
-constructor EcmaScriptInternalFunctionObject(aScope: GlobalObject; aOriginalName: String; aDelegate: InternalFunctionDelegate; aLength: Integer; aStrict: Boolean := false);
+constructor EcmaScriptInternalFunctionObject(aScope: GlobalObject; aScopeVar: ExecutionContext; aOriginalName: String; aDelegate: InternalFunctionDelegate; aLength: Integer; aStrict: Boolean := false);
 begin
   inherited constructor(aScope, new EcmaScriptObject(aScope, aScope.Root.FunctionPrototype));
   &Class := 'Function';
+  Scope := aScopeVar;
   var lProto := new EcmaScriptObject(aScope);
   lProto.DefineOwnProperty('constructor', new PropertyValue(PropertyAttributes.writable or PropertyAttributes.Configurable, self));
   fOriginalName := aOriginalName;
@@ -177,12 +180,12 @@ end;
 
 method EcmaScriptInternalFunctionObject.Call(context: ExecutionContext; params args: array of Object): Object;
 begin
-  exit fDelegate(context, self, args, self);
+  exit fDelegate(Scope, self, args, self);
 end;
 
 method EcmaScriptInternalFunctionObject.CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object;
 begin
-  exit fDelegate(context, aSelf, args, self);
+  exit fDelegate(Scope, aSelf, args, self);
 end;
 
 method EcmaScriptInternalFunctionObject.Construct(context: ExecutionContext; params args: array of Object): Object;
