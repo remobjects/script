@@ -446,10 +446,70 @@ end;
 
 method GlobalObject.ArrayReduce(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
+  var lObj := Utilities.ToObject(aCaller, aSelf);
+  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'));
+  var lCallback := EcmaScriptBaseFunctionObject(Utilities.GetArg(args, 0));
+  if lCallback = nil then RaiseNativeError(nativeErrorType.TypeError, 'Delegate expected');
+  var lInitialValue := Utilities.GetArg(args, 1);
+  var lGotInitial := false;
+  if args.Length >= 2 then 
+    lGotInitial := true;
+  var k := 0;
+  if not lGotInitial then begin
+    while k < lLen do begin
+      var lKey := k.ToString;
+      inc(k);
+      if lObj.HasProperty(lKey) then begin
+        lGotInitial := true;
+        lInitialValue := lObj.Get(aCaller, 2, lKey);
+        break;
+      end;
+    end;
+  end;
+  if not lGotInitial then
+    RaiseNativeError(NativeErrorType.TypeError, 'Empty array');
+  while k < lLen do begin
+    var lKey := k.ToString;
+    if lObj.HasProperty(lKey) then
+    lInitialValue := lCallback.CallEx(aCaller, Undefined.Instance, lInitialValue, lObj.Get(aCaller, 2, lKey), k, lObj);
+
+    inc(k);
+  end;
+  exit lInitialValue;
 end;
 
 method GlobalObject.ArrayReduceRight(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
+  var lObj := Utilities.ToObject(aCaller, aSelf);
+  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'));
+  var lCallback := EcmaScriptBaseFunctionObject(Utilities.GetArg(args, 0));
+  if lCallback = nil then RaiseNativeError(nativeErrorType.TypeError, 'Delegate expected');
+  var lInitialValue := Utilities.GetArg(args, 1);
+  var lGotInitial := false;
+  if args.Length >= 2 then 
+    lGotInitial := true;
+  var k := lLen -1;
+  if not lGotInitial then begin
+    while k >= 0 do begin
+      var lKey := k.ToString;
+      dec(k);
+      if lObj.HasProperty(lKey) then begin
+        lGotInitial := true;
+        lInitialValue := lObj.Get(aCaller, 2, lKey);
+        break;
+      end;
+    end;
+  end;
+  if not lGotInitial then
+    RaiseNativeError(NativeErrorType.TypeError, 'Empty array');
+  while k >= 0 do begin
+    var lKey := k.ToString;
+    if lObj.HasProperty(lKey) then
+    lInitialValue := lCallback.CallEx(aCaller, Undefined.Instance, lInitialValue, lObj.Get(aCaller, 2, lKey), k, lObj);
+
+    dec(k);
+  end;
+  exit lInitialValue;
 end;
 
 constructor EcmaScriptArrayObject(aRoot: GlobalObject; aLength: Integer);
