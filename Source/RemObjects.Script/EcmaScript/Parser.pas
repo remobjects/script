@@ -1005,6 +1005,7 @@ begin
       lVal := new BooleanExpression(fTok.PositionPair, false);
       fTok.Next;
     end;
+    TokenKind.SingleQuoteString,
     Tokenkind.String: begin
       lVal := new StringExpression(fTok.PositionPair, Tokenizer.DecodeString(fTok.TokenStr));
       fTok.Next();

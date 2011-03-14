@@ -83,7 +83,7 @@ type
     method FromPropertyDescriptor(aProp: PropertyValue): EcmaScriptObject;
     method ToPropertyDescriptor(aProp: EcmaScriptObject): PropertyValue;
 
-    method GetNames: IEnumerator<String>;  // recursive, but unique 
+    method GetNames: IEnumerator<String>; virtual;  // recursive, but unique 
 
     property Names: sequence of string read Values.Keys;
 

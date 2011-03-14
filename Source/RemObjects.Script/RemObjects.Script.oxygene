@@ -98,6 +98,7 @@
     <Compile Include="EcmaScript\Objects\DefaultObjects.pas" />
     <Compile Include="EcmaScript\Objects\Error.pas" />
     <Compile Include="EcmaScript\Objects\Function.pas" />
+    <Compile Include="EcmaScript\Objects\JSON.pas" />
     <Compile Include="EcmaScript\Objects\Math.pas" />
     <Compile Include="EcmaScript\Objects\Number.pas" />
     <Compile Include="EcmaScript\Objects\Object.pas" />

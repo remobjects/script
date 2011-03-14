@@ -71,6 +71,7 @@ type
     /// a string
     /// </summary>
     String,
+    SingleQuoteString,
 
     /// <summary>
     /// Float // 0.2394834
@@ -973,7 +974,7 @@ begin
             inc(curroffset);
           end;
           FLen := curroffset - FPos + 1;
-          FToken := TokenKind.String; 
+          FToken := TokenKind.SingleQuoteString; 
           FTokenStr := new Char[FLen];
           &Array.Copy(FInput, FPos, FTokenStr, 0, FLen);
         end;

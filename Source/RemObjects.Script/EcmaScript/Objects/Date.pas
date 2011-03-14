@@ -72,6 +72,8 @@ type
     method DateSetFullYear(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method DateSetUTCFullYear(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method DateNow(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+    method DatetoISOString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+    method DateToJSON(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
   end;
 
   EcmaScriptDateObject = public class(EcmaScriptFunctionObject)
@@ -105,7 +107,9 @@ begin
   DatePrototype := new EcmaScriptFunctionObject(self, 'Date', @DateCtor, 1, &Class := 'Date');
   DatePrototype.Prototype := ObjectPrototype;
   result.Values['prototype'] := PropertyValue.NotAllFlags(DatePrototype);
-  DatePrototype.Values.Add('toString', PropertyValue.NotAllFlags(new EcmaScriptFunctionObject(self, 'toString', @DateToString, 1)));
+  DatePrototype.Values.Add('toString', PropertyValue.NotAllFlags(new EcmaScriptFunctionObject(self, 'toString', @DateToString, 0)));
+  DatePrototype.Values.Add('toISOString', PropertyValue.NotAllFlags(new EcmaScriptFunctionObject(self, 'toISOString', @DateToISOString, 0)));
+  DatePrototype.Values.Add('toJSON', PropertyValue.NotAllFlags(new EcmaScriptFunctionObject(self, 'toJSON', @DAteToJSON, 1)));
   DatePrototype.Values.Add('toUTCString', PropertyValue.NotAllFlags(new EcmaScriptFunctionObject(self, 'toUTCString', @DateToUTCString, 1)));
   Dateprototype.Values.Add('toDateString', PropertyValue.NotAllFlags(new EcmaScriptFunctionObject(self, 'toDateString', @DateToDateString, 1)));
   Dateprototype.Values.Add('toTimeString', PropertyValue.NotAllFlags(new EcmaScriptFunctionObject(self, 'toTimeString', @DateToTimeString, 1)));
@@ -531,6 +535,19 @@ end;
 method GlobalObject.DateNow(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   exit DateTimeToUnix(DateTime.UtcNow);
+end;
+
+method GlobalObject.DatetoISOString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+begin
+  exit UnixToDateTime(Utilities.GetObjAsInt64(aSelf)).ToString('S');
+end;
+
+method GlobalObject.DateToJSON(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+begin
+  var lItem := Utilities.ToObject(aCaller, aSelf);
+  if (lItem.Value is Integer) or (lItem.Value is Int64) or (lItem.Value is Double) then
+    exit DatetoISOString(aCaller, lItem);
+  exit nil;
 end;
 
 method EcmaScriptDateObject.Call(context: ExecutionContext; params args: array of Object): Object;

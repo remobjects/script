@@ -447,9 +447,13 @@ begin
   var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0);
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'Type(O) is not Object');
   var lResult := new EcmaScriptArrayObject(0, self);
-  var lItems := lWork.GetNames();
-  while lItems.MoveNext do
-    lResult.AddValue(lItems.Current);
+  if lWork is EcmaScriptArrayObject then begin
+    for i: Integer := 0 to EcmaScriptArrayObject(lWork).Items.Count -1 do
+      lREsult.AddValue(i.ToString());
+  end;
+  for each el in lWork.Values.Keys do 
+    lResult.AddValue(el);
+  exit lResult;
 end;
 
 

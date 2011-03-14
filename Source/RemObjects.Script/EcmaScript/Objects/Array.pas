@@ -64,6 +64,7 @@ type
     method GetIndex(aName: Int32): Object; override;
     property ToArray: array of Object read fItems.ToArray;
     property Items: List<Object> read fItems;
+    method GetNames: IEnumerator<String>; override;
   end;
 
 
@@ -590,6 +591,23 @@ end;
 method EcmaScriptArrayObject.AddValue(aITem: Object);
 begin
   fItems.Add(aItem);
+end;
+
+method EcmaScriptArrayObject.GetNames: IEnumerator<String>;
+begin
+  var lItems := new List<string>;
+  var lCurr: EcmaScriptObject := self;
+  for i: Integer := 0 to Items.Count -1 do
+    lItems.Add(i.ToString());
+  while assigned(lCurr) do begin
+    for each el in lCurr.Values do begin
+      if PropertyAttributes.Enumerable in el.Value.Attributes then begin
+        if not lItems.Contains(el.Key) then lItems.Add(el.Key);
+      end;
+    end;
+    lCurr := lCurr.Prototype;
+  end;
+  exit System.Linq.Enumerable.Where(lItems, a-> HasProperty(a)).GetEnumerator;
 end;
 
 end.
