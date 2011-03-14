@@ -20,8 +20,11 @@ type
   GlobalObject = public partial class(EcmaScriptObject)
   public
     method CreateArray: EcmaScriptObject;
+
+    method ArrayIsArray(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method ArrayCtor(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method ArrayToString(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+    method ArrayToLocaleString(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method ArrayConcat(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method ArrayJoin(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method ArrayPop(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
@@ -32,6 +35,15 @@ type
     method ArraySort(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method ArraySplice(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method ArrayUnshift(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+    method ArrayIndexOf(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+    method ArrayEvery(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+    method ArrayLastIndexOf(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+    method ArraySome(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+    method ArrayMap(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+    method ArrayForeach(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+    method ArrayFilter(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+    method ArrayReduce(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+    method ArrayReduceRight(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 
     method DefaultCompare(aCaller: ExecutionContext; aSelf: Object; params Args: Array of Object): Object;
   end;
@@ -68,10 +80,12 @@ begin
   ArrayPrototype := new EcmaScriptFunctionObject(self, 'Array', @ArrayCtor, 1, &Class := 'Array');
   ArrayPrototype.Prototype := ObjectPrototype;
   
-  result.Values['prototype'] := PropertyValue.NotAllFlags(ArrayPrototype);
+  result.values['prototype'] := PropertyValue.NotAllFlags(ArrayPrototype);
+  result.Values.Add('isArray', PRopertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'isArray', @ArrayIsArray, 1)));
 
   ArrayPrototype.Values['constructor'] := PropertyValue.NotEnum(ArrayPrototype);
   ArrayPrototype.Values.Add('toString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toString', @ArrayToString, 0)));
+  ArrayPrototype.Values.Add('toLocaleString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toLocaleString', @ArrayToLocaleString, 0)));
   ArrayPrototype.Values.Add('concat', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'concat', @ArrayConcat, 1)));
   ArrayPrototype.Values.Add('join', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'join', @ArrayJoin, 1)));
   ArrayPrototype.Values.Add('pop', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'pop', @ArrayPop, 0)));
@@ -82,6 +96,18 @@ begin
   ArrayPrototype.Values.Add('sort', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'sort', @ArraySort, 1)));
   ArrayPrototype.Values.Add('splice', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'splice', @ArraySplice, 2)));
   ArrayPrototype.Values.Add('unshift', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'unshift', @ArrayUnshift, 1)));
+
+
+
+  ArrayPrototype.Values.Add('indexOf', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'indexOf', @ArrayindexOf, 1)));
+  ArrayPrototype.Values.Add('lastIndexOf', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'lastIndexOf', @ArraylastIndexOf, 1)));
+  ArrayPrototype.Values.Add('every', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'every', @Arrayevery, 1)));
+  ArrayPrototype.Values.Add('some', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'some', @Arraysome, 1)));
+  ArrayPrototype.Values.Add('forEach', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'forEach', @ArrayforEach, 1)));
+  ArrayPrototype.Values.Add('map', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'map', @ArrayMap, 1)));
+  ArrayPrototype.Values.Add('filter', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'filter', @Arrayfilter, 1)));
+  ArrayPrototype.Values.Add('reduce', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'reduce', @Arrayreduce, 1)));
+  ArrayPrototype.Values.Add('reduceRight', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'reduceRight', @ArrayreduceRight, 1)));
 end;
 
 
@@ -96,22 +122,21 @@ end;
 
 method GlobalObject.ArrayToString(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  var lSelf := EcmaScriptArrayObject(aSelf);
-  if lSelf = nil then begin 
-    if EcmaScriptObject(aSelf):&Class = 'Array' then
-      exit 'Array Class';
-    RaiseNativeError(NativeErrorType.TypeError, 'Array.prototype.toString is not generic');
-  end;
-  exit ArrayJoin(aCaller, lSelf);
+  var lSelf :=  Utilities.ToObject(aCaller, aSelf);
+  var lJoin := EcmaScriptBaseFunctionObject(lSelf.Get('join'));
+  if lJoin = nil then exit ObjectToString(aCaller,aSelf);
+  exit lJoin.CallEx(aCaller, aSelf);
 end;
 
 method GlobalObject.ArrayConcat(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  var lSelf := EcmaScriptArrayObject(aSelf);
-  if lSelf = nil then RaiseNativeError(NativeErrorType.TypeError, 'Array.prototype.concat is not generic');
+  var lSelf := Utilities.ToObject(aCaller, aSelf);
   var lRes: EcmaScriptArrayObject;
   lRes := new EcmaScriptArrayObject(self, 0);
-  lRes.Items.AddRange(lSelf.Items);
+  for i: Integer := 0 to Utilities.GetObjAsInteger(lSelf.Get('length')) -1 do begin
+    lRes.Items.Add(lSelf.Get(aCaller, 3, i.ToString()));
+  end;
+
   for each el in Args do begin
     if el is EcmaScriptArrayObject then begin
       lRes.Items.AddRange(EcmaScriptArrayObject(el).Items);
@@ -125,12 +150,11 @@ method GlobalObject.ArrayJoin(aCaller: ExecutionContext;aSelf: Object; params Ar
 begin
   var lSep := Utilities.GetArgAsString(Args, 0);
   if (lSep = nil) then lSep := ',';
-  var lSelf := EcmaScriptArrayObject(aSelf);
-  if lSelf = nil then exit Undefined.Instance;
+  var lSelf := Utilities.ToObject(aCaller, aSelf);
   var lRes := new StringBuilder;
-  for each el in lSelf.Items index n do begin
-    if n <> 0 then lRes.Append(lSep);
-    var lItem := Utilities.GetObjAsString(el);
+  for i: Integer := 0 to Utilities.GetObjAsInteger(lSelf.Get('length')) -1 do begin
+    if i <> 0 then lRes.Append(lSep);
+    var lItem := Utilities.GetObjAsString(lSelf.Get(aCaller, 3, i.ToString()));
     if (lItem = nil) then lItem := '';
     lRes.Append(lItem);
   end;
@@ -273,6 +297,160 @@ begin
   exit Utilities.GetObjAsDouble(lLeft).CompareTo(Utilities.GetObjAsDouble(lRight));
 end;
 
+
+method GlobalObject.ArrayToLocaleString(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+begin
+  var lObj := Utilities.ToObject(aCaller, aSelf);
+  if lObj = nil then RaiseNativeError(NativeErrorType.ReferenceError, 'Object type expected');
+  var lLen := Utilities.GetObjAsInteger(lObj.Get(aCaller, 0, 'length'));
+  var lRes := new StringBuilder;
+  for i: Integer := 0 to lLen -1 do begin
+    var lVal := Utilities.ToObject(aCaller, lObj.Get(aCaller, 2, i.ToString));
+    var lData: string;
+    if lVal = nil then begin
+      lData := String.Empty;
+    end else begin
+      var lLocale := EcmaSCriptFunctionObject(lVAl.Get('toLocaleString'));
+      if lLocale = nil then RaiseNativeError(NativeErrorType.ReferenceError, 'element '+i+' in array does not have a callable toLocaleString');
+      lData := Utilities.GetObjAsString(lLocale.CallEx(aCaller, lVal));
+    end;
+    
+    if i <> 0 then lRes.Append(',');
+    lREs.Append(lData);
+  end;
+  exit lRes.ToString;
+end;
+
+method GlobalObject.ArrayIsArray(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+begin
+  var lEl := EcmaScriptArrayObject(Utilities.GetArg(Args, 0));
+  if lEl = nil then exit false;
+  exit lEl.Class = 'Array';
+end;
+
+method GlobalObject.ArrayIndexOf(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+begin
+  var lObj := Utilities.ToObject(aCaller, aSelf);
+  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'));
+  var lElement := utilities.GetArg(Args, 0);
+  var lStart := Utilities.GetArgAsInteger(args, 1);
+  if lStart >= lLen then exit -1;
+  if lStart < 0 then lStart := lLen + lStart;
+  while lStart < lLen do begin
+    var lIndex := lStart.ToString;
+    if lObj.HasProperty(lIndex) then
+      if Operators.StrictEqual(lObj.Get(aCaller, 2, lIndex), lElement) then exit lStart;
+    lStart := lStart + 1;
+  end;
+  exit -1;
+end;
+
+method GlobalObject.ArrayEvery(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+begin
+  var lObj := Utilities.ToObject(aCaller, aSelf);
+  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'));
+  var lCallback := EcmaScriptBaseFunctionObject(Utilities.GetArg(args, 0));
+  var lCallbackThis := coalesce(UTilities.GetArg(args, 1), Undefined.Instance);
+  if lCallback = nil then RaiseNativeError(nativeErrorType.TypeError, 'Delegate expected');
+  for i: Integer := 0 to lLen -1 do begin
+    var lIndex := i.ToString;
+    if lObj.HasProperty(lIndex) then
+      if not Utilities.GetObjAsBoolean(lCallback.CallEx(aCaller, lCallbackThis, lObj.Get(aCaller, 2, lIndex), i, lObj)) then exit false;
+  end;
+  exit true;
+end;
+
+method GlobalObject.ArrayLastIndexOf(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+begin
+  var lObj := Utilities.ToObject(aCaller, aSelf);
+  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'));
+  var lElement := utilities.GetArg(Args, 0);
+  var lStart := if Args.length >= 2 then Utilities.GetArgAsInteger(args, 1) else lLen;
+  if lLen = 0 then exit false;
+  if lStart >= lLen then lStart := lLen -1;
+  if lStart < 0 then lStart := lLen + lStart;
+  while lStart >= 0 do begin
+    var lIndex := lStart.ToString;
+    if lObj.HasProperty(lIndex) then
+      if Operators.StrictEqual(lObj.Get(aCaller, 2, lIndex), lElement) then exit lStart;
+    lStart := lStart - 1;
+  end;
+  exit -1;
+end;
+
+method GlobalObject.ArraySome(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+begin
+  var lObj := Utilities.ToObject(aCaller, aSelf);
+  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'));
+  var lCallback := EcmaScriptBaseFunctionObject(Utilities.GetArg(args, 0));
+  var lCallbackThis := coalesce(UTilities.GetArg(args, 1), Undefined.Instance);
+  if lCallback = nil then RaiseNativeError(nativeErrorType.TypeError, 'Delegate expected');
+  for i: Integer := 0 to lLen -1 do begin
+    var lIndex := i.ToString;
+    if lObj.HasProperty(lIndex) then
+      if Utilities.GetObjAsBoolean(lCallback.CallEx(aCaller, lCallbackThis, lObj.Get(aCaller, 2, lIndex), i, lObj)) then exit true;
+  end;
+  exit false;
+end;
+
+method GlobalObject.ArrayMap(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+begin
+  var lObj := Utilities.ToObject(aCaller, aSelf);
+  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'));
+  var lCallback := EcmaScriptBaseFunctionObject(Utilities.GetArg(args, 0));
+  var lCallbackThis := coalesce(UTilities.GetArg(args, 1), Undefined.Instance);
+  if lCallback = nil then RaiseNativeError(nativeErrorType.TypeError, 'Delegate expected');
+  var lRes := new EcmaScriptArrayObject(lLen, self);
+  for i: Integer := 0 to lLen -1 do begin
+    var lIndex := i.ToString;
+    if lObj.HasProperty(lIndex) then begin
+      lRes.AddValue(lCallback.CallEx(aCaller, lCallbackThis, lObj.Get(aCaller, 2, lIndex), i, lObj));
+    end;
+  end;
+  exit lRes;
+end;
+
+method GlobalObject.ArrayForeach(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+begin
+  var lObj := Utilities.ToObject(aCaller, aSelf);
+  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'));
+  var lCallback := EcmaScriptBaseFunctionObject(Utilities.GetArg(args, 0));
+  var lCallbackThis := coalesce(UTilities.GetArg(args, 1), Undefined.Instance);
+  if lCallback = nil then RaiseNativeError(nativeErrorType.TypeError, 'Delegate expected');
+  for i: Integer := 0 to lLen -1 do begin
+    var lIndex := i.ToString;
+    if lObj.HasProperty(lIndex) then
+      lCallback.CallEx(aCaller, lCallbackThis, lObj.Get(aCaller, 2, lIndex), i, lObj);
+  end;
+  exit Undefined.Instance;
+end;
+
+method GlobalObject.ArrayFilter(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+begin
+  var lObj := Utilities.ToObject(aCaller, aSelf);
+  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'));
+  var lCallback := EcmaScriptBaseFunctionObject(Utilities.GetArg(args, 0));
+  var lCallbackThis := coalesce(UTilities.GetArg(args, 1), Undefined.Instance);
+  if lCallback = nil then RaiseNativeError(nativeErrorType.TypeError, 'Delegate expected');
+  var lRes := new EcmaScriptArrayObject(lLen, self);
+  for i: Integer := 0 to lLen -1 do begin
+    var lIndex := i.ToString;
+    if lObj.HasProperty(lIndex) then begin
+      var lGet := lObj.Get(aCaller, 2, lIndex);
+      if Utilities.GetObjAsBoolean(lCallback.CallEx(aCaller, lCallbackThis, lGet, i, lObj)) then
+        lRes.AddValue(lGet);
+    end;
+  end;
+  exit lRes;
+end;
+
+method GlobalObject.ArrayReduce(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+begin
+end;
+
+method GlobalObject.ArrayReduceRight(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+begin
+end;
 
 constructor EcmaScriptArrayObject(aRoot: GlobalObject; aLength: Integer);
 begin
