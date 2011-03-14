@@ -40,7 +40,7 @@ implementation
 
 method GlobalObject.CreateNumber: EcmaScriptObject;
 begin
-  result := EcmaScriptObject(Get(nil, 'Number'));
+  result := EcmaScriptObject(Get(nil, 0, 'Number'));
   if result <> nil then exit;
 
   result := new EcmaScriptNumberObject(self, 'Number', @NumberCall, 1, &Class := 'Number');

@@ -47,7 +47,7 @@ type
     method AddValues(aItems: Array of Object): EcmaScriptArrayObject;
     method AddValue(aItem: Object);
     method Put(aExecutionContext: ExecutionContext; aName: String; aValue: Object; aThrow: Boolean): Object; override;
-    method Get(aExecutionContext: ExecutionContext; aName: String): Object; override;
+    method Get(aExecutionContext: ExecutionContext; aFlags: Integer; aName: String): Object; override;
     method PutIndex(aName: Int32; aValue: Object): Object; override;
     method GetIndex(aName: Int32): Object; override;
     property ToArray: array of Object read fItems.ToArray;
@@ -59,7 +59,7 @@ implementation
 
 method GlobalObject.CreateArray: EcmaScriptObject;
 begin
-  result := EcmaScriptObject(Get(nil, 'Array'));
+  result := EcmaScriptObject(Get(nil, 0, 'Array'));
   if result <> nil then exit;
 
   result := new EcmaScriptObject(self, nil, &Class := 'Array');
@@ -306,14 +306,14 @@ begin
   end;
 end;
 
-method EcmaScriptArrayObject.Get(aExecutionContext: ExecutionContext; aName: String): Object;
+method EcmaScriptArrayObject.Get(aExecutionContext: ExecutionContext; aFlags: Integer; aName: String): Object;
 begin
   if aName = 'length' then exit fItems.Count;
   var lIndex: Integer;
   if Int32.TryParse(aname, out lIndex) then
     Result := GetIndex(lIndex)
   else
-    Result := inherited Get(aExecutionContext, aName);
+    Result := inherited Get(aExecutionContext, aFlags, aName);
 end;
 
 method EcmaScriptArrayObject.PutIndex(aName: Int32; aValue: Object): Object;

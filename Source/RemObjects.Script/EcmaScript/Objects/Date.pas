@@ -93,7 +93,7 @@ end;
 
 method GlobalObject.CreateDate: EcmaScriptObject;
 begin
-  result := EcmaScriptObject(Get(nil, 'Date'));
+  result := EcmaScriptObject(Get(nil, 0, 'Date'));
   if result <> nil then exit;
 
   result := new EcmaScriptDateObject(self, 'Date', @DateCall, 1, &Class := 'Date');

@@ -60,7 +60,7 @@ type
 
     method GetOwnProperty(aName: String): PropertyValue; virtual;
     method GetProperty(aName: String): PropertyValue; virtual;
-    method &Get(aExecutionContext: ExecutionContext := nil; aName: String): Object; virtual;
+    method &Get(aExecutionContext: ExecutionContext := nil; aFlags: Integer := 0; aName: String): Object; virtual;
 
     method CanPut(aName: String): Boolean; virtual;
     method &Put(aExecutionContext: ExecutionContext := nil; aName: String; aValue: Object; aThrow: Boolean := true): Object; virtual;
@@ -126,7 +126,7 @@ begin
   exit nil;
 end;
 
-method EcmaScriptObject.Get(aExecutionContext: ExecutionContext; aName: String): Object;
+method EcmaScriptObject.Get(aExecutionContext: ExecutionContext; aFlags: Integer := 0; aName: String): Object;
 begin
   var lDesc := GetProperty(aName);
   if lDesc = nil then exit Undefined.Instance;

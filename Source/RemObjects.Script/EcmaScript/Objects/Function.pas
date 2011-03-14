@@ -25,6 +25,7 @@ type
     method FunctionToString(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method FunctionApply(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method FunctionCall(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+    method FunctionBind(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
   end;
 
   EcmaScriptBaseFunctionObject = public class(EcmaScriptObject)
@@ -36,6 +37,20 @@ type
     property OriginalName: String read fOriginalName;
   end;
 
+  EcmaScriptBoundFunctionObject = public class(EcmaScriptBaseFunctionObject)
+  private
+    fFunc: InternalFunctionDelegate;
+    fNewSelf: Object;
+    fNewArgs: array of Object;
+    fOriginal: EcmaScriptInternalFunctionObject;
+  public
+    constructor(aGlobal: GlobalObject; aFunc: EcmaScriptInternalFunctionObject; args: array of Object);
+
+    method Call(context: ExecutionContext; params args: array of Object): Object; override;
+    method CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object; override;
+  end;
+
+  
   EcmaScriptFunctionObject = public class(EcmaScriptBaseFunctionObject)
   private
     fDelegate: InternalDelegate;
@@ -63,10 +78,10 @@ implementation
 
 method GlobalObject.CreateFunction: EcmaScriptObject;
 begin
-  result := EcmaScriptObject(Get(nil, 'Function'));
+  result := EcmaScriptObject(Get(nil, 0, 'Function'));
   if result <> nil then exit;
 
-  result := new EcmaScriptObject(self, nil, &Class := 'Function');
+  result := new EcmaScriptFunctionObject(self, nil, @FunctionCtor,1, &Class := 'Function');
   Values.Add('Function', PropertyValue.NotEnum(Result));
 
   FunctionPrototype := new EcmaScriptFunctionObject(self, 'Function', @FunctionCtor, 1, &Class := 'Function');
@@ -78,12 +93,54 @@ begin
   FunctionPrototype.Values.Add('toString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toString', @FunctionToString, 0)));
   FunctionPrototype.Values.Add('apply', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'apply', @FunctionApply, 2)));
   FunctionPrototype.Values.Add('call', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'call', @FunctionCall, 1)));
+  FunctionPrototype.Values.Add('bind', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'bind', @FunctionBind, 1)));
 end;
 
 
 method GlobalObject.FunctionCtor(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  // Todo: Implement
+  var lNames: string := '';
+  var lBody := '';
+  if Length(Args) <> 0 then begin
+    lBody := Utilities.GetArgAsString(Args, Length(Args)-1);
+    for i: Integer := 0 to Length(Args) -2 do begin
+      if i = 0 then lNames := Utilities.GetArgAsString(args, i) else
+        lNames := lNames+','+Utilities.GetArgAsString(args, i);
+    end;
+  end;
+  var lTokenizer := new Tokenizer;
+  lTokenizer.Error += method (Caller: Tokenizer; Kind: TokenizerErrorKind; Parameter: String); 
+    begin
+      RaiseNativeError(NativeErrorType.SyntaxError, 'Invalid function definition');
+    end;
+  lTokenizer.SetData(lNames, 'Function Constructor Names');
+
+  var lParams: List<ParameterDeclaration> := new List<ParameterDeclaration>;
+  if lTokenizer.Token <> TokenKind.EOF then
+  loop begin
+    if lTokenizer.Token <> TokenKind.Identifier then begin
+      RaiseNativeError(NativeErrorType.SyntaxError, 'Unknown token in parameter names');
+    end;
+    lParams.Add(new ParameterDeclaration(lTokenizer.PositionPair, lTokenizer.TokenStr));
+    lTokenizer.Next;
+    if lTokenizer.Token = TokenKind.Comma then begin
+      lTokenizer.Next;
+    end else if lTokenizer.Token = TokenKind.EOF then begin
+      lTokenizer.Next;
+      break;
+    end else begin
+      RaiseNativeError(NativeErrorType.SyntaxError, 'Unknown token in parameter names');
+    end;
+  end;
+  var lParser := new Parser;
+  lTokenizer.SetData(lBody, 'Function Body');
+
+  var lCode := lParser.Parse(lTokenizer);
+
+  var lFunc := new FunctionDeclarationElement(lCode.PositionPair, FunctionDeclarationType.None, nil, lParams, lCode);
+
+ 
+  exit new EcmaScriptInternalFunctionObject(self, fParser.fRoot, nil, InternalFunctionDelegate(fParser.Parse(lFunc, false, nil, lCode.Items)), lFunc.Parameters.Count, aCaller.Strict);
 end;
 
 method GlobalObject.FunctionToString(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
@@ -119,6 +176,13 @@ begin
   exit EcmaScriptObject(aSelf).CallEx(aCaller, self, lSelf, lArgs);
 end;
 
+method GlobalObject.FunctionBind(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+begin
+  var lSelf := EcmaScriptInternalFunctionObject(aSelf);
+  if lSelf = nil then RaiseNativeError(NativeErrorType.TypeError, '"this" is not a function');
+  exit new EcmaScriptBoundFunctionObject(self, lSelf, Args);
+end;
+
 constructor EcmaScriptFunctionObject(aScope: GlobalObject; aOriginalName: String; aDelegate: InternalDelegate; aLength: Integer; aStrict: Boolean := false);
 begin 
   inherited constructor(aScope, new EcmaScriptObject(aScope, aScope.Root.FunctionPrototype));
@@ -140,7 +204,7 @@ end;
 method EcmaScriptFunctionObject.Construct(context: ExecutionContext; params args: array of Object): Object;
 begin
   var lRes := new EcmaScriptObject(Root);
-  lRes.Prototype := coalesce(EcmaScriptObject(Get(context, 'prototype')), Root.ObjectPrototype);
+  lRes.Prototype := coalesce(EcmaScriptObject(Get(context, 0, 'prototype')), Root.ObjectPrototype);
   var lFunc := fDelegate;
   result := lFunc(context, lRes, args);
   if Result is not EcmaScriptObject then result := lRes;
@@ -189,10 +253,47 @@ end;
 method EcmaScriptInternalFunctionObject.Construct(context: ExecutionContext; params args: array of Object): Object;
 begin
   var lRes := new EcmaScriptObject(Root);
-  lRes.Prototype := coalesce(EcmaScriptObject(Get(context, 'prototype')), Root.ObjectPrototype);
+  lRes.Prototype := coalesce(EcmaScriptObject(Get(context, 0, 'prototype')), Root.ObjectPrototype);
   var lFunc := fDelegate;
   result := lFunc(context, lRes, args, self);
   if Result is not EcmaScriptObject then result := lRes;
+end;
+
+constructor EcmaScriptBoundFunctionObject(aGlobal: GlobalObject; aFunc: EcmaScriptInternalFunctionObject; args: array of Object);
+begin
+  inherited constructor(aGlobal);
+  self.fFunc := EcmaScriptInternalFunctionObject(afunc):&Delegate;
+  &Class := 'Function';
+  Scope := aFunc.Scope;
+  var lProto := new EcmaScriptObject(aGlobal);
+  lProto.DefineOwnProperty('constructor', new PropertyValue(PropertyAttributes.writable or PropertyAttributes.Configurable, self));
+  var lLength := Utilities.GetObjAsInteger(aFunc.Get(nil, 0, 'length'));
+
+  fOriginal := aFunc;
+  lLength := lLength - (length(args) - 1);
+  if lLength < 0 then lLength := 0;
+  fNewSelf := Utilities.GetArg(args, 0);
+  if Length(Args) = 0 then
+   fNewArgs := []
+  else begin
+    fNewArgs := new Object[Length(Args ) -1];
+    ARray.Copy(args, 1, fNewArgs, 0, fNewArgs.Length);
+  end;
+  Values.Add('length', PropertyValue.NotAllFlags(lLength));
+  DefineOwnProperty('prototype', new PropertyValue(PropertyAttributes.writable, lProto));
+  DefineOwnProperty('caller', new PropertyValue(PropertyAttributes.None, aGlobal.Thrower, aGlobal.Thrower));
+  DefineOwnProperty('arguments', new PropertyValue(PropertyAttributes.None, aGlobal.Thrower, aGlobal.Thrower));
+end;
+
+method EcmaScriptBoundFunctionObject.Call(context: ExecutionContext; params args: array of Object): Object;
+begin
+  exit fFunc(new ExecutionContext(Scope, false), fNewSelf, System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Concat(fNewArgs, Args)), fOriginal);
+  
+end;
+
+method EcmaScriptBoundFunctionObject.CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object;
+begin
+  exit Call(context, args);
 end;
 
 end.

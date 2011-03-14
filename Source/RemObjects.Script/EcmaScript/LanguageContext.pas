@@ -75,9 +75,10 @@ type
   end;
 
   EcmaScriptCompiler = public class
+  assembly
+    fRoot: EnvironmentRecord;
   private
     fGlobal: GlobalObject;
-    fRoot: EnvironmentRecord;
     fUseStrict: Boolean;
     fDebug: Boolean;
     fExitLabel: Label;
@@ -89,7 +90,6 @@ type
     fBreak,
     fContinue: nullable Label;
     method Parse(aFilename, aData: string; aEval: Boolean := false): List<SourceElement>; // eval throws different exception
-    method Parse(aFunction: FunctionDeclarationElement; aEval: Boolean; aScopeName: string; aElements: List<SourceElement>): Object;
     method MarkLabelled(aBreak, aContinue: nullable Label);
     method WriteDebugStack;
     method WriteStatement(El: SourceElement);
@@ -118,6 +118,7 @@ type
     
     method EvalParse(aData: string): InternalDelegate;
     method Parse(aFilename, aData: string): InternalDelegate;
+    method Parse(aFunction: FunctionDeclarationElement; aEval: Boolean; aScopeName: string; aElements: List<SourceElement>): Object;
   end;
 
   DynamicMethods = public static class
@@ -1000,7 +1001,7 @@ begin
       CallGetValue(ArrayAccessExpression(aExpression).Member.Type);
       WriteExpression(ArrayAccessExpression(aExpression).Parameter);
       CallGetValue(ArrayAccessExpression(aExpression).Parameter.Type);
-      filg.Emit(Opcodes.Ldc_I4, if fUseStrict then 1 else 0);
+      filg.Emit(Opcodes.Ldc_I4, if fUseStrict then 3 else 2);
       filg.Emit(Opcodes.Call, Reference.Method_Create);
     end;
     ElementType.NewExpression: begin

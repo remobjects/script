@@ -21,7 +21,7 @@ type
     property Map: EcmaScriptObject;
     class var &Constructor: System.Reflection.ConstructorInfo := typeof (EcmaScriptArgumentObject).GetConstructors()[0]; readonly;
 
-    method Get(aExecutionContext: ExecutionContext; aName: String): Object; override;
+    method Get(aExecutionContext: ExecutionContext; aFlags: Integer; aName: String): Object; override;
     method GetOwnProperty(aName: String): PropertyValue; override;
     method DefineOwnProperty(aName: String; aValue: PropertyValue; aThrow: Boolean): Boolean; override;
     method Delete(aName: String; aThrow: Boolean): Boolean; override;
@@ -49,7 +49,7 @@ begin
   fStrict := aStrict;
 end;
 
-method EcmaScriptArgumentObject.Get(aExecutionContext: ExecutionContext; aName: String): Object;
+method EcmaScriptArgumentObject.Get(aExecutionContext: ExecutionContext; aFlags: Integer; aName: String): Object;
 begin
   var lIndex: Integer;
   if not fStrict and Int32.TryParse(aname, out lIndex) and (lIndex < Math.Min(Length(fNames), Length(fArgs))) then begin

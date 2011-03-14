@@ -36,7 +36,7 @@ type
     constructor(aGlobal: GlobalObject; aPattern, aFlags: String);
     property &GlobalVal: Boolean read fGlobalVal;
     property RegEx: Regex read fRegEx;
-    property LastIndex: Integer read Utilities.GetObjAsInteger(Get(nil, 'lastIndex')) write set_LastIndex;
+    property LastIndex: Integer read Utilities.GetObjAsInteger(Get(nil, 0, 'lastIndex')) write set_LastIndex;
   end;
 implementation
 method GlobalObject.CreateRegExp: EcmaScriptObject;

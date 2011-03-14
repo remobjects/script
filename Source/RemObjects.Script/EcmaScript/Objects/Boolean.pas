@@ -36,7 +36,7 @@ implementation
 
 method GlobalObject.CreateBoolean: EcmaScriptObject;
 begin
-  result := EcmaScriptObject(Get(nil, 'Boolean'));
+  result := EcmaScriptObject(Get(nil, 0, 'Boolean'));
   if result <> nil then exit;
 
   result := new EcmaScriptBooleanObject(self, 'Boolean', @BooleanCall, 1, &Class := 'Boolean');

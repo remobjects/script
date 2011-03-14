@@ -41,7 +41,7 @@ implementation
 
 method GlobalObject.CreateError: EcmaScriptObject;
 begin
-  result := EcmaScriptObject(Get(nil, 'Error'));
+  result := EcmaScriptObject(Get(nil, 0, 'Error'));
   if result <> nil then exit;
 
   result := new EcmaScriptFunctionObject(self, 'Error', @ErrorCtor, 1, &Class := 'Error');
@@ -66,8 +66,8 @@ end;
 method GlobalObject.ErrorToString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   var lSelf := Utilities.GetObjAsEcmaScriptObject(aSelf);
-  var lMsg := if lSelf.Get(aCaller, 'message') = nil then nil else Utilities.GetObjAsString(lSelf.Get(aCaller, 'message'));
-  var lName := coalesce(Utilities.GetObjAsString(lSelf.Get(aCaller, 'name')), 'Error');
+  var lMsg := if lSelf.Get(aCaller, 0, 'message') = nil then nil else Utilities.GetObjAsString(lSelf.Get(aCaller, 0, 'message'));
+  var lName := coalesce(Utilities.GetObjAsString(lSelf.Get(aCaller, 0, 'name')), 'Error');
   if STring.IsNullOrEmpty(lMsg) then
     exit lName
 

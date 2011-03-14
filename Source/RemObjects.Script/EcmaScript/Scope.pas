@@ -9,15 +9,17 @@ type
   Reference = public class
   private
   public
-    constructor(aBase: Object; aName: string; aStrict: Boolean);
+    constructor(aBase: Object; aName: string; aStrict: Integer);
     property Base: Object; // Undefined, Simple, IEnvironmentRecord or Object
     property Name: string;
-    property Strict: Boolean;
+    property &Flags: Integer;
+    property Strict: Boolean read 0 <> (1 and &Flags);
+    property ArrayAccess: Boolean read 0 <> (2 and &Flags);
 
     class method GetValue(aReference: Object; aExecutionContext: ExecutionContext): Object;
     class method SetValue(aReference: Object; aValue: Object; aExecutionContext: ExecutionContext): Object;
     class method Delete(aReference: Object; aExecutionContext: ExecutionContext): Boolean;
-    class method CreateReference(aBase, aSub: Object; aExecutionContext: ExecutionContext; aStrict: Boolean): Reference;
+    class method CreateReference(aBase, aSub: Object; aExecutionContext: ExecutionContext; aStrict: Integer): Reference;
 
     class var Method_GetValue: System.Reflection.MethodInfo := typeof(Reference).GetMethod('GetValue'); readonly;
     class var Method_SetValue: System.Reflection.MethodInfo := typeof(Reference).GetMethod('SetValue'); readonly;
@@ -237,11 +239,11 @@ begin
   exit val;
 end;
 
-constructor Reference(aBase: Object; aName: string; aStrict: Boolean);
+constructor Reference(aBase: Object; aName: string; aStrict: Integer);
 begin
   Base := aBase;
   Name := aName;
-  Strict := aStrict;
+  Flags := aStrict;
 end;
 
 class method Reference.GetValue(aReference: Object; aExecutionContext: ExecutionContext): Object;
@@ -253,7 +255,7 @@ begin
   if lRef.Base = nil then exit aExecutionContext.Global.ObjectPrototype.Get(aExecutionContext, lRef.Name);
   var lObj := EcmaScriptObject(lRef.Base);
   if assigned(lObj) then 
-    exit lObj.Get(aExecutionContext,lRef. Name);
+    exit lObj.Get(aExecutionContext, lREf.Flags, lRef.Name);
   var lExec := EnvironmentRecord(lRef.Base); 
   if assigned(lExec) then
     exit lExec.GetBindingValue(lRef.Name, lRef.Strict);
@@ -308,7 +310,7 @@ begin
     aExecutionContext.Global.RaiseNativeError(NativeErrorType.SyntaxError, 'Cannot delete transient object');
 end;
 
-class method Reference.CreateReference(aBase, aSub: Object; aExecutionContext: ExecutionContext; aStrict: Boolean): Reference;
+class method Reference.CreateReference(aBase, aSub: Object; aExecutionContext: ExecutionContext; aStrict: Integer): Reference;
 begin
   if (aBase = nil) then aExecutionContext.Global.RaiseNativeError(NativeErrorType.TypeError, 'Cannot get property on null');
   if (aBase = Undefined.Instance) then aExecutionContext.Global.RaiseNativeError(NativeErrorType.TypeError, 'Cannot get property of undefined');
@@ -319,12 +321,12 @@ class method EnvironmentRecord.GetIdentifier(aLex: EnvironmentRecord; aName: Str
 begin
   while aLex <> nil do begin
     if aLex.HasBinding(aName) then begin
-      exit new Reference(aLex, aName, aStrict);
+      exit new Reference(aLex, aName, if aStrict then 1 else 0);
     end;
     aLex := aLex.Previous;
   end;
 
-  if aLex = nil then exit new Reference(Undefined.Instance, aName, aStrict);
+  if aLex = nil then exit new Reference(Undefined.Instance, aName, if aStrict then 1 else 0);
 end;
 
 constructor EnvironmentRecord(aPrev: EnvironmentRecord);
