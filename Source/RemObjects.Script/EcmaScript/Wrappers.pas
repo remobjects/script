@@ -126,7 +126,7 @@ begin
     if lItems[0].MemberType = MemberTypes.Property then
       exit new PropertyValue(if PropertyInfo(lItems[0]).CanWrite then PropertyAttributes.writable else PropertyAttributes.none, if PropertyInfo(lItems[0]).CanRead then PropertyInfo(lItems[0]).GetValue(fValue, []));
   end;
-  if lItems.All(a->a.MemberType = MemberTypes.Method) then
+  if (lItems.Length > 0) and (lItems.All(a->a.MemberType = MemberTypes.Method)) then
     exit new PropertyValue(PropertyAttributes.None, new EcmaScriptObjectWrapper(new Overloads(fValue, lItems.Cast<MethodBase>().ToArray), typeof(Overloads), Root));
   exit nil;
 end;
@@ -206,6 +206,11 @@ begin
   try 
   exit EcmaScriptScope.DoTryWrap(aRoot, lMeth.Invoke(aSelf, lReal));
   except
+    on e: TargetInvocationException do begin
+      if e.InnerException is RemObjects.Script.ScriptRuntimeException then
+        raise e.InnerException;
+      raise new RemObjects.Script.ScriptRuntimeException(EcmaScriptScope.DoTryWrap(aRoot, e.InnerException) as EcmaScriptObject);
+    end;
     on e: Exception where e is not RemObjects.Script.ScriptRuntimeException do
       raise new RemObjects.Script.ScriptRuntimeException(EcmaScriptScope.DoTryWrap(aRoot, e) as EcmaScriptObject);
   end;

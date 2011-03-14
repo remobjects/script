@@ -16,25 +16,18 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DefineConstants>DESIGN;DEBUG;TRACE;</DefineConstants>
-    <OutputPath>..\..\Bin</OutputPath>
+    <OutputPath>..\..\Bin\</OutputPath>
     <GeneratePDB>True</GeneratePDB>
     <GenerateMDB>True</GenerateMDB>
     <SuppressWarnings>
     </SuppressWarnings>
-    <EnableAsserts>True</EnableAsserts>
-    <CodeFlowAnalysis>True</CodeFlowAnalysis>
     <CpuType>anycpu</CpuType>
-    <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
-    <RegisterForComInterop>False</RegisterForComInterop>
-    <UseXmlDoc>False</UseXmlDoc>
     <XmlDocWarningLevel>WarningOnPublicMembers</XmlDocWarningLevel>
-    <XmlDocAllMembers>False</XmlDocAllMembers>
-    <Optimize>True</Optimize>
-    <WarnOnCaseMismatch>False</WarnOnCaseMismatch>
-    <RunCodeAnalysis>False</RunCodeAnalysis>
-    <RequireExplicitLocalInitialization>False</RequireExplicitLocalInitialization>
     <FutureHelperClassName>
     </FutureHelperClassName>
+    <EnableUnmanagedDebugging>True</EnableUnmanagedDebugging>
+    <DebugClass />
+    <AssertMethodName />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DefineConstants>DESIGN</DefineConstants>

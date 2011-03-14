@@ -188,10 +188,10 @@ begin
   var lPrecondition := o.Get('precondition');
 
   if (lPrecondition <> nil) and (lPrecondition <> RemObjects.Script.EcmaScript.Undefined.Instance) then begin
-    var lRes := RemObjects.Script.EcmaScript.EcmaScriptObject(lPrecondition).Call(fContext);
+    var lRes := RemObjects.Script.EcmaScript.EcmaScriptObject(lPrecondition).CallEx(fContext, o.Root);
     Xunit.Assert.True(RemObjects.Script.EcmaScript.Utilities.GetObjAsBoolean(lRes), 'Precondition for '+RemObjects.Script.EcmaScript.Utilities.GetObjAsString(lName) +' failed. Description: '+RemObjects.Script.EcmaScript.Utilities.GetObjAsString(lDescription));
   end;
-  var lRes := RemObjects.Script.EcmaScript.EcmaScriptObject(lTest).Call(fContext);
+  var lRes := RemObjects.Script.EcmaScript.EcmaScriptObject(lTest).Call(fContext, o.Root);
   Xunit.Assert.True(RemObjects.Script.EcmaScript.Utilities.GetObjAsBoolean(lRes), 'Testcase '+RemObjects.Script.EcmaScript.Utilities.GetObjAsString(lName) +' failed. Description: '+RemObjects.Script.EcmaScript.Utilities.GetObjAsString(lDescription));
 
   //lName.ToString();

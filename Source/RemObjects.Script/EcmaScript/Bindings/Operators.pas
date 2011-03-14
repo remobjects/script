@@ -17,10 +17,10 @@ type
     class method SameValue(aLeft, aright: Object): Boolean;
 
 
-    class method Equal(aLeft, aRight: Object): Boolean;
+    class method Equal(aLeft, aRight: Object): Object;
     class method NotEqual(aLeft, aRight: Object): Object;
-    class method StrictEqual(aLeft, aRight: Object): Boolean;
-    class method StrictNotEqual(aLeft, aRight: Object): Boolean;
+    class method StrictEqual(aLeft, aRight: Object): Object;
+    class method StrictNotEqual(aLeft, aRight: Object): Object;
     class method _TypeOf(aValue: Object): String;
 
     // OR, AND, ?: have side effects in evaluation and are not specified here.
@@ -34,7 +34,7 @@ type
 
 implementation
 
-class method Operators.Equal(aLeft, aRight: Object): Boolean;
+class method Operators.Equal(aLeft, aRight: Object): Object;
 begin
   var lLeft: TypeCode := iif(aLeft = nil, TypeCode.Empty, &Type.GetTypeCode(aLeft.GetType));
   var lRight: TypeCode := iif(aRight = nil, TypeCode.Empty, &Type.GetTypeCode(aRight.GetType));
@@ -131,7 +131,7 @@ begin
   result := aLeft.Equals(aRight);
 end;
 
-class method Operators.StrictEqual(aLeft, aRight: Object): Boolean;
+class method Operators.StrictEqual(aLeft, aRight: Object): Object;
 begin
   if (aLeft = nil) and (aRight = nil) then exit true;
   if (aLeft = nil) or (aRight = nil) then exit false;
@@ -165,9 +165,9 @@ begin
   exit &Equals(aLeft, aRight);
 end;
 
-class method Operators.StrictNotEqual(aLeft, aRight: Object): Boolean;
+class method Operators.StrictNotEqual(aLeft, aRight: Object): Object;
 begin
-  result := NOT StrictEqual(aLeft, aRight);
+  result := NOT Boolean(StrictEqual(aLeft, aRight));
 end;
 class method Operators.DoubleCompare(aLeft, aRight: Double): Boolean;
 begin
@@ -176,7 +176,7 @@ end;
 
 class method Operators.SameValue(aLeft, aright: Object): Boolean;
 begin
-  exit (aLeft = aRight) or (StrictEqual(aLeft, aRight));
+  exit (aLeft = aRight) or Boolean(StrictEqual(aLeft, aRight));
 end;
 
 class method Operators._TypeOf(aValue: Object): String;
@@ -216,7 +216,7 @@ end;
 
 class method Operators.NotEqual(aLeft, aRight: Object): Object;
 begin
-  exit Not Equal(aLeft, aRight);
+  exit Not Boolean(Equal(aLeft, aRight));
 end;
 
 end.

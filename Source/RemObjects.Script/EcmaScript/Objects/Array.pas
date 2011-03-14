@@ -340,7 +340,7 @@ begin
   while lStart < lLen do begin
     var lIndex := lStart.ToString;
     if lObj.HasProperty(lIndex) then
-      if Operators.StrictEqual(lObj.Get(aCaller, 2, lIndex), lElement) then exit lStart;
+      if Boolean(Operators.StrictEqual(lObj.Get(aCaller, 2, lIndex), lElement)) then exit lStart;
     lStart := lStart + 1;
   end;
   exit -1;
@@ -373,7 +373,7 @@ begin
   while lStart >= 0 do begin
     var lIndex := lStart.ToString;
     if lObj.HasProperty(lIndex) then
-      if Operators.StrictEqual(lObj.Get(aCaller, 2, lIndex), lElement) then exit lStart;
+      if Boolean(Operators.StrictEqual(lObj.Get(aCaller, 2, lIndex), lElement)) then exit lStart;
     lStart := lStart - 1;
   end;
   exit -1;
