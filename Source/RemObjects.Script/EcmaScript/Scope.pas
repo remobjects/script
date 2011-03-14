@@ -226,7 +226,7 @@ method DeclarativeEnvironmentRecord.InitializeImmutableBinding(aName: string; aV
 begin
   var lVal: PropertyValue;
   if not fBag.TryGetValue(aName, out lVal) then fGlobal.RaiseNativeError(NativeErrorType.TypeError, 'Unknown property: '+aName);
-  if PropertyAttributes.Configurable <> lVal.Attributes then fGlobal.RaiseNativeError(NativeErrorType.TypeError, 'Property not an unitialized immutable: '+aName);
+  if PropertyAttributes.Configurable or PropertyAttributes.HasValue <> lVal.Attributes then fGlobal.RaiseNativeError(NativeErrorType.TypeError, 'Property not an unitialized immutable: '+aName);
   lVal.Attributes := PropertyAttributes.None;
   lVal.Value := aValue;
 end;

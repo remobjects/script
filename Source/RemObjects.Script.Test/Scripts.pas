@@ -277,8 +277,7 @@ method Scripts.Error;
 begin
   ExecuteJS("try {
   n = 15;
-  n.toString = [1].toString;
-  [1].toString.call(n);
+  n = n / 0;
   writeln(n.toString());
  eval('(');	
  } catch(n){
@@ -296,17 +295,18 @@ writeln(x);
 writeln(Error.prototype.name);
 writeln(Error.prototype.message);
 writeln(Error.prototype.toString());");
-var lExpected :="TypeError: Array.prototype.toString is not generic
+var lExpected :="
 object
-true
 false
-Array.prototype.toString is not generic
+false
+null
 Error: test
 test
 Error
 Error
 
-Error";
+Error
+";
  Assert.Equal(lExpected.Replace(#13#10, #10).Trim([#13, #9, #32, #10]), fresult.Replace(#13#10, #10).Trim([#13, #9, #32, #10]));
 end;
 

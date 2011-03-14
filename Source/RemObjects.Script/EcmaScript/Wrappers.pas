@@ -173,7 +173,7 @@ begin
       lParamStart := lParams.Length -1;
     // Now we'll have to see if the parameter types matches what's in the arguments array
     for j: Integer := 0 to Length(aArgs) -1 do begin
-      if not IsCompatibleType(aArgs:GetType, if j >= lParamStart then lParams[lParams.Length-1].ParameterType.GetElementType() else lParams[j].ParameterType) then  begin
+      if not IsCompatibleType(aArgs[j]:GetType, if (lParamSTart <> -1) and (j >= lParamStart) then lParams[lParams.Length-1].ParameterType.GetElementType() else lParams[j].ParameterType) then  begin
         lMeth := nil;
         break;
       end;
@@ -195,7 +195,7 @@ begin
   if ((lParams.Length > 0) and (Length(lParams[lParams.Length-1].GetCustomAttributes(typeof(ParamArrayAttribute), false)) >0)) then 
     lParamStart := lParams.Length -1;
   for j: Integer := 0 to Length(aArgs) -1 do begin
-    if j >= lParamStart then begin
+    if (lParamStart <> -1) and (j >= lParamStart) then begin
       if j = lParamstart then begin
         lReal[j] := Array.CreateInstance(lParams[lParams.Length-1].ParameterType.GetElementType, Length(aArgs) - lParamSTart);
       end;
