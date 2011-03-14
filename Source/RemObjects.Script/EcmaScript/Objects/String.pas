@@ -29,6 +29,7 @@ type
     method StringConcat(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method StringIndexOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method StringLastIndexOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+    method StringLocaleCompare(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method StringMatch(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method StringReplace(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method StringSearch(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
@@ -39,6 +40,7 @@ type
     method StringToUpperCase(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method StringToLocaleLowerCase(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method StringToLocaleUpperCase(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+    method StringTrim(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
   end;
   EcmaScriptStringObject = public class(EcmaScriptFunctionObject)
   public
@@ -81,6 +83,9 @@ begin
   StringPrototype.Values.Add('toUpperCase', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toUpperCase', @StringToUpperCase, 0)));
   StringPrototype.Values.Add('toLocaleLowerCase', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toLocaleLowerCase', @StringToLocaleLowerCase, 0)));
   StringPrototype.Values.Add('toLocaleUpperCase', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toLocaleUpperCase', @StringToLocaleUpperCase, 0)));
+  
+  StringPrototype.Values.Add('localeCompare', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'localeCompare', @StringLocaleCompare, 1)));
+  StringPrototype.Values.Add('trim', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'trim', @StringTrim, 0)));
 end;
 
 method GlobalObject.StringCall(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
@@ -273,6 +278,18 @@ begin
     lRealResult.Items[i] := MatchToArray(lRes[i]);
   end;
   exit lRealResult;
+end;
+
+method GlobalObject.StringLocaleCompare(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+begin
+  if (aSelf = nil) or (aSelf = Undefined.Instance) then RaiseNativeError(NativeErrorType.TypeError, 'null/undefined not coercible');
+  exit String.Compare(Utilities.GetObjAsString(aSelf), Utilities.GetArgAsString(args, 0), StringComparison.CurrentCulture);
+end;
+
+method GlobalObject.StringTrim(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+begin
+  if (aSelf = nil) or (aSelf = Undefined.Instance) then RaiseNativeError(NativeErrorType.TypeError, 'null/undefined not coercible');
+  exit Utilities.GetObjAsString(aSelf).Trim();
 end;
 
 method EcmaScriptStringObject.Call(context: ExecutionContext; params args: array of Object): Object;
