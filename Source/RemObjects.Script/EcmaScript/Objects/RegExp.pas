@@ -49,7 +49,12 @@ begin
 
   RegExpPrototype := new EcmaScriptFunctionObject(self, 'RegExp', @RegExpCtor, 1, &Class := 'RegExp');
   RegExpPrototype.Prototype := ObjectPrototype;
-  
+  RegExpPrototype.Values['source'] := PropertyValue.NotAllFlags(Undefined.Instance);
+  RegExpPrototype.Values['global'] := PropertyValue.NotAllFlags(false);
+  RegExpPrototype.Values['ignoreCase'] := PropertyValue.NotAllFlags(false);
+  RegExpPrototype.Values['multiline'] := PropertyValue.NotAllFlags(false);
+  RegExpPrototype.Values['lastIndex'] := new PropertyValue(PropertyAttributes.writable, undefined.Instance);
+
   result.Values['prototype'] := PropertyValue.NotAllFlags(RegExpPrototype);
 
   RegExpPrototype.Values['constructor'] := PropertyValue.NotEnum(RegExpPrototype);
@@ -116,7 +121,8 @@ begin
   Values['source'] := PropertyValue.NotAllFlags(aPattern);
   Values['global'] := PropertyValue.NotAllFlags(fGlobalVal);
   Values['ignoreCase'] := PropertyValue.NotAllFlags(RegExOptions.IgnoreCase in lOpt);
-  Values['multiLine'] := PropertyValue.NotAllFlags(RegExOptions.Multiline in lOpt);
+  Values['multiline'] := PropertyValue.NotAllFlags(RegExOptions.Multiline in lOpt);
+  Values['lastIndex'] := new PropertyValue(PropertyAttributes.writable, undefined.Instance);
   fRegEx := new Regex(aPattern, lOpt);
 end;
 
