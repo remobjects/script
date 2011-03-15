@@ -378,9 +378,9 @@ begin
     else // RemObjects.Script.EcmaScript.Internal.FunctionDeclarationType.None
       lDescr := new PropertyValue(PropertyAttributes.All, aData);
   end; // case
-  if aStrict and ((aName = 'eval') or (aName = 'arguments')) then begin
-    Root.RaiseNativeError(NativeErrorType.SyntaxError, 'eval and arguments not allowed as object literals when using strict mode');
-  end;
+  //if aStrict and ((aName = 'eval') or (aName = 'arguments')) then begin
+  //  Root.RaiseNativeError(NativeErrorType.SyntaxError, 'eval and arguments not allowed as object literals when using strict mode');
+  //end;
   var lOwn := GetOwnProperty(aName);
   if lOwn <> nil then begin
     if aStrict and IsDataDescriptor(lOwn) and IsDataDescriptor(lDescr) then Root.RaiseNativeError(NativeErrorType.SyntaxError, 'Duplicate property');

@@ -97,6 +97,18 @@ type
     method get_Debug: IDebugSink;
   end;
   EcmaScriptEvalFunctionObject = public class(EcmaScriptFunctionObject);
+
+
+  EcmaScriptObjectObject = public class(EcmaScriptBaseFunctionObject)
+  private
+  public
+    constructor(aOwner: GlobalObject; aName: string);
+
+    method Call(context: ExecutionContext; params args: array of Object): Object; override;
+    method Construct(context: ExecutionContext; params args: array of Object): Object; override;
+  end;
+
+
 implementation
 
 constructor GlobalObject(aParser: EcmaScriptCompiler);
@@ -248,7 +260,7 @@ begin
 
   ObjectPrototype := new EcmaScriptFunctionObject(self, 'Object', @ObjectCtor, 1, &Class := 'Object');
 
-  result := new EcmaScriptObject(self, ObjectPrototype);
+  result := new EcmaScriptObjectObject(self, 'Object');
   Values.Add('Object', PropertyValue.NotEnum(Result));
 
   result.Values['prototype'] := PropertyValue.NotAllFlags(ObjectPrototype);
@@ -505,6 +517,30 @@ end;
 method Undefined.ToString: String;
 begin
   exit 'undefined';
+end;
+
+constructor EcmaScriptObjectObject(aOwner: GlobalObject; aName: string);
+begin
+  inherited constructor(aOwner, new EcmaScriptObject(aOwner, aOwner.FunctionPrototype));
+  &Class := 'Function';
+  fOriginalName := aName;
+  Values.Add('length', PropertyValue.NotAllFlags(1));
+end;
+
+method EcmaScriptObjectObject.Call(context: ExecutionContext; params args: array of Object): Object;
+begin
+  var lVal := Utilities.GetArg(args, 0);
+  if (lVal = nil) or (lVal = Undefined.Instance) then exit Construct(context, self, args);
+  exit Utilities.ToObject(context, lVAl);
+end;
+
+method EcmaScriptObjectObject.Construct(context: ExecutionContext; params args: array of Object): Object;
+begin
+  if (Length(args) <> 0) and (args[0] <> nil) and (args[0] <> Undefined.Instance) then begin
+    if args[0] is EcmaScriptObject then exit args[0];
+    if (args[0] is string) or (args[0] is Integer) or (args[0] is Int64) or (args[0] is Double) or( args[0] is Boolean) then exit Utilities.ToObject(context, args[0]);
+  end;
+  exit new EcmaScriptObject(Root);
 end;
 
 end.
