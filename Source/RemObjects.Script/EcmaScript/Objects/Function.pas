@@ -20,6 +20,7 @@ type
   private
   public
     method CreateFunction: EcmaScriptObject;
+    method CreateFunctionPrototype;
 
     method FunctionCtor(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method FunctionToString(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
@@ -84,8 +85,6 @@ begin
   result := new EcmaScriptFunctionObject(self, nil, @FunctionCtor,1, &Class := 'Function');
   Values.Add('Function', PropertyValue.NotEnum(Result));
 
-  FunctionPrototype := new EcmaScriptFunctionObject(self, 'Function', @FunctionCtor, 1, &Class := 'Function');
-  FunctionPrototype.Prototype := ObjectPrototype;
   
   result.Values['prototype'] := PropertyValue.NotAllFlags(FunctionPrototype);
 
@@ -94,6 +93,8 @@ begin
   FunctionPrototype.Values.Add('apply', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'apply', @FunctionApply, 2)));
   FunctionPrototype.Values.Add('call', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'call', @FunctionCall, 1)));
   FunctionPrototype.Values.Add('bind', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'bind', @FunctionBind, 1)));
+
+  ObjectPrototype.Prototype := FunctionPrototype;
 end;
 
 
@@ -169,7 +170,7 @@ begin
       lArgs := EcmaScriptArrayObject(args[1]).ToArray;
     end else RaiseNativeError(NativeErrorType.TypeError, 'Function.prototype.apply requires two parameters')
   end;
-  exit EcmaScriptObject(aSelf).CallEx(aCaller, self, lSelf, lArgs);
+  exit EcmaScriptObject(aSelf).CallEx(aCaller, lSelf, lArgs);
 end;
 
 method GlobalObject.FunctionCall(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
@@ -179,7 +180,7 @@ begin
   if (Length(args) = 0) or (args[0] is not EcmaScriptObject) then lSelf := self else lSelf := args[0];
   var lArgs: array of object := new Object[iif(Length(Args) < 1, 0, Length(args) -1)];
   if lArgs.Length >0 then Array.Copy(Args, 1, lArgs, 0, lArgs.Length);
-  exit EcmaScriptObject(aSelf).CallEx(aCaller, self, lSelf, lArgs);
+  exit EcmaScriptObject(aSelf).CallEx(aCaller, lSelf, lArgs);
 end;
 
 method GlobalObject.FunctionBind(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
@@ -187,6 +188,12 @@ begin
   var lSelf := EcmaScriptInternalFunctionObject(aSelf);
   if lSelf = nil then RaiseNativeError(NativeErrorType.TypeError, '"this" is not a function');
   exit new EcmaScriptBoundFunctionObject(self, lSelf, Args);
+end;
+
+method GlobalObject.CreateFunctionPrototype;
+begin
+  FunctionPrototype := new EcmaScriptFunctionObject(self, 'Function', @FunctionCtor, 1, &Class := 'Function');
+  FunctionPrototype.Prototype := ObjectPrototype;
 end;
 
 constructor EcmaScriptFunctionObject(aScope: GlobalObject; aOriginalName: String; aDelegate: InternalDelegate; aLength: Integer; aStrict: Boolean := false);

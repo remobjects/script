@@ -259,6 +259,8 @@ begin
   result := EcmaScriptObject(Get(nil, 0, 'Object'));
   if result <> nil then exit;
 
+  CreateFunctionPrototype;
+
   ObjectPrototype := new EcmaScriptFunctionObject(self, 'Object', @ObjectCtor, 1, &Class := 'Object');
 
   result := new EcmaScriptObjectObject(self, 'Object');
