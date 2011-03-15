@@ -910,7 +910,11 @@ begin
       var lPos := fTok.Position;
       fTok.Next;
       var lArgs: List<ExpressionElement> := new List<ExpressionElement>;
+
       if fTok.Token <> TokenKind.ClosingBracket then begin
+        if ftok.Token = TokenKind.Comma then begin
+          fTok.Next;
+        end;
         loop begin
           var lSub: ExpressionElement;
           if fTok.Token in [TokenKind.Comma, TokenKind.ClosingBracket] then

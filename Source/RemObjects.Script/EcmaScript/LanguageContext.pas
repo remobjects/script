@@ -966,8 +966,12 @@ begin
       filg.Emit(Opcodes.Newobj, EcmaScriptArrayObject.Constructor);
       for each el in ArrayLiteralExpression(aExpression).Items do begin
         filg.Emit(Opcodes.Dup);
-        WriteExpression(el);
-        CallGetValue(el.Type);
+        if el = nil then  begin
+          filg.Emit(Opcodes.Call, Undefined.Method_Instance);
+        end else begin
+          WriteExpression(el);
+          CallGetValue(el.Type);
+        end;
         filg.Emit(Opcodes.Call, EcmaScriptArrayObject.Method_AddValue);
       end;
     end;
