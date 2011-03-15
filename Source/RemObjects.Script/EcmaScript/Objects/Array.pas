@@ -623,7 +623,9 @@ begin
   if Int32.TryParse(aName, out el) and (el < fItems.Count) then begin
     var lItem := fItems[el];
     exit new PropertyValue(PropertyAttributes.All, lItem);
-  end else
+  end else if aname = 'length' then
+    exit new PropertyValue(PropertyAttributes.None, fItems.Count)
+  else
     exit inherited GetOwnProperty(aname);
 end;
 
