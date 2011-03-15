@@ -63,15 +63,13 @@ type
     method &Get(aExecutionContext: ExecutionContext := nil; aFlags: Integer := 0; aName: String): Object; virtual;
 
     method CanPut(aName: String): Boolean; virtual;
-    method &Put(aExecutionContext: ExecutionContext := nil; aName: String; aValue: Object; aThrow: Boolean := true): Object; virtual;
+    method &Put(aExecutionContext: ExecutionContext := nil; aName: String; aValue: Object; aFlags: Integer := 1): Object; virtual;
     method HasProperty(aName: string): Boolean; virtual;
 
     method Delete(aName: string; aThrow: Boolean): Boolean; virtual;
 
     method DefineOwnProperty(aName: string; aValue: PropertyValue; aThrow: Boolean := true): Boolean; virtual;
 
-    method &PutIndex(aName: Integer; aValue: Object): Object; virtual;
-    method &GetIndex(aName: Integer): Object; virtual;
     method Construct(context: ExecutionContext; params args: array of Object): Object; virtual;
     method Call(context: ExecutionContext; params args: array of Object): Object; virtual;
     method CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object; virtual;
@@ -159,16 +157,16 @@ begin
   exit Extensible;
 end;
 
-method EcmaScriptObject.&Put(aExecutionContext: ExecutionContext; aName: String; aValue: Object; aThrow: Boolean): Object; 
+method EcmaScriptObject.&Put(aExecutionContext: ExecutionContext; aName: String; aValue: Object; aFlags: Integer := 1): Object; 
 begin
   if not CanPut(aName) then begin
-    if aThrow then
+    if 0 <> (aFlags and 1) then
       Root.RaiseNativeError(NativeErrorType.TypeError, 'Property '+aName+' cannot be written to');
     exit Undefined.Instance;
   end;
   var lOwn := GetOwnProperty(aName);
   if assigned(lOwn) and IsDataDescriptor(lOwn) then begin
-    if DefineOwnProperty(aName, new PropertyValue(PropertyAttributes.None, aValue), aThrow) then
+    if DefineOwnProperty(aName, new PropertyValue(PropertyAttributes.None, aValue), 0 <> (aFlags and 1)) then
       exit aValue;
     exit Undefined.Instance;
   end;
@@ -176,7 +174,7 @@ begin
   if assigned(lOwn) and IsAccessorDescriptor(lOwn) and (lOwn.Set <> nil) then begin
     exit lOwn.Set.CallEx(aExecutionContext, self, [aValue]);
   end;
-  if DefineOwnProperty(aName, new PropertyValue(PropertyAttributes.All, aValue), aThrow) then
+  if DefineOwnProperty(aName, new PropertyValue(PropertyAttributes.All, aValue), 0 <> (aFlags and 1)) then
     exit Avalue;
   exit Undefined.Instance;
 end;
@@ -233,15 +231,6 @@ begin
   result := '[object '+&Class+']';
 end;
 
-method EcmaScriptObject.PutIndex(aName: Integer; aValue: Object): Object;
-begin
-  exit Put(nil, aName.ToString, aValue, true);
-end;
-
-method EcmaScriptObject.GetIndex(aName: Integer): Object;
-begin
-  result := Get(nil, aName.ToString);
-end;
 
 method EcmaScriptObject.IsAccessorDescriptor(aProp: PropertyValue): Boolean;
 begin

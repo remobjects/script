@@ -60,6 +60,9 @@ namespace Debugger
                         }
                         else
                             edOutput.AppendText("\r\nResult: \r\n" + ScriptEngine.RunResult);
+           
+                        tbMain.Document.MarkerStrategy.RemoveAll(a => (a.TextMarkerType == ICSharpCode.TextEditor.Document.TextMarkerType.SolidBlock && a.Color == Color.Red));
+                        tbMain.Refresh();
                         Text = "Script Editor"; // done running
 						break;
                    
@@ -100,12 +103,19 @@ namespace Debugger
             Invoke(new Action(delegate
             {
                 lvLocals.Items.Clear();
-                foreach (var el in ScriptEngine.Locals)
-                {
-                    if (!el.Internal)
-                    {
-                        ListViewItem item = new ListViewItem(el.Name);
-                        item.SubItems.Add(el.Value == null ? "(null)" : el.Value.ToString());
+                for (int i = ScriptEngine.CallStack.Count -1; i >= 0; i--) {
+                    var el = ScriptEngine.CallStack[i];
+                    ListViewItem item = new ListViewItem("[METHOD]");
+                    item.SubItems.Add(el.Method ?? null);
+                    lvLocals.Items.Add(item);
+                    item = new ListViewItem("this");
+                    item.SubItems.Add(el.This == null? "this" : el.This.ToString());
+                    lvLocals.Items.Add(item);
+                    
+                    foreach (var name in el.Frame.Names()) {
+                        item = new ListViewItem(name);
+                        var val = el.Frame.GetBindingValue(name, false);
+                        item.SubItems.Add(val == null ? "(null)" : val.ToString());
                         lvLocals.Items.Add(item);
                     }
                 }

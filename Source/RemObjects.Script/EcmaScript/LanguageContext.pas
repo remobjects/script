@@ -335,6 +335,7 @@ begin
     if fDebug then begin
       WriteDebugStack;
       filg.Emit(OpCodes.Ldstr, aScopeName);
+      filg.Emit(Opcodes.Ldarg, 1); // this
       filg.Emit(Opcodes.Ldloc, fExecutionContext);
       filg.Emit(Opcodes.Callvirt, DebugSink.Method_EnterScope);
       fILG.BeginExceptionBlock; // finally

@@ -40,6 +40,8 @@ type
     constructor(aValue: Object; aType: &Type; aGlobal: GlobalObject);
     method DefineOwnProperty(aName: String; aValue: PropertyValue; aThrow: Boolean): Boolean; override;
     method GetOwnProperty(aName: String): PropertyValue; override;
+    method Get(aExecutionContext: ExecutionContext; aFlags: Integer; aName: String): Object; override;
+    method Put(aExecutionContext: ExecutionContext; aName: String; aValue: Object; aFlags: Integer): Object; override;
     method Construct(context: ExecutionContext; params args: array of Object): Object; override;
     method Call(context: ExecutionContext; params args: array of Object): Object; override;
     method CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object; override;
@@ -241,6 +243,46 @@ method EcmaScriptObjectWrapper.Construct(context: ExecutionContext; params args:
 begin
   if not Static then Root.RaiseNativeError(NativeErrorType.ReferenceError, 'Cannot call new on instance');
   exit FindAndCallBestOverload(fType.GetConstructors(bindingFlags.Public).Cast<MethodBase>.ToArray, Root, '<constructor>', nil, args);
+end;
+
+method EcmaScriptObjectWrapper.Get(aExecutionContext: ExecutionContext; aFlags: Integer; aName: String): Object;
+begin
+  if ((aFlags and 2) <> 0) and not Static then begin
+    // default property
+    var lItems := fType.GetDefaultMembers.Where(a->a.MemberType = MemberTypes.Property).Cast<PropertyInfo>().Where(a-> Length(a.GetIndexParameters) = 1).ToArray();
+    var lIntValue: Integer;
+    var lIsInt := Int32.TryParse(aName, out lIntValue);
+    if lIsInt then begin
+      var lCall := lItems.Where(a->a.GetIndexParameters()[0].ParameterType = Typeof(Integer)).FirstOrDefault():GetGetMethod();
+      if lCall <> nil then
+        exit lCall.Invoke(Value, [lIntValue]);
+    end;
+    var lCall := lItems.Where(a->a.GetIndexParameters()[0].ParameterType = Typeof(String)).FirstOrDefault():GetGetMethod();
+    if lCall <> nil then
+      exit lCall.Invoke(Value, [aName]);
+    root.RaiseNativeError(NativeErrorType.ReferenceError, 'No default indexer with string or integer parameter');
+  end;
+  exit inherited;
+end;
+
+method EcmaScriptObjectWrapper.Put(aExecutionContext: ExecutionContext; aName: String; aValue: Object; aFlags: Integer): Object;
+begin
+  if ((aFlags and 2) <> 0) and not Static then begin
+    // default property
+    var lItems := fType.GetDefaultMembers.Where(a->a.MemberType = MemberTypes.Property).Cast<PropertyInfo>().Where(a-> Length(a.GetIndexParameters) = 1).ToArray();
+    var lIntValue: Integer;
+    var lIsInt := Int32.TryParse(aName, out lIntValue);
+    if lIsInt then begin
+      var lCall := lItems.Where(a->a.GetIndexParameters()[0].ParameterType = Typeof(Integer)).FirstOrDefault():GetSetMethod();
+      if lCall <> nil then
+        exit lCall.Invoke(Value, [lIntValue, aValue]);
+    end;
+    var lCall := lItems.Where(a->a.GetIndexParameters()[0].ParameterType = Typeof(String)).FirstOrDefault():GetSetMethod();
+    if lCall <> nil then
+      exit lCall.Invoke(Value, [aName, aValue]);
+    root.RaiseNativeError(NativeErrorType.ReferenceError, 'No default indexer setter with string or integer parameter');
+  end;
+  exit inherited;
 end;
 
 constructor Overloads(aInstance: Object; aItems: array of MethodBase);

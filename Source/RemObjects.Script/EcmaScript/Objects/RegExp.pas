@@ -106,9 +106,9 @@ begin
   var lObj := new EcmaScriptArrayObject(self, 0);
   lObj.AddValue('index', aMatch.Index);
   lObj.AddValue('length', aMatch.Captures.Count);
-  lObj.PutIndex(0, aMAtch.Value);
+  lObj.AddValue('0', aMAtch.Value);
   for i: Integer := 1 to Math.Min(32, aMatch.Captures.Count)-1 do begin
-    lObj.PutIndex(1, aMatch.Captures[1].Value);
+    lObj.AddValue(i.ToString, aMatch.Captures[i].Value);
   end;
   exit lObj;
 end;
@@ -149,7 +149,7 @@ end;
 
 method EcmaScriptRegexpObject.set_LastIndex(value: Integer);
 begin
-  self.Put('lastIndex', value, false);
+  self.Put('lastIndex', value, 0);
 end;
 
 end.

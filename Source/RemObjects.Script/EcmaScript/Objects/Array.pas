@@ -58,10 +58,10 @@ type
     class var Method_AddValue: System.Reflection.MethodInfo := typeof(EcmaScriptArrayObject).GetMethod('AddValue', [typeof(Object)]); readonly;
     method AddValues(aItems: Array of Object): EcmaScriptArrayObject;
     method AddValue(aItem: Object);
-    method Put(aExecutionContext: ExecutionContext; aName: String; aValue: Object; aThrow: Boolean): Object; override;
+    method Put(aExecutionContext: ExecutionContext; aName: String; aValue: Object; aThrow: Integer): Object; override;
     method Get(aExecutionContext: ExecutionContext; aFlags: Integer; aName: String): Object; override;
-    method PutIndex(aName: Int32; aValue: Object): Object; override;
-    method GetIndex(aName: Int32): Object; override;
+    method PutIndex(aName: Int32; aValue: Object): Object; 
+    method GetIndex(aName: Int32): Object; 
     method GetOwnProperty(aName: String): PropertyValue; override;
     property ToArray: array of Object read fItems.ToArray;
     property Items: List<Object> read fItems;
@@ -531,7 +531,7 @@ begin
 end;
 
 
-method EcmaScriptArrayObject.Put(aExecutionContext: ExecutionContext; aName: String; aValue: Object; aThrow: Boolean): Object; 
+method EcmaScriptArrayObject.Put(aExecutionContext: ExecutionContext; aName: String; aValue: Object; aThrow: Integer): Object; 
 begin
   if aName = 'length' then begin
     var lLength := Utilities.GetObjAsInteger(aValue);
@@ -548,7 +548,7 @@ begin
     if Int32.TryParse(aname, out lIndex) then
       exit PutIndex(lIndex, aValue)
     else
-      exit inherited Put(aExecutionContext, aName, aValue);
+      exit inherited Put(aExecutionContext, aName, aValue, aThrow);
   end;
 end;
 
@@ -624,7 +624,7 @@ begin
     var lItem := fItems[el];
     exit new PropertyValue(PropertyAttributes.All, lItem);
   end else if aname = 'length' then
-    exit new PropertyValue(PropertyAttributes.None, fItems.Count)
+     exit new PropertyValue(PropertyAttributes.None, fItems.Count)
   else
     exit inherited GetOwnProperty(aname);
 end;

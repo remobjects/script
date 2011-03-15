@@ -28,7 +28,7 @@ type
     method GetCustomAttributes(attributeType: System.Type): sequence of Xunit.Sdk.IAttributeInfo;
     method CreateInstance: System.Object; empty;
     method ToStartXml: System.Xml.XmlNode; empty;
-    property Timeout: System.Int32 read 60000;
+    property Timeout: System.Int32 read 20000;
     property ShouldCreateInstance: System.Boolean read false;
     method Execute(testClass: System.Object): Xunit.Sdk.MethodResult;
     property DisplayName: System.String read Name;
@@ -98,8 +98,7 @@ begin
   fLib := Path.Combine(fSputnikRoot, 'lib');
 
   try
-  //ScanJS(fTestRoot);
-  //ScanJS(Path.Combine(Path.Combine(fTestRoot, 'Conformance'), '07_Lexical_Conventions'));
+    ScanJS(fTestRoot);
   except
 
   end;

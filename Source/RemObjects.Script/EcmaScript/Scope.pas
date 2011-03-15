@@ -75,6 +75,8 @@ type
     method DeleteBinding(aName: string): Boolean;  abstract;
     method ImplicitThisValue: Object; abstract;
 
+    method Names: sequence of string; abstract;
+
     class method CreateAndSetMutableBindingNoFail(aVal: Object; aName: string; Ex: EnvironmentRecord; aImmutable, aDeleteAfter: Boolean);
 
     class var Method_CreateAndSetMutableBindingNoFail: System.Reflection.MethodInfo := typeof(EnvironmentRecord).GetMethod('CreateAndSetMutableBindingNoFail'); readonly;
@@ -87,6 +89,8 @@ type
     fObject: EcmaScriptObject;
   public
     constructor(aPrevious: EnvironmentRecord; aObject: EcmaScriptObject; aProvideThis: Boolean := false);
+
+    method Names: sequence of string; override;
     property Global: GlobalObject read fObject.Root; override;
     property IsDeclarative: Boolean read false; override;
     method HasBinding(aName: string): Boolean; override;
@@ -103,6 +107,7 @@ type
     fBag: Dictionary<string, PropertyValue> := new Dictionary<String,PropertyValue>();
   public
     constructor(aPrevious: EnvironmentRecord; aGlobal: GlobalObject);
+    method Names: sequence of string; override;
     property Global: GlobalObject read fGlobal write fGlobal; override;
     property Bag: Dictionary<string, PropertyValue> read fBag;
     property IsDeclarative: Boolean read true; override;
@@ -137,7 +142,7 @@ end;
 
 method ObjectEnvironmentRecord.SetMutableBinding(aName: string; aValue: Object; aStrict: Boolean);
 begin
-  fObject.Put(aName, aValue, aStrict);
+  fObject.Put(aName, aValue, if aStrict then 1 else 0);
 end;
 
 method ObjectEnvironmentRecord.GetBindingValue(aName: string; aStrict: Boolean): Object;
@@ -169,6 +174,11 @@ begin
   inherited constructor(aPrevious);
   fObject := aObject;
   ProvideThis := aProvideThis;
+end;
+
+method ObjectEnvironmentRecord.Names: sequence of string;
+begin
+  exit fObject.Names;
 end;
 
 constructor DeclarativeEnvironmentRecord(aPrevious: EnvironmentRecord; aGlobal: GlobalObject);
@@ -239,6 +249,11 @@ begin
   exit val;
 end;
 
+method DeclarativeEnvironmentRecord.Names: sequence of string;
+begin
+  exit fBag.Keys;
+end;
+
 constructor Reference(aBase: Object; aName: string; aStrict: Integer);
 begin
   Base := aBase;
@@ -277,10 +292,10 @@ begin
     if lRef.Strict then
       aExecutionContext.Global.RaiseNativeError(NativeErrorType.TypeError,'Cannot call '+lRef.Name+' on undefined')
     else
-      exit aExecutionContext.Global.Put(aExecutionContext, lRef.NAme, aValue, false);
+      exit aExecutionContext.Global.Put(aExecutionContext, lRef.NAme, aValue, lRef.Flags);
   var lObj := EcmaScriptObject(lRef.Base);
   if assigned(lObj) then 
-    exit lObj.Put(aExecutionContext,lRef.Name, aValue, lRef.Strict);
+    exit lObj.Put(aExecutionContext,lRef.Name, aValue, lRef.Flags);
   var lExec := EnvironmentRecord(lRef.Base);
   if assigned(lExec) then begin
     lExec.SetMutableBinding(lRef.Name, aValue, lRef.Strict);

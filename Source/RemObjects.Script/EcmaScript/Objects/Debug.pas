@@ -11,7 +11,7 @@ uses
 type
   IDebugSink = public interface
     method DebugLine(aFilename: string; aStartRow, aStartCol, aEndRow, aEndCol: Integer); 
-    method EnterScope(aName: string; aContext: ExecutionContext); // enter method
+    method EnterScope(aName: string; aThis: Object; aContext: ExecutionContext); // enter method
     method ExitScope(aName: string; aContext: ExecutionContext); // exit method
     method CaughtException(e: Exception); // triggers on a CATCH before the js code itself
     method UncaughtException(e: Exception); // triggers when an exception escapes the main method
@@ -21,7 +21,7 @@ type
   DebugSink = public class(IDebugSink)
   public
     method DebugLine(aFilename: string; aStartRow, aStartCol, aEndRow, aEndCol: Integer); virtual; empty;
-    method EnterScope(aName: string; aContext: ExecutionContext); virtual; empty;// enter method
+    method EnterScope(aName: string; aThis: Object; aContext: ExecutionContext); virtual; empty;// enter method
     method ExitScope(aName: string; aContext: ExecutionContext); virtual; empty;// exit method
     method CaughtException(e: Exception); virtual; empty;// triggers on a CATCH before the js code itself
     method UncaughtException(e: Exception); virtual; empty;// triggers when an exception escapes the main method

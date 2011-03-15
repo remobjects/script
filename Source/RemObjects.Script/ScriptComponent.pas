@@ -37,50 +37,17 @@ type
 		Paused,
 		Pausing);
 
-  ScriptBaseLocalInfo = public abstract class
-  private
-  public
-    property Internal: Boolean read; abstract;
-		property Name: String read; abstract;
-		property Value: Object read write; abstract; 
-  end;
-
-	ScriptLocalInfo = public class(ScriptBaseLocalInfo)
-	private
-		fInternal: Boolean;
-		fName: String;
-		fScope: IDictionary<Object,Object>;
-		method set_Value(aValue: Object);
-		method get_Value: Object;
-	assembly
-	  constructor(aScope: IDictionary<Object,Object>; aKey: string);
-	public
-    property Internal: Boolean read fInternal; override;
-		property Name: String read fName; override;
-		property Value: Object read get_Value write set_Value; override;
-	end;
-
-  ScriptScopeLocalInfo = public class(ScriptBaseLocalInfo)
-  private
-    fInst: EnvironmentRecord;
-    fName: String;
-    method set_Value(aValue: Object); override;
-    method get_Value: Object; override;
-  public
-    constructor(aInst: EnvironmentRecord; aName: String);
-    property Internal: Boolean read false; override;
-    property Name: String read fName; override;
-    property Value: Object read get_Value write set_Value; override;
-  end;
 
   ScriptStackFrame = public class
   private
+    fThis: Object;
     fMethod: string;
     fFrame: EnvironmentRecord;
   assembly
-    constructor(aMethod: String; aFrame: EnvironmentRecord);
+    constructor(aMethod: String; aThis: Object; aFrame: EnvironmentRecord);
   public
-    property Locals: System.Collections.ObjectModel.ReadOnlyCollection<ScriptBaseLocalInfo> read nil;
+    property Frame: EnvironmentRecord read fFrame;
+    property This: Object read fThis;
     property &Method: string read fMethod;
   end;
 
@@ -97,13 +64,12 @@ type
     fDebugLastPos: PositionPair;
     fLastFrame: Integer;
     method DebugLine(aFilename: string; aStartRow, aStartCol, aEndRow, aEndCol: Integer); 
-    method EnterScope(aName: string; aContext: ExecutionContext); // enter method
+    method EnterScope(aName: string; athis: Object; aContext: ExecutionContext); // enter method
     method ExitScope(aName: string; aContext: ExecutionContext); // exit method
     method CaughtException(e: Exception); // triggers on a CATCH before the js code itself
     method UncaughtException(e: Exception); // triggers when an exception escapes the main method
     method Debugger; 
     method Idle;
-		method get_Locals: System.Collections.ObjectModel.ReadOnlyCollection<ScriptBaseLocalInfo>;
 		method set_Status(value: ScriptStatus);
 		method set_RunInThread(value: Boolean);
     method CheckShouldPause;
@@ -113,7 +79,6 @@ type
 		fGlobals: ScriptScope;
     fEntryStatus: ScriptStatus := ScriptStatus.Running;
 		method IntRun: Object; abstract;
-		method LoadLocals;
 		method SetDebug(b: Boolean); virtual;
   public
 		constructor;
@@ -130,11 +95,8 @@ type
     property CallStack: ReadOnlyCollection<ScriptStackFrame> read fStackItems;
 		[Browsable(false)]
 		property Globals: ScriptScope read; abstract;
-		[Browsable(false)]
-		property Locals: System.Collections.ObjectModel.ReadOnlyCollection<ScriptBaseLocalInfo> read get_Locals;
 
-		method ExposeAssembly(asm: &Assembly); virtual;
-    method ExposeType(&type: &Type; Name: String := nil); abstract;
+		method ExposeType(&type: &Type; Name: String := nil); abstract;
 		//method UseNamespace(ns: String); virtual;
 		/// <summary>Clears all assemblies and exposed variables</summary>
 		method Clear(aGlobals: Boolean := false); abstract;
@@ -228,12 +190,6 @@ begin
   inherited constructor;
   fStackItems := new ReadOnlyCollection<ScriptStackFrame>(fStackList);
 	Clear;
-end;
-
-
-method ScriptComponent.ExposeAssembly(asm: &Assembly);
-begin
-  // TODO: Implement
 end;
 
 method ScriptComponent.SetDebug(b: Boolean);
@@ -343,18 +299,6 @@ begin
 end;
 
 
-method ScriptComponent.LoadLocals;
-begin
-   // TODO: Impl
-	//fREAo
-end;
-
-method ScriptComponent.get_Locals: System.Collections.ObjectModel.ReadOnlyCollection<ScriptBaseLocalInfo>;
-begin
-	LoadLocals;
-	exit new ReadOnlyCollection<ScriptBaseLocalInfo>([]);
-end;
-
 
 method ScriptComponent.Run;
 begin
@@ -431,9 +375,9 @@ begin
   end;
 end;
 
-method ScriptComponent.EnterScope(aName: string; aContext: ExecutionContext);
+method ScriptComponent.EnterScope(aName: string; athis: Object; aContext: ExecutionContext);
 begin
-  fStackList.Add(new ScriptStackFrame(aName, aContext.LexicalScope));
+  fStackList.Add(new ScriptStackFrame(aName, aThis, aContext.LexicalScope));
   if Status = ScriptStatus.Stopping then raise new ScriptAbortException();
   if  fTracing then exit;
   fTracing := true;
@@ -540,13 +484,14 @@ end;
 
 method EcmaScriptComponent.ExposeType(&type: &Type; Name: String);
 begin
-  // TODO: impl
+  if Name = nil then Name := &Type.Name;
+  fGlobalObject.AddValue(name, new EcmaScriptObjectWrapper(nil, &Type, fGlobalObject));
 end;
 
 method EcmaScriptComponent.SetDebug(b: Boolean);
 begin
   if b <> inherited Debug then begin
-    inherited SEtDebug(b);
+    inherited SetDebug(b);
     Clear;
   end;
 end;
@@ -567,47 +512,11 @@ begin
   fGlobalObject.Parser := fCompiler;
 end;
 
-method ScriptLocalInfo.get_Value: Object;
-begin
-  if not fScope.TryGetValue(fName, out Result) then 
-    result := Undefined.Instance;
-end;
-
-method ScriptLocalInfo.set_Value(aValue: Object);
-begin
-  fScope.Item[fName] := aValue;
-end;
-
-
-constructor ScriptLocalInfo(aScope: IDictionary<Object,Object>; aKey: string);
-begin
-	fScope := aScope;
-	fName := aKey;
-  if fName.Contains('$') then fInternal := true;
-end;
-
-
-
-constructor ScriptStackFrame(aMethod: String; aFrame: EnvironmentRecord);
+constructor ScriptStackFrame(aMethod: String; aThis: Object; aFrame: EnvironmentRecord);
 begin
   fMethod := aMethod;
   fFrame := aFrame;
-end;
-
-method ScriptScopeLocalInfo.get_Value: Object;
-begin
-  exit fInst.GetBindingValue(fName, false);
-end;
-
-method ScriptScopeLocalInfo.set_Value(aValue: Object);
-begin
-  fInst.SetMutableBinding(fName, AValue, false);
-end;
-
-constructor ScriptScopeLocalInfo(aInst: EnvironmentRecord; aName: String);
-begin
-  fName := aName;
-  fInst := aInst;
+  fthis := aThis;
 end;
 
 constructor SyntaxErrorException(aSource: string; aMessage: String; aSpan: PositionPair; anErrorCode: Int32);
