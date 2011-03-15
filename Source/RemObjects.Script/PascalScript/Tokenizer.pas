@@ -20,8 +20,8 @@ type
     /// <summary>comment not closed</summary>
     CommentError,
     /// <summary>invalid string</summary>
-    EnterInString,
     ErrorInChar,
+    EnterInString,
     EOFInString);  
 
   /// <summary>contains all tokens the tokenizersupports</summary>

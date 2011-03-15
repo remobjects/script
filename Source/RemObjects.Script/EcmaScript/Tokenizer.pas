@@ -21,7 +21,6 @@ type
     CommentError,
     InvalidEscapeSequence,
     /// <summary>invalid string</summary>
-    EnterInString,
     EOFInString,
     EOFInRegex);  
 
@@ -872,12 +871,7 @@ begin
           inc(curroffset);
           while (FInput[curroffset] <> #0) and (FInput[curroffset] <> '"') do
           begin
-            if FInput[curroffset] in [#10, #13, #$2028, #$2029] then
-            begin
-              if Error <> nil then Error(self, TokenizerErrorKind.EnterInString, '');
-              FLen := curroffset - FPos;
-              exit false;
-            end;
+            
             if FInput[curroffset] = '\' then
             begin
               inc(curroffset);
@@ -929,12 +923,7 @@ begin
           inc(curroffset);
           while (FInput[curroffset] <> #0) and (FInput[curroffset] <> #39) do
           begin
-            if FInput[curroffset] in [#10, #13, #$2028, #$2029] then
-            begin
-              if Error <> nil then Error(self, TokenizerErrorKind.EnterInString, '');
-              FLen := curroffset - FPos;
-              exit false;
-            end;
+            
             if FInput[curroffset] = '\' then
             begin
               inc(curroffset);
@@ -1065,6 +1054,12 @@ begin
           #39: lRes.Append(#39);
           '\': lRes.Append('\');
           '0': lRes.append(#0);
+          #10: begin
+            // do nothing
+          end;
+          #13: begin
+            if aString[i+1] = #10 then inc(i);
+          end
         else
           lRes.Append(aString[i]);
         end; // case

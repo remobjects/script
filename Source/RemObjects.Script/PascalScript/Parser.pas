@@ -18,7 +18,6 @@ type
   ParserErrorKind = public enum (Custom, 
     UnknownCharacter,
     CommentError,
-    EnterInString,
     ErrorInChar,
     EOFInString,
     UnexpectedEndOfFile,
@@ -127,7 +126,6 @@ begin
     ParserErrorKind.Custom: result := fMessage;
     ParserErrorKind.UnknownCharacter: result := Resources.eUnknownCharacter;
     ParserErrorKind.CommentError: result := Resources.eCommentError;
-    ParserErrorKind.EnterInString: result := Resources.eEnterInString;
     ParserErrorKind.ErrorInChar: result := resources.eErrorInCharacter;
     ParserErrorKind.EOFInString: result := Resources.eEOFInString;
     ParserErrorKind.UnexpectedEndOfFile: result := Resources.eUnexpectedEndOfFile;
@@ -248,7 +246,6 @@ method Parser.Tok_Error(Caller: Tokenizer; Kind: TokenizerErrorKind; Parameter: 
 begin
   case Kind of 
     TokenizerErrorKind.CommentError: Error(ParserErrorKind.CommentError, '');
-    TokenizerErrorKind.EnterInString: Error(ParserErrorKind.EnterInString, '');
     TokenizerErrorKind.EOFInString: Error(ParserErrorKind.EOFInString, '');
     TokenizerErrorKind.ErrorInChar: Error(ParserErrorKind.ErrorInChar, '');
     TokenizerErrorKind.UnknownCharacter: Error(ParserErrorKind.UnknownCharacter, '');

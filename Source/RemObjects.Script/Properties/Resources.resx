@@ -123,7 +123,6 @@
   <data name="eClosingBracketExpected" xml:space="preserve"><value>Closing bracket expected</value></data>
   <data name="eSyntaxError" xml:space="preserve"><value>Syntax error</value></data>
   <data name="eCommentError" xml:space="preserve"><value>Unexpected end of file in comment</value></data>
-  <data name="eEnterInString" xml:space="preserve"><value>Unexpected new line in string</value></data>
   <data name="eEOFInRegex" xml:space="preserve"><value>Unexpected end of file in regular expression</value></data>
   <data name="eEOFInString" xml:space="preserve"><value>Unexpected end of file in string</value></data>
   <data name="eInvalidEscapeSequence" xml:space="preserve"><value>Invalid escape sequence</value></data>

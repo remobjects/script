@@ -109,11 +109,10 @@ begin
     end;
   end;
   var lTokenizer := new Tokenizer;
-  lTokenizer.Error += method (Caller: Tokenizer; Kind: TokenizerErrorKind; Parameter: String); 
-    begin
-      RaiseNativeError(NativeErrorType.SyntaxError, 'Invalid function definition');
-    end;
+  var lParser := new Parser;
+  lTokenizer.Error += lParser.fTok_Error;
   lTokenizer.SetData(lNames, 'Function Constructor Names');
+  lTokenizer.Error -= lParser.fTok_Error;
 
   var lParams: List<ParameterDeclaration> := new List<ParameterDeclaration>;
   if lTokenizer.Token <> TokenKind.EOF then
@@ -132,10 +131,17 @@ begin
       RaiseNativeError(NativeErrorType.SyntaxError, 'Unknown token in parameter names');
     end;
   end;
-  var lParser := new Parser;
+  for each el in lParser.Messages do
+    if el.IsError then 
+      RaiseNativeError(NativeErrorType.SyntaxError, el.IntToString());
+  lTokenizer.Error += lParser.fTok_Error;
   lTokenizer.SetData(lBody, 'Function Body');
+  lTokenizer.Error -= lParser.fTok_Error;
 
   var lCode := lParser.Parse(lTokenizer);
+  for each el in lParser.Messages do
+    if el.IsError then 
+      RaiseNativeError(NativeErrorType.SyntaxError, el.IntToString());
 
   var lFunc := new FunctionDeclarationElement(lCode.PositionPair, FunctionDeclarationType.None, nil, lParams, lCode);
 

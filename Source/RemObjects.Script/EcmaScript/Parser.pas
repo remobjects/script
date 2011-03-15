@@ -218,14 +218,14 @@ end;
 method Parser.ParseBlockStatement(): BlockStatement;
 begin
   var lPos := fTok.Position;
-  var lItems := new List<Statement>;
+  var lItems := new List<sourceElement>;
   fTok.Next;
   while fTok.Token <> Tokenkind.CurlyClose do begin
     if fTok.Token = TokenKind.EOF then begin
       Error(ParserErrorKind.ClosingBraceExpected, '');
       exit nil;
     end;
-    var lState := Statement(ParseStatement(ParseStatementFlags.None));
+    var lState := ParseStatement(ParseStatementFlags.AllowFuction);
     if lState = nil then break;
     lItems.Add(lState);
   end;
@@ -1153,7 +1153,6 @@ begin
   ftok := Caller;
   case Kind of
     TokenizerErrorKind.CommentError: Error(ParserErrorKind.CommentError, '');
-    TokenizerErrorKind.EnterInString: Error(ParserErrorKind.EnterInString, '');
     TokenizerErrorKind.EOFInRegex: Error(ParserErrorKind.EOFInRegex, '');
     TokenizerErrorKind.EOFInString: Error(ParserErrorKind.EOFInString, '');
     TokenizerErrorKind.InvalidEscapeSequence: Error(ParserErrorKind.InvalidEscapeSequence, '');
@@ -1212,7 +1211,6 @@ begin
     ParserErrorKind.ClosingBracketExpected: result := Resources.eClosingBracketExpected;
     ParserErrorKind.SyntaxError: Result := Resources.eSyntaxError;
     ParserErrorKind.CommentError: Result := Resources.eCommentError;
-    ParserErrorKind.EnterInString: Result := Resources.eEnterInString;
     ParserErrorKind.EOFInRegex: Result := Resources.eEOFInRegex;
     ParserErrorKind.EOFInString: Result := Resources.eEOFInString;
     ParserErrorKind.InvalidEscapeSequence: Result := Resources.eInvalidEscapeSequence;

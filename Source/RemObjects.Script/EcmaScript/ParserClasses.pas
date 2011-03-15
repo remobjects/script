@@ -101,14 +101,14 @@ type
     property &Type: ElementType read ElementType.FunctionDeclaration; override;
   end;
 
-  BlockStatement = public class(Statement, IList<Statement>)
+  BlockStatement = public class(Statement, IList<sourceElement>)
   private
-    fItems: List<Statement>;
+    fItems: List<sourceElement>;
   public
-    constructor(aPositionPair: PositionPair; params aStatements: array of Statement);
-    constructor(aPositionPair: PositionPair; aStatements: sequence of Statement);
-    constructor(aPositionPair: PositionPair; aStatements: List<Statement>);
-    property Items: List<Statement> read fItems; implements IList<Statement>;
+    constructor(aPositionPair: PositionPair; params aStatements: array of sourceElement);
+    constructor(aPositionPair: PositionPair; aStatements: sequence of sourceElement);
+    constructor(aPositionPair: PositionPair; aStatements: List<sourceElement>);
+    property Items: List<sourceElement> read fItems; implements IList<sourceElement>;
     property &Type: ElementType read ElementType.BlockStatement; override;
   end;
 
@@ -711,19 +711,19 @@ begin
   fMode := aMode;
 end;
 
-constructor BlockStatement(aPositionPair: PositionPair; params aStatements: array of Statement);
+constructor BlockStatement(aPositionPair: PositionPair; params aStatements: array of sourceElement);
 begin
   inherited constructor(aPositionPair);
-  fItems := new List<Statement>(aStatements);
+  fItems := new List<sourceElement>(aStatements);
 end;
 
-constructor BlockStatement(aPositionPair: PositionPair; aStatements: sequence of Statement);
+constructor BlockStatement(aPositionPair: PositionPair; aStatements: sequence of sourceElement);
 begin
   inherited constructor(aPositionPair);
-  fItems := new List<Statement>(new List<Statement>(aStatements));
+  fItems := new List<sourceElement>(aStatements);
 end;
 
-constructor BlockStatement(aPositionPair: PositionPair; aStatements: List<Statement>);
+constructor BlockStatement(aPositionPair: PositionPair; aStatements: List<sourceElement>);
 begin
   inherited constructor(aPositionPair);
   fItems := aStatements;

@@ -54,7 +54,6 @@ type
         class method get_eDuplicateIdentifier: System.String;
         class method get_eDuplicateLabel: System.String;
         class method get_eEndExpected: System.String;
-        class method get_eEnterInString: System.String;
         class method get_eEOFInRegex: System.String;
         class method get_eEOFInString: System.String;
         class method get_eEqualExpected: System.String;
@@ -109,7 +108,6 @@ type
         class property eDuplicateIdentifier: System.String read get_eDuplicateIdentifier;
         class property eDuplicateLabel: System.String read get_eDuplicateLabel;
         class property eEndExpected: System.String read get_eEndExpected;
-        class property eEnterInString: System.String read get_eEnterInString;
         class property eEOFInRegex: System.String read get_eEOFInRegex;
         class property eEOFInString: System.String read get_eEOFInString;
         class property eEqualExpected: System.String read get_eEqualExpected;
@@ -261,11 +259,6 @@ end;
 class method Resources.get_eEndExpected: System.String;
 begin
     exit(ResourceManager.GetString('eEndExpected', resourceCulture));
-end;
-
-class method Resources.get_eEnterInString: System.String;
-begin
-    exit(ResourceManager.GetString('eEnterInString', resourceCulture));
 end;
 
 class method Resources.get_eEOFInRegex: System.String;

@@ -35,7 +35,6 @@ type
     ClosingBracketExpected,
     SyntaxError,
     CommentError,
-    EnterInString,
     EOFInRegex,
     EOFInString,
     InvalidEscapeSequence,
@@ -110,6 +109,7 @@ type
     method WriteFunction(el: FunctionDeclarationElement; aRegister: Boolean);
     method WriteTryStatement(el: TryStatement);
     method WriteSwitchstatement(el: SwitchStatement);
+    method DefineInScope(aEval: Boolean; aElements: sequence of SourceElement);
   public
     constructor(aOptions: EcmaScriptCompilerOptions);
 
@@ -157,7 +157,6 @@ begin
     ParserErrorKind.ClosingBracketExpected: result := Resources.eClosingBracketExpected;
     ParserErrorKind.SyntaxError: Result := Resources.eSyntaxError;
     ParserErrorKind.CommentError: Result := Resources.eCommentError;
-    ParserErrorKind.EnterInString: Result := Resources.eEnterInString;
     ParserErrorKind.EOFInRegex: Result := Resources.eEOFInRegex;
     ParserErrorKind.EOFInString: Result := Resources.eEOFInString;
     ParserErrorKind.InvalidEscapeSequence: Result := Resources.eInvalidEscapeSequence;
@@ -309,6 +308,20 @@ begin
       filg.Emit(Opcodes.Call, EnvironmentRecord.Method_CreateAndSetMutableBindingNoFail);
 
       filg.MarkLabel(lAlreadyHaveArguments);
+
+      var lHaveThis := filg.DefineLabel;
+      var lHaveNoThis := filg.DefineLabel;
+      filg.Emit(Opcodes.Ldarg_1);
+      filg.Emit(Opcodes.Call, Undefined.Method_Instance);
+      filg.Emit(Opcodes.Beq, lHaveNoThis);
+      filg.Emit(Opcodes.Ldarg_1);
+      filg.Emit(Opcodes.Brfalse, lHaveNoThis);
+      filg.Emit(Opcodes.Br, lHavethis);
+      filg.MarkLabel(lHaveNoThis);
+      filg.Emit(Opcodes.Ldloc, fExecutionContext);
+      filg.Emit(Opcodes.Call, ExecutionContext.Method_get_Global);
+      filg.Emit(Opcodes.Starg, 1);
+      filg.MarkLabel(lHaveThis);
     end else begin
       fILG.Emit(OpCodes.Ldarg_0);  // first execution context
       fILG.Emit(Opcodes.Stloc, fExecutionContext);
@@ -351,38 +364,7 @@ begin
       filg.MarkLabel(lGotThis);
     end;
 
-    for each el in RecursiveFindFuncAndVars(aElements) do begin
-      if el.Type = ElementType.FunctionDeclaration then begin
-        filg.Emit(Opcodes.Ldloc, fExecutionContext);
-        filg.Emit(Opcodes.Call, ExecutionContext.Method_get_VariableScope);
-        filg.Emit(Opcodes.Ldstr, FunctionDeclarationElement(el).Identifier);
-        if aEval then 
-          filg.Emit(Opcodes.Ldc_I4_1) 
-        else
-          filg.Emit(Opcodes.Ldc_I4_0);
-        filg.Emit(Opcodes.Call, EnvironmentRecord.Method_CreateMutableBindingNoFail);
-        filg.Emit(Opcodes.Ldloc, fExecutionContext);
-        filg.Emit(Opcodes.Call, ExecutionContext.Method_get_VariableScope);
-        filg.Emit(Opcodes.Ldstr, FunctionDeclarationElement(el).Identifier);
-        WriteFunction(FunctionDeclarationElement(el), true);
-        if fUseStrict then
-          filg.Emit(Opcodes.Ldc_I4_1) 
-        else
-          filg.Emit(Opcodes.Ldc_I4_0);
-        filg.Emit(Opcodes.Callvirt, EnvironmentRecord.Method_SetMutableBinding);
-      end else if el.Type = ElementType.VariableStatement then begin
-        for each en in VariableStatement(el).Items do begin
-          filg.Emit(Opcodes.Ldloc, fExecutionContext);
-          filg.Emit(Opcodes.Call, ExecutionContext.Method_get_VariableScope);
-          filg.Emit(Opcodes.Ldstr, en.Identifier);
-          if aEval then
-            filg.Emit(Opcodes.Ldc_I4_1) 
-          else
-            filg.Emit(Opcodes.Ldc_I4_0);
-          filg.Emit(Opcodes.Call, EnvironmentRecord.Method_CreateMutableBindingNoFail);
-        end;
-      end;
-    end;
+    DefineInScope(aEval, aElements);
 
     for i: Integer := 0 to aElements.Count -1 do
       WriteStatement(aElements[i]);
@@ -494,6 +476,7 @@ begin
     end;
     ElementType.ThrowStatement: begin
       WriteExpression(ThrowStatement(el).ExpressionElement);
+      CallGetValue(ThrowStatement(el).ExpressionElement.Type);
       filg.Emit(Opcodes.Call, ScriptRuntimeException.Method_Wrap);
       filg.Emit(Opcodes.Throw);
     end;
@@ -1101,8 +1084,14 @@ begin
       ElementType.BlockStatement: yield RecursiveFindFuncAndVars(BlockStatement(el).Items.Cast<SourceElement>);
       ElementType.IfStatement: yield RecursiveFindFuncAndVars([IfStatement(el).True, IfStatement(el).False]);
       ElementType.LabelledStatement: yield RecursiveFindFuncAndVars([LabelledStatement(el).Statement]);
-      ElementType.SwitchStatement: RecursiveFindFuncAndVars(SwitchStatement(el).Clauses.SelectMany(a->a.Body.Cast<SourceElement>()));
-      ElementType.TryStatement: RecursiveFindFuncAndVars([TryStatement(el).Body, TryStatement(el).Finally, TryStatement(el).Catch:Body]);
+      ElementType.SwitchStatement: 
+        begin
+          for each els in SwitchStatement(el).Clauses do begin
+            if els.Body <> nil then
+              yield RecursiveFindFuncAndVars(els.Body.Cast<SourceElement>);
+          end;
+        end;
+      ElementType.TryStatement: yield RecursiveFindFuncAndVars([TryStatement(el).Body, TryStatement(el).Finally, TryStatement(el).Catch:Body]);
       ElementType.VariableStatement: yield el;
       ElementType.VariableDeclaration: yield new VariableStatement(el.PositionPair, VariableDeclaration(el));
       ElementType.WithStatement: yield RecursiveFindFuncAndVars([WithStatement(el).Body]);
@@ -1406,7 +1395,7 @@ begin
     filg.Emit(Opcodes.Stloc,  lVar);
     var lold := fExecutionContext;
     fExecutionContext := lVar;
-
+    //DefineInScope(false, [el.Catch.Body]);
     WriteStatement(el.Catch.Body);
 
     ReleaseLocal(lVar);
@@ -1474,5 +1463,41 @@ begin
   fContinue := lOldContinue;
 end;
 
+
+method EcmaScriptCompiler.DefineInScope(aEval: Boolean; aElements: sequence of SourceElement);
+begin
+  for each el in RecursiveFindFuncAndVars(aElements) do begin
+    if el.Type = ElementType.FunctionDeclaration then begin
+      filg.Emit(Opcodes.Ldloc, fExecutionContext);
+      filg.Emit(Opcodes.Call, ExecutionContext.Method_get_VariableScope);
+      filg.Emit(Opcodes.Ldstr, FunctionDeclarationElement(el).Identifier);
+      if aEval then 
+        filg.Emit(Opcodes.Ldc_I4_1) 
+      else
+        filg.Emit(Opcodes.Ldc_I4_0);
+      filg.Emit(Opcodes.Call, EnvironmentRecord.Method_CreateMutableBindingNoFail);
+      filg.Emit(Opcodes.Ldloc, fExecutionContext);
+      filg.Emit(Opcodes.Call, ExecutionContext.Method_get_VariableScope);
+      filg.Emit(Opcodes.Ldstr, FunctionDeclarationElement(el).Identifier);
+      WriteFunction(FunctionDeclarationElement(el), true);
+      if fUseStrict then
+        filg.Emit(Opcodes.Ldc_I4_1) 
+      else
+        filg.Emit(Opcodes.Ldc_I4_0);
+      filg.Emit(Opcodes.Callvirt, EnvironmentRecord.Method_SetMutableBinding);
+    end else if el.Type = ElementType.VariableStatement then begin
+      for each en in VariableStatement(el).Items do begin
+        filg.Emit(Opcodes.Ldloc, fExecutionContext);
+        filg.Emit(Opcodes.Call, ExecutionContext.Method_get_VariableScope);
+        filg.Emit(Opcodes.Ldstr, en.Identifier);
+        if aEval then
+          filg.Emit(Opcodes.Ldc_I4_1) 
+        else
+          filg.Emit(Opcodes.Ldc_I4_0);
+        filg.Emit(Opcodes.Call, EnvironmentRecord.Method_CreateMutableBindingNoFail);
+      end;
+    end;
+  end;
+end;
 
 end.
