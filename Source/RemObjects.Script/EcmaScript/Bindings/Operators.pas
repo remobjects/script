@@ -181,6 +181,8 @@ begin
 end;
 class method Operators.DoubleCompare(aLeft, aRight: Double): Boolean;
 begin
+  if Double.IsNegativeInfinity(aLeft) and Double.IsNegativeInfinity(aRight) then exit true;
+  if Double.IsPositiveInfinity(aLeft) and Double.IsPositiveInfinity(aRight) then exit true;
   exit Math.Abs(aRight - aLeft) < 0.00000001;
 end;
 

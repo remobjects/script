@@ -987,8 +987,10 @@ begin
     ElementType.ArrayAccessExpression: begin
       WriteExpression(ArrayAccessExpression(aExpression).Member);
       CallGetValue(ArrayAccessExpression(aExpression).Member.Type);
+      
       WriteExpression(ArrayAccessExpression(aExpression).Parameter);
       CallGetValue(ArrayAccessExpression(aExpression).Parameter.Type);
+      filg.Emit(Opcodes.Ldloc, fExecutionContext);
       filg.Emit(Opcodes.Ldc_I4, if fUseStrict then 3 else 2);
       filg.Emit(Opcodes.Call, Reference.Method_Create);
     end;

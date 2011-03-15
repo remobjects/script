@@ -62,6 +62,7 @@ type
     method Get(aExecutionContext: ExecutionContext; aFlags: Integer; aName: String): Object; override;
     method PutIndex(aName: Int32; aValue: Object): Object; override;
     method GetIndex(aName: Int32): Object; override;
+    method GetOwnProperty(aName: String): PropertyValue; override;
     property ToArray: array of Object read fItems.ToArray;
     property Items: List<Object> read fItems;
     method GetNames: IEnumerator<String>; override;
@@ -614,6 +615,16 @@ begin
     lCurr := lCurr.Prototype;
   end;
   exit System.Linq.Enumerable.Where(lItems, a-> HasProperty(a)).GetEnumerator;
+end;
+
+method EcmaScriptArrayObject.GetOwnProperty(aName: String): PropertyValue;
+begin
+  var el: Integer;
+  if Int32.TryParse(aName, out el) and (el < fItems.Count) then begin
+    var lItem := fItems[el];
+    exit new PropertyValue(PropertyAttributes.All, lItem);
+  end else
+    exit inherited GetOwnProperty(aname);
 end;
 
 constructor EcmaScriptArrayObjectObject(aOwner: GlobalObject);
