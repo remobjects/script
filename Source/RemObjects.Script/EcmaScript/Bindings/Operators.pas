@@ -73,6 +73,16 @@ begin
     else exit false;
     end; // case
   end;
+  if (aLeft is EcmaScriptObject) <> (aRight is EcmaScriptObject) then begin
+    if EcmaScriptObject(aLeft):Value <> nil then begin
+      aLeft := EcmaScriptObject(aLeft):Value;
+      lLeft := &Type.GetTypeCode(aLeft.GetType);
+    end;
+    if EcmaScriptObject(aRight):Value <> nil then begin
+      aRight := EcmaScriptObject(aRight):Value;
+      lRight := &Type.GetTypeCode(aRight.GetType);
+    end;
+  end;
 
   if (lLeft = TypeCode.String) or (lRight = TypeCode.String) then begin
     if lRight = TypeCode.Single then

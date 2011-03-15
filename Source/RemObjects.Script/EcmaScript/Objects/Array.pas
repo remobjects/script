@@ -67,7 +67,13 @@ type
     method GetNames: IEnumerator<String>; override;
   end;
 
+  EcmaScriptArrayObjectObject = public class(EcmaScriptFunctionObject)
+  private
+  public
+    constructor (aOwner: GlobalObject);
 
+    method Construct(context: ExecutionContext; params args: array of Object): Object; override;
+  end;
 implementation
 
 method GlobalObject.CreateArray: EcmaScriptObject;
@@ -75,16 +81,16 @@ begin
   result := EcmaScriptObject(Get(nil, 0, 'Array'));
   if result <> nil then exit;
 
-  result := new EcmaScriptObject(self, nil, &Class := 'Array');
+  result := new EcmaScriptArrayObjectObject(self, &Class := 'Array');
   Values.Add('Array', PropertyValue.NotEnum(Result));
 
-  ArrayPrototype := new EcmaScriptFunctionObject(self, 'Array', @ArrayCtor, 1, &Class := 'Array');
+  ArrayPrototype := new EcmaScriptObject(self, &Class := 'Array');
   ArrayPrototype.Prototype := ObjectPrototype;
   
   result.values['prototype'] := PropertyValue.NotAllFlags(ArrayPrototype);
   result.Values.Add('isArray', PRopertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'isArray', @ArrayIsArray, 1)));
 
-  ArrayPrototype.Values['constructor'] := PropertyValue.NotEnum(ArrayPrototype);
+  ArrayPrototype.Values['constructor'] := PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'Array', @ArrayCtor, 1));
   ArrayPrototype.Values.Add('toString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toString', @ArrayToString, 0)));
   ArrayPrototype.Values.Add('toLocaleString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toLocaleString', @ArrayToLocaleString, 0)));
   ArrayPrototype.Values.Add('concat', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'concat', @ArrayConcat, 1)));
@@ -608,6 +614,16 @@ begin
     lCurr := lCurr.Prototype;
   end;
   exit System.Linq.Enumerable.Where(lItems, a-> HasProperty(a)).GetEnumerator;
+end;
+
+constructor EcmaScriptArrayObjectObject(aOwner: GlobalObject);
+begin
+  inherited constructor(aOwner, 'Array', @aOwner.ArrayCtor, 0, false);
+end;
+
+method EcmaScriptArrayObjectObject.Construct(context: ExecutionContext; params args: array of Object): Object;
+begin
+  exit root.ArrayCtor(context, self, args);
 end;
 
 end.

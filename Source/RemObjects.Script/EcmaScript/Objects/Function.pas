@@ -41,13 +41,13 @@ type
   EcmaScriptBoundFunctionObject = public class(EcmaScriptBaseFunctionObject)
   private
     fFunc: InternalFunctionDelegate;
-    fFunc2: InternalDelegate;
+    fFunc2: EcmaScriptBaseFunctionObject;
     fNewSelf: Object;
     fNewArgs: array of Object;
     fOriginal: EcmaScriptInternalFunctionObject;
   public
     constructor(aGlobal: GlobalObject; aFunc: EcmaScriptInternalFunctionObject; args: array of Object);
-    constructor(aGlobal: GlobalObject; aFunc: EcmaScriptFunctionObject; args: array of Object);
+    constructor(aScope: EnvironmentRecord; aGlobal: GlobalObject; aFunc: EcmaScriptBaseFunctionObject; args: array of Object);
 
     method Call(context: ExecutionContext; params args: array of Object): Object; override;
     method CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object; override;
@@ -95,8 +95,7 @@ begin
   FunctionPrototype.Values.Add('apply', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'apply', @FunctionApply, 2)));
   FunctionPrototype.Values.Add('call', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'call', @FunctionCall, 1)));
   FunctionPrototype.Values.Add('bind', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'bind', @FunctionBind, 1)));
-
-  ObjectPrototype.Prototype := FunctionPrototype;
+ 
 end;
 
 
@@ -189,9 +188,9 @@ method GlobalObject.FunctionBind(aCaller: ExecutionContext;aSelf: Object; params
 begin
   var lSelf := EcmaScriptInternalFunctionObject(aSelf);
   if lSelf = nil then begin
-    var lSelf2 :=  EcmaScriptFunctionObject(aSelf);
+    var lSelf2 :=  EcmaScriptBaseFunctionObject(aSelf);
     if lSelf2 <> nil then begin
-      exit new EcmaScriptBoundFunctionObject(self, lSelf2, Args)
+      exit new EcmaScriptBoundFunctionObject(aCaller.LexicalScope, self, lSelf2, Args)
     end;
 
     RaiseNativeError(NativeErrorType.TypeError, '"this" is not a function');
@@ -284,6 +283,7 @@ end;
 constructor EcmaScriptBoundFunctionObject(aGlobal: GlobalObject; aFunc: EcmaScriptInternalFunctionObject; args: array of Object);
 begin
   inherited constructor(aGlobal);
+  Prototype := aGlobal.FunctionPrototype;
   self.fFunc := EcmaScriptInternalFunctionObject(afunc):&Delegate;
   &Class := 'Function';
   Scope := aFunc.Scope;
@@ -311,7 +311,7 @@ method EcmaScriptBoundFunctionObject.Call(context: ExecutionContext; params args
 begin
   if ffunc2 = nil then 
     exit fFunc(new ExecutionContext(Scope, false), fNewSelf, System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Concat(fNewArgs, Args)), fOriginal);
-  exit fFunc2(new ExecutionContext(Scope, false), fNewSelf, System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Concat(fNewArgs, Args)));
+  exit fFunc2.CallEx(new ExecutionContext(Scope, false), fNewSelf, System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Concat(fNewArgs, Args)));
 end;
 
 method EcmaScriptBoundFunctionObject.CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object;
@@ -319,12 +319,12 @@ begin
   exit Call(context, args);
 end;
 
-constructor EcmaScriptBoundFunctionObject(aGlobal: GlobalObject; aFunc: EcmaScriptFunctionObject; args: array of Object);
+constructor EcmaScriptBoundFunctionObject(aScope: EnvironmentRecord; aGlobal: GlobalObject; aFunc: EcmaScriptBaseFunctionObject; args: array of Object);
 begin
     inherited constructor(aGlobal);
-  self.fFunc2 := afunc.Delegate;
+  self.fFunc2 := afunc;
   &Class := 'Function';
-  Scope := aFunc.Scope;
+  Scope := ascope;
   var lProto := new EcmaScriptObject(aGlobal);
   lProto.DefineOwnProperty('constructor', new PropertyValue(PropertyAttributes.writable or PropertyAttributes.Configurable, self));
   var lLength := Utilities.GetObjAsInteger(aFunc.Get(nil, 0, 'length'));

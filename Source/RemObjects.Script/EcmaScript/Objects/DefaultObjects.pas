@@ -107,6 +107,7 @@ type
     constructor(aOwner: GlobalObject; aName: string);
 
     method Call(context: ExecutionContext; params args: array of Object): Object; override;
+    method CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object; override;
     method Construct(context: ExecutionContext; params args: array of Object): Object; override;
   end;
 
@@ -263,10 +264,10 @@ begin
   result := EcmaScriptObject(Get(nil, 0, 'Object'));
   if result <> nil then exit;
 
+  ObjectPrototype := new EcmaScriptObject(self);
   CreateFunctionPrototype;
 
-  ObjectPrototype := new EcmaScriptFunctionObject(self, 'Object', @ObjectCtor, 1, &Class := 'Object');
-
+ 
   result := new EcmaScriptObjectObject(self, 'Object');
   Values.Add('Object', PropertyValue.NotEnum(Result));
 
@@ -285,7 +286,7 @@ begin
   result.Values.Add('isExtensible', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'isExtensible', @ObjectisExtensible, 1)));
   result.Values.Add('keys', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'keys', @ObjectKeys, 1)));
 
-  ObjectPrototype.Values['constructor'] := PropertyValue.NotEnum(ObjectPrototype);
+  ObjectPrototype.Values['constructor'] := PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'Object', @ObjectCtor, 1, &Class := 'Object'));
 
   ObjectPrototype.Values.Add('toString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toString', @ObjectToString, 0)));
   ObjectPrototype.Values.Add('toLocaleString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toLocaleString', @ObjectToLocaleString, 0)));
@@ -612,6 +613,13 @@ begin
     if (args[0] is string) or (args[0] is Integer) or (args[0] is Int64) or (args[0] is Double) or( args[0] is Boolean) then exit Utilities.ToObject(context, args[0]);
   end;
   exit new EcmaScriptObject(Root);
+end;
+
+method EcmaScriptObjectObject.CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object;
+begin
+  var lVal := Utilities.GetArg(args, 0);
+  if (lVal = nil) or (lVal = Undefined.Instance) then exit Construct(context, self, args);
+  exit Utilities.ToObject(context, lVAl);
 end;
 
 end.
