@@ -166,8 +166,7 @@ begin
       RaiseNativeError(NativeErrorType.SyntaxError, el.IntToString());
   end;
   
-  
-  var lEval: InternalDelegate := InternalDelegate(fParser.EvalParse(lScript));
+  var lEval: InternalDelegate := InternalDelegate(fParser.EvalParse(aCaller.Strict, lScript));
   exit lEval(lEx, aSelf, []);
 end;
 

@@ -282,8 +282,10 @@ begin
   if assigned(lObj) then 
     exit lObj.Put(aExecutionContext,lRef.Name, aValue, lRef.Strict);
   var lExec := EnvironmentRecord(lRef.Base);
-  if assigned(lExec) then
+  if assigned(lExec) then begin
     lExec.SetMutableBinding(lRef.Name, aValue, lRef.Strict);
+    exit aValue;
+  end;
   if lRef.Strict then
     aExecutionContext.Global.RaiseNativeError(NativeErrorType.TypeError, 'Cannot set value on transient object');
   exit aValue; // readonly so the on the fly object 

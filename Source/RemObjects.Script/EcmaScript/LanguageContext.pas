@@ -116,7 +116,7 @@ type
 
     property GlobalObject: GlobalObject read fGlobal;
     
-    method EvalParse(aData: string): InternalDelegate;
+    method EvalParse(aStrict: Boolean; aData: string): InternalDelegate;
     method Parse(aFilename, aData: string): InternalDelegate;
     method Parse(aFunction: FunctionDeclarationElement; aEval: Boolean; aScopeName: string; aElements: List<SourceElement>): Object;
   end;
@@ -204,8 +204,9 @@ begin
 end;
 
 
-method EcmaScriptCompiler.EvalParse(aData: string): InternalDelegate;
+method EcmaScriptCompiler.EvalParse(aStrict: Boolean; aData: string): InternalDelegate;
 begin
+  fUseStrict := aStrict;
   exit InternalDelegate(Parse(nil, true, '<eval>', Parse('<eval>', aData, true)));
 end;
 
@@ -324,7 +325,7 @@ begin
       filg.Emit(Opcodes.Ldloc, fExecutionContext);
       filg.Emit(Opcodes.Callvirt, DebugSink.Method_EnterScope);
       fILG.BeginExceptionBlock; // finally
-      if aFunction = nil then
+      if not aEval and (aFunction = nil) then
         fILG.BeginExceptionBlock; // except
     end;
     var lOldExitLabel := fExitLabel;
@@ -393,7 +394,7 @@ begin
       filg.Emit(Opcodes.Ldloc, fExecutionContext);
       filg.Emit(Opcodes.Callvirt, DebugSink.Method_ExitScope);
       filg.EndExceptionBlock();
-      if aFunction = nil then begin
+      if not aEval and (aFunction = nil) then begin
         filg.BeginCatchBlock(typeof(Exception));
         var lTemp := AllocateLocal(typeof(Exception));
         filg.Emit(Opcodes.Stloc, lTemp);
@@ -497,7 +498,7 @@ begin
       filg.Emit(Opcodes.Throw);
     end;
     ElementType.WithStatement: begin
-      if fUseStrict then new ScriptParsingException(El.PositionPair.File, el.PositionPair, EcmaScriptErrorKind.WithNotAllowedInStrict);
+      if fUseStrict then raise new ScriptParsingException(El.PositionPair.File, el.PositionPair, EcmaScriptErrorKind.WithNotAllowedInStrict);
       WriteWithStatement(WithStatement(el));
     end;
     ElementType.TryStatement: WriteTryStatement(TryStatement(el));
