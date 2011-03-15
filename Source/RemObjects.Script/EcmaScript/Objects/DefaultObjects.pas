@@ -61,6 +61,8 @@ type
     method parseFloat(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
     method isNaN(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
     method isFinite(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
+    method escape(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
+    method unescape(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
     method encodeURI(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
     method decodeURI(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
     method encodeURIComponent(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
@@ -146,6 +148,8 @@ begin
   Values.Add('isFinite', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'isFinite', @isFinite, 1)));
   Values.Add('decodeURI', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'decodeURI', @decodeURI, 1)));
   Values.Add('encodeURI', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'encodeURI', @encodeURI, 1)));
+  Values.Add('escape', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'escape', @escape, 1)));
+  Values.Add('unescape', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'unescape', @unescape, 1)));
   Values.Add('decodeURIComponent', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'decodeURIComponent', @decodeURIComponent, 1)));
   Values.Add('encodeURIComponent', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'encodeURIComponent', @encodeURIComponent, 1)));
 end;
@@ -515,6 +519,64 @@ begin
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'this is not Object');
   var lProp := lWork.GetOwnProperty(Utilities.GetArgAsString(Args, 0));
   exit (lProp <> nil) and (PropertyATtributes.Enumerable in lProp.Attributes);
+end;
+
+method GlobalObject.escape(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
+begin
+  var lWork := Utilities.GetArgAsString(args, 0);
+  var sb := new StringBuilder;
+  for i: Integer := 0 to Length(lWork) -1 do begin
+    case lWork[i] of 
+      'A' .. 'Z',
+      'a' .. 'z',
+      '0' .. '9',
+      '@', '*','_','+','-','.': 
+        sb.Append(lWork[i]);
+      else begin
+        var c := Integer(lWork[i]);
+        if c < 256 then begin
+          sb.Append('%');
+          sb.Append(c.ToString('x2'));
+        end else begin
+          sb.Append('%u');
+          sb.Append(c.ToString('x5'));
+        end;
+      end;
+    end; // case
+  end;
+  exit sb.ToString;
+end;
+
+method GlobalObject.unescape(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
+begin
+ var lWork := Utilities.GetArgAsString(args, 0);
+  var sb := new StringBuilder;
+  var i: Integer := 0;
+  while i < Length(lWork) do begin
+    if lWork[i] = '%' then begin
+      inc(i);
+      var lTmp: Integer;
+      if i < lWork.Length then begin
+        if (lWork[i] = 'u') and (i +4 < lWork.Length) then begin
+          inc(i);
+
+          
+          if Int32.TryParse(lWork.Substring(i, 4), System.Globalization.NumberStyles.HexNumber, System.Globalization.NumberFormatInfo.InvariantInfo, out lTmp) then
+            sb.Append(char(lTmp));
+          inc(i, 4);
+        end else begin
+          if Int32.TryParse(lWork.Substring(i, 2), System.Globalization.NumberStyles.HexNumber, System.Globalization.NumberFormatInfo.InvariantInfo, out lTmp) then
+            sb.Append(char(lTmp));
+          inc(i, 2);
+        end;
+
+      end;
+    end else begin
+      sb.Append(lWork[i]);
+      inc(i);
+    end;
+  end;
+  exit sb.ToString;
 end;
 
 method Undefined.ToString: String;

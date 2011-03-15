@@ -26,13 +26,14 @@ type
     method MatchToArray(aMatch: Match): EcmaScriptArrayObject;
     method RegExpTest(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method RegExpToString(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+    method RegExpCompile(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
   end;
   EcmaScriptRegexpObject = public class(EcmaScriptObject)
   private
-    fRegEx: Regex;
-    fGlobalVal: Boolean;
     method set_LastIndex(value: Integer);
   public
+    fGlobalVal: Boolean;
+    fRegEx: Regex;
     constructor(aGlobal: GlobalObject; aPattern, aFlags: String);
     property &GlobalVal: Boolean read fGlobalVal;
     property RegEx: Regex read fRegEx;
@@ -60,6 +61,7 @@ begin
   RegExpPrototype.Values['constructor'] := PropertyValue.NotEnum(RegExpPrototype);
   RegExpPrototype.Values.Add('toString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toString', @RegExpToString, 0)));
   RegExpPrototype.Values.Add('test', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'test', @RegExpTest, 1)));
+  RegExpPrototype.Values.Add('compile', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'test', @RegExpCompile, 2)));
   RegExpPrototype.Values.Add('exec', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'exec', @RegExpExec, 1)));
 end;
 
@@ -108,6 +110,25 @@ begin
   for i: Integer := 1 to Math.Min(32, aMatch.Captures.Count)-1 do begin
     lObj.PutIndex(1, aMatch.Captures[1].Value);
   end;
+  exit lObj;
+end;
+
+method GlobalObject.RegExpCompile(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+begin
+  var lObj := EcmaScriptRegexpObject(aSelf);
+  if lObj = nil then RaiseNativeError(NativeErrorType.TypeError, 'this is not a RegEx object');
+  var lOpt := RegexOptions.ECMAScript;
+  var aFlags := Utilities.GetArgAsString(args, 1);
+  var aPattern := Utilities.GetArgAsString(args, 0);
+  if (aFlags <> nil) and (aFlags.contains('i')) then lOpt := lOpt or RegExOptions.IgnoreCase;
+  if (aFlags <> nil) and (aFlags.contains('m')) then lOpt := lOpt or RegExOptions.Multiline;
+  if (aFlags <> nil) and (aFlags.contains('g')) then lObj.fGlobalVal := true;
+  lObj.Values['source'] := PropertyValue.NotAllFlags(aPattern);
+  lObj.Values['global'] := PropertyValue.NotAllFlags(lObj.fGlobalVal);
+  lObj.Values['ignoreCase'] := PropertyValue.NotAllFlags(RegExOptions.IgnoreCase in lOpt);
+  lObj.Values['multiline'] := PropertyValue.NotAllFlags(RegExOptions.Multiline in lOpt);
+  lObj.Values['lastIndex'] := new PropertyValue(PropertyAttributes.writable, undefined.Instance);
+  lObj.fRegEx := new Regex(aPattern, lOpt);
   exit lObj;
 end;
 

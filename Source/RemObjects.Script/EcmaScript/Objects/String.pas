@@ -59,7 +59,8 @@ begin
   result := new EcmaScriptStringObject(self, 'String', @StringCall, 1, &Class := 'String');
   Values.Add('String', PropertyValue.NotEnum(Result));
 
-  StringPrototype := new EcmaScriptFunctionObject(self, 'String', @StringCtor, 1, &Class := 'String');
+  StringPrototype := new EcmaScriptObject(self, &Class := 'String');
+  StringPrototype.Values.add('constructor', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'String', @StringCtor, 1, &Class := 'String')));
   StringPrototype.Prototype := ObjectPrototype;
   result.Values['prototype'] := PropertyValue.NotAllFlags(StringPrototype);
   

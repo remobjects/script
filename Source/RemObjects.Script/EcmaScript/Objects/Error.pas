@@ -47,7 +47,8 @@ begin
   result := new EcmaScriptFunctionObject(self, 'Error', @ErrorCtor, 1, &Class := 'Error');
   Values.Add('Error', PropertyValue.NotEnum(Result));
 
-  ErrorPrototype := new EcmaScriptFunctionObject(self, 'Error', @ErrorCtor, 1, &Class := 'Error');
+  ErrorPrototype := new EcmaScriptObject(self, &Class := 'Error'); 
+  ErrorPrototype.values.Add('constructor', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'Error', @ErrorCtor, 1)));
   ErrorPrototype.Prototype := ObjectPrototype;
   result.Values['prototype'] := PropertyValue.NotAllFlags(ErrorPrototype);
   ErrorPrototype.Values.Add('toString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toString', @ErrorToString, 0)));

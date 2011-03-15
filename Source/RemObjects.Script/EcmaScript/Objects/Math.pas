@@ -35,6 +35,7 @@ type
     method Mathmin(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method Mathpow(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method Mathrandom(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+    method Mathround(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method Mathsin(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method Mathsqrt(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method Mathtan(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
@@ -59,23 +60,24 @@ begin
   result.Values.Add('LOG2E', PropertyValue.NotAllFlags(Math.Log(Math.e, 2)));
   result.Values.Add('LOG10E', PropertyValue.NotAllFlags(Math.Log(Math.e, 10)));
 
-  result.Values.Add('abs', PropertyValue.NotAllFlags(new EcmaScriptFunctionObject(self, 'abs', @MathAbs, 1)));
-  result.Values.Add('acos', PropertyValue.NotAllFlags(new EcmaScriptFunctionObject(self, 'acos', @MathACos, 1)));
-  result.Values.Add('asin', PropertyValue.NotAllFlags(new EcmaScriptFunctionObject(self, 'asin', @MathASin, 1)));
-  result.Values.Add('atan', PropertyValue.NotAllFlags(new EcmaScriptFunctionObject(self, 'atin', @MathATan, 1)));
-  result.Values.Add('atan2', PropertyValue.NotAllFlags(new EcmaScriptFunctionObject(self, 'atin2', @MathATan2,2)));
-  result.Values.Add('ceil', PropertyValue.NotAllFlags(new EcmaScriptFunctionObject(self, 'ceil', @MathCeil, 1)));
-  result.Values.Add('cos', PropertyValue.NotAllFlags(new EcmaScriptFunctionObject(self, 'cos', @MathCos, 1)));
-  result.Values.Add('exp', PropertyValue.NotAllFlags(new EcmaScriptFunctionObject(self, 'exp', @MathExp, 1)));
-  result.Values.Add('floor', PropertyValue.NotAllFlags(new EcmaScriptFunctionObject(self, 'floor', @MathFloor, 1)));
-  result.Values.Add('log', PropertyValue.NotAllFlags(new EcmaScriptFunctionObject(self, 'log', @MathLog, 1)));
-  result.Values.Add('max', PropertyValue.NotAllFlags(new EcmaScriptFunctionObject(self, 'max',@MathMax, 2)));
-  result.Values.Add('min', PropertyValue.NotAllFlags(new EcmaScriptFunctionObject(self, 'min', @MathMin, 2)));
-  result.Values.Add('pow', PropertyValue.NotAllFlags(new EcmaScriptFunctionObject(self, 'pow', @MathPow, 1)));
-  result.Values.Add('random', PropertyValue.NotAllFlags(new EcmaScriptFunctionObject(self, 'random', @MathRandom, 0)));
-  result.Values.Add('sin', PropertyValue.NotAllFlags(new EcmaScriptFunctionObject(self, 'sin', @MathSin, 1)));
-  result.Values.Add('sqrt', PropertyValue.NotAllFlags(new EcmaScriptFunctionObject(self, 'sqrt', @MathSQRT, 1)));
-  result.Values.Add('tan', PropertyValue.NotAllFlags(new EcmaScriptFunctionObject(self, 'tan', @MathTan, 1)));
+  result.Values.Add('abs', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'abs', @MathAbs, 1)));
+  result.Values.Add('acos', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'acos', @MathACos, 1)));
+  result.Values.Add('asin', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'asin', @MathASin, 1)));
+  result.Values.Add('atan', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'atin', @MathATan, 1)));
+  result.Values.Add('atan2', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'atin2', @MathATan2,2)));
+  result.Values.Add('ceil', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'ceil', @MathCeil, 1)));
+  result.Values.Add('cos', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'cos', @MathCos, 1)));
+  result.Values.Add('exp', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'exp', @MathExp, 1)));
+  result.Values.Add('floor', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'floor', @MathFloor, 1)));
+  result.Values.Add('log', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'log', @MathLog, 1)));
+  result.Values.Add('max', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'max',@MathMax, 2)));
+  result.Values.Add('min', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'min', @MathMin, 2)));
+  result.Values.Add('pow', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'pow', @MathPow, 1)));
+  result.Values.Add('random', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'random', @MathRandom, 0)));
+  result.Values.Add('round', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'round', @MathRound, 1)));
+  result.Values.Add('sin', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'sin', @MathSin, 1)));
+  result.Values.Add('sqrt', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'sqrt', @MathSQRT, 1)));
+  result.Values.Add('tan', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'tan', @MathTan, 1)));
 end;
 
 method GlobalObject.Mathabs(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
@@ -182,6 +184,14 @@ end;
 method GlobalObject.Mathtan(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
   exit Math.Tan(Utilities.GetArgAsDouble(Args, 0));
+end;
+
+method GlobalObject.Mathround(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+begin
+  var lVal := Utilities.GetArgAsDouble(args, 0);
+  // Javascript has a weird kind of rounding
+  if (lVal < 0) and (lVal > -0.5) then exit 0;
+  exit Math.Floor(lVal + 0.5);
 end;
 
 end.
