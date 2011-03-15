@@ -33,6 +33,7 @@ type
     fTok: ITokenizer;
     fMessages: List<ParserMessage>;
     fMessagesWrapper: ReadOnlyCollection<ParserMessage>;
+    method LookAheadGetSetWasName: Boolean;
   assembly
     method fTok_Error(Caller: Tokenizer; Kind: TokenizerErrorKind; Parameter: String);
     method Error(aCode: ParserErrorKind; aParameter: String);
@@ -948,7 +949,7 @@ begin
             var lName: ExpressionElement;
             var lValue: ExpressionElement;
             var lMode: FunctionDeclarationType := FunctionDeclarationType.None;
-            if fTok.Token in [TokenKind.K_set, TokenKind.K_get] then begin
+            if (fTok.Token in [TokenKind.K_set, TokenKind.K_get]) and not LookAheadGetSetWasName then begin
               lName := nil;
               lMode := if ftok.Token = TokenKind.K_set then FunctionDeclarationType.Set else FunctionDeclarationType.Get;
               var lTmp := FunctionDeclarationElement(ParseStatement(ParseStatementFlags.AllowGetSet));
@@ -1177,6 +1178,16 @@ begin
     
     exit new CommaSeparatedExpression(new PositionPair(lPos, fTok.EndPosition), lItems);
   end;
+end;
+
+method Parser.LookAheadGetSetWasName: Boolean;
+begin
+  // current token is SET/GEt
+  var lSave := fTok.SaveState;
+  ftok.Next;
+  result := fTok.Token = TokenKind.Colon;
+
+  ftok.RestoreState(lSave);
 end;
 
 constructor ParserError(aPosition: Position; anError: ParserErrorKind; aMessage: String);

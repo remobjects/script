@@ -279,8 +279,10 @@ begin
     if Utilities.GetObjAsBoolean(aProp.Get('enumerable')) then result.Attributes := result.Attributes or PropertyAttributes.Enumerable;
   if aProp.HasProperty('configurable') then
     if Utilities.GetObjAsBoolean(aProp.Get('configurable')) then result.Attributes := result.Attributes or PropertyAttributes.configurable;
-  if aProp.HasProperty('value') then
+  if aProp.HasProperty('value') then begin
     result.Value := aProp.Get('value');
+ end else   result.Attributes := result.Attributes and not PropertyAttributes.HasValue;
+
  if aProp.HasProperty('writable') then
     if Utilities.GetObjAsBoolean(aProp.Get('writable')) then result.Attributes := result.Attributes or PropertyAttributes.writable;
   if aProp.HasProperty('get') then begin

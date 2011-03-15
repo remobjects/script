@@ -134,7 +134,7 @@ implementation
 
 constructor ScriptParsingException(aFilename: String; aPosition: PositionPair; anError: EcmaScriptErrorKind; aMsg: String := '');
 begin
-  inherited constructor(String.Format('{0}({1}:{2}) {3} {4}', aFilename, 
+  inherited constructor(String.Format('{0}({1}:{2}) E{3} {4}', aFilename, 
     aPosition.StartRow, aPosition.StartCol, Integer(anError), ErrorToString(anError, aMsg)));
   Position := aPosition;
   Error := anError;
