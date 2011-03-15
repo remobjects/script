@@ -131,6 +131,7 @@ begin
   CreateRegExp;
   CreateError;
   CreateNativeError;
+  CreateJSON;
 
   Thrower := new EcmaScriptFunctionObject(self, 'ThrowTypeError', method begin
     RaiseNativeError(NativeErrorType.TypeError, 'caller/arguments not available in strict mode')

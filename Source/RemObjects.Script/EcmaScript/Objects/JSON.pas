@@ -39,6 +39,7 @@ method GlobalObject.CreateJSON: EcmaScriptObject;
 begin
   result := EcmaScriptObject(Get(nil, 0, 'JSON'));
   if result <> nil then exit;
+  Values.Add('JSON', PropertyValue.NotEnum(Result));
 
   result := new EcmaScriptObject(self, ObjectPrototype, &Class := 'JSON');
   Values.Add('parse', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'parse', @JSONParse, 1, false)));
