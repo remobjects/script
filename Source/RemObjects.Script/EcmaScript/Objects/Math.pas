@@ -47,7 +47,7 @@ method GlobalObject.CreateMath: EcmaScriptObject;
 begin
   result := new EcmaScriptObject(self, nil, &Class := 'Math');
   Values['Math'] := PropertyValue.NotEnum(Result);
-
+  
   
   result.Values.Add('E', PropertyValue.NotAllFlags(Math.E));
   result.Values.Add('PI', PropertyValue.NotAllFlags(Math.PI));

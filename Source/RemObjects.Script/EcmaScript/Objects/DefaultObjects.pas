@@ -120,9 +120,9 @@ begin
   Values.Add('Infinity', PropertyValue.NotAllFlags(Double.PositiveInfinity));
   Values.Add('undefined', PropertyValue.NotAllFlags(Undefined.Instance));
 
-  Values.Add('Math', PropertyValue.NotEnum(new Func<EcmaScriptObject>(CreateMath)));
   CreateObject;
   CreateFunction;
+  CreateMath;
   CreateArray;
   CreateNumber;
   CreateDate;
