@@ -253,7 +253,7 @@ end;
 method GlobalObject.ObjectIsPrototypeOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   if (args.Length = 0) or (aSelf is not EcmaScriptObject) then exit false;
-  var lValue := EcmaScriptObject(args[1]);
+  var lValue := EcmaScriptObject(args[0]);
 
   if lValue = nil then result := false else result := lValue.Prototype = aSelf;
 end;
@@ -341,6 +341,12 @@ begin
   var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0);
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'Type(O) is not Object');
   var lName := Utilities.GetArgAsString(args, 1);
+  var lArr := EcmaScriptArrayObject (lWork);
+  var lVal: Integer;
+  if (lArr <> nil) and Int32.TryParse(lName, out lval) and (lval < lArr.Items.Count) and (lval >= 0) then begin
+    exit  FromPropertyDescriptor(new PropertyValue(PropertyAttributes.All, lArr.Items[lval]));
+  end;
+
 
   var lPV: PropertyValue;
   if lWork.Values.TryGetValue(lName, out lPV) then
@@ -366,7 +372,7 @@ begin
 
   var lArgs := Utilities.GetArgAsEcmaScriptObject(args, 1);
   if lArgs <> nil then
-    ObjectdefineProperties(aCaller, nil, lRes, args);
+    ObjectdefineProperties(aCaller, nil, lRes, largs);
   exit lRes;
 end;
 

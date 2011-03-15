@@ -79,7 +79,8 @@ begin
   StringPrototype.Values.Add('search', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'search', @StringSearch, 1))); // depends on regex support
   StringPrototype.Values.Add('slice', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'slice', @StringSlice, 2)));
   StringPrototype.Values.Add('split', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'split', @StringSplit, 2)));
-  StringPrototype.Values.Add('subString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'subString', @StringSubString, 2)));
+  StringPrototype.Values.Add('substring', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'substring', @StringSubString, 2)));
+  StringPrototype.Values.Add('substr', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'substr', @StringSubString, 2)));
   StringPrototype.Values.Add('toLowerCase', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toLowerCase', @StringToLowerCase, 0)));
   StringPrototype.Values.Add('toUpperCase', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toUpperCase', @StringToUpperCase, 0)));
   StringPrototype.Values.Add('toLocaleLowerCase', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toLocaleLowerCase', @StringToLocaleLowerCase, 0)));

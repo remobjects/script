@@ -42,7 +42,8 @@ begin
   result := new EcmaScriptBooleanObject(self, 'Boolean', @BooleanCall, 1, &Class := 'Boolean');
   Values.Add('Boolean', PropertyValue.NotEnum(Result));
 
-  BooleanPrototype := new EcmaScriptFunctionObject(self, 'Boolean', @BooleanCtor, 1, &Class := 'Boolean');
+  BooleanPrototype := new EcmaScriptObject(self, &Class := 'Boolean');
+  BooleanPrototype.Values.Add('constructor', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'Boolean', @BooleanCtor, 1, &Class := 'Boolean')));
   BooleanPrototype.Prototype := ObjectPrototype;
   result.Values['prototype'] := PropertyValue.NotAllFlags(BooleanPrototype);
   

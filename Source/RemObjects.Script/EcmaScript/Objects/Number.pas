@@ -51,7 +51,8 @@ begin
   Result.Values.Add('NEGATIVE_INFINITY', PropertyValue.NotAllFlags(Double.NegativeInfinity));
   Result.Values.Add('POSITIVE_INFINITY', PropertyValue.NotAllFlags(Double.PositiveInfinity));
 
-  NumberPrototype := new EcmaScriptFunctionObject(self, 'Number', @NumberCtor, 1, &Class := 'Number');
+  NumberPrototype := new EcmaScriptObject(self, &Class := 'Number');
+  numberPrototype.Values.Add('constructor', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'Number', @NumberCtor, 1)));
   NumberPrototype.Prototype := ObjectPrototype;
   result.Values['prototype'] := PropertyValue.NotAllFlags(NumberPrototype);
   

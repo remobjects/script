@@ -287,13 +287,17 @@ begin
     if Utilities.GetObjAsBoolean(aProp.Get('writable')) then result.Attributes := result.Attributes or PropertyAttributes.writable;
   if aProp.HasProperty('get') then begin
     var lGet := aProp.Get('get');
-    if lGet is not EcmaScriptBaseFunctionObject then Root.RaiseNativeError(NativeErrorType.TypeError, 'get not callable');
-    result.Get := EcmaScriptBaseFunctionObject(lGet);
+    if lget <> Undefined.Instance then begin
+      if lGet is not EcmaScriptBaseFunctionObject then Root.RaiseNativeError(NativeErrorType.TypeError, 'get not callable');
+      result.Get := EcmaScriptBaseFunctionObject(lGet);
+    end;
   end;
   if aProp.HasProperty('set') then begin
     var lset := aProp.Get('set');
-    if lset is not EcmaScriptBaseFunctionObject then Root.RaiseNativeError(NativeErrorType.TypeError, 'set not callable');
-    result.Set := EcmaScriptBaseFunctionObject(lset);
+    if lset <> Undefined.Instance then begin
+      if lset is not EcmaScriptBaseFunctionObject then Root.RaiseNativeError(NativeErrorType.TypeError, 'set not callable');
+      result.Set := EcmaScriptBaseFunctionObject(lset);
+    end;
   end;
   if IsAccessorDescriptor(result) and IsDataDescriptor(result) then
     Root.RaiseNativeError(NativeErrorType.TypeError, 'both get/set and data/writable is set');
