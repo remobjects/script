@@ -13,6 +13,7 @@ uses
   System.Collections.ObjectModel,
   System.Text,
 	System.ComponentModel,
+  System.Linq,
 	System.Reflection,
   RemObjects.Script.EcmaScript;
 
@@ -458,7 +459,8 @@ method EcmaScriptComponent.RunFunction(aName: String; params args: Array of obje
 begin
 	var lItem := fGlobalObject.Get(aName) as RemObjects.Script.EcmaScript.EcmaScriptBaseFunctionObject;
 	if lItem = nil then raise new ScriptComponentException(String.Format(RemObjects.Script.Properties.Resources.eNoSuchFunction, aName));
-  exit lItem.Call(fRoot, Args);
+  if args = nil then Args := [];
+  exit lItem.Call(fRoot, Args.Select(a->EcmaScriptScope.DoTryWrap(fGlobalObject, a)).ToArray());
 end;
 
 method EcmaScriptComponent.IntRun: Object;
