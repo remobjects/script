@@ -35,6 +35,14 @@ type
     constructor (aParser: EcmaScriptCompiler);
 		constructor;
 
+    property MaxFrames: Integer := 1024;
+    property FrameCount: Integer;
+    method IncreaseFrame;
+    method DecreaseFrame;
+
+    class var Method_IncreaseFrame: System.Reflection.MethodInfo := typeof(GlobalObject).GetMethod('IncreaseFrame'); readonly;
+    class var Method_DecreaseFrame: System.Reflection.MethodInfo := typeof(GlobalObject).GetMethod('DecreaseFrame'); readonly;
+
     method StoreFunction(aDelegate: InternalFunctionDelegate): Integer;
     class var Method_GetFunction: System.Reflection.MethodInfo := typeof(GlobalObject).GetMethod('GetFunction'); readonly;
     method GetFunction(i: Integer): InternalFunctionDelegate;
@@ -584,6 +592,18 @@ begin
     end;
   end;
   exit sb.ToString;
+end;
+
+method GlobalObject.IncreaseFrame;
+begin
+  if FrameCount+1 > MaxFrames then
+    RaiseNativeError(NativeErrorType.EvalError, 'Stack overflow');
+  FrameCount := FrameCount + 1;
+end;
+
+method GlobalObject.DecreaseFrame;
+begin
+  FrameCount := FrameCount - 1;
 end;
 
 method Undefined.ToString: String;

@@ -68,6 +68,7 @@ type
   private
   public
     constructor; empty;
+    property StackOverflowProtect: Boolean := true;
     property EmitDebugCalls: Boolean;
     property Context: EnvironmentRecord;
     property GlobalObject: GlobalObject;
@@ -79,7 +80,7 @@ type
   private
     fGlobal: GlobalObject;
     fUseStrict: Boolean;
-    fDebug: Boolean;
+    fStackProtect, fDebug: Boolean;
     fExitLabel: Label;
     fResultVar: LocalBuilder;
     fExecutionContext: LocalBuilder;
@@ -196,8 +197,10 @@ end;
 constructor EcmaScriptCompiler(aOptions: EcmaScriptCompilerOptions);
 begin
   fGlobal := aOptions:GlobalObject;
-  if assigned(aOptions) then
+  if assigned(aOptions) then begin
     fDebug := aOptions.EmitDebugCalls;
+    fStackProtect := aOptions.StackOverflowProtect;
+  end else fStackProtect := true;
   if fGlobal = nil then fGlobal := new GlobalObject(self);
   fRoot := new ObjectEnvironmentRecord(aOptions:Context, fGlobal, false);
 end;
@@ -338,10 +341,16 @@ begin
       filg.Emit(Opcodes.Ldarg, 1); // this
       filg.Emit(Opcodes.Ldloc, fExecutionContext);
       filg.Emit(Opcodes.Callvirt, DebugSink.Method_EnterScope);
-      fILG.BeginExceptionBlock; // finally
-      if not aEval and (aFunction = nil) then
-        fILG.BeginExceptionBlock; // except
     end;
+    if fStackProtect then begin
+      filg.Emit(Opcodes.Ldloc, fExecutionContext);
+      filg.Emit(Opcodes.Call, ExecutionContext.Method_get_Global);
+      filg.Emit(Opcodes.Call, GlobalObject.Method_IncreaseFrame);
+    end;
+    fILG.BeginExceptionBlock; // finally
+    
+    if fDebug and not aEval and (aFunction = nil) then
+      fILG.BeginExceptionBlock; // except
     var lOldExitLabel := fExitLabel;
     var lOldResultVar := fResultVar;
     fExitLabel := filg.DefineLabel;
@@ -370,13 +379,21 @@ begin
     for i: Integer := 0 to aElements.Count -1 do
       WriteStatement(aElements[i]);
 
+    filg.BeginFinallyBlock();
+    if fStackProtect then begin
+      filg.Emit(Opcodes.Ldloc, fExecutionContext);
+      filg.Emit(Opcodes.Call, ExecutionContext.Method_get_Global);
+      filg.Emit(Opcodes.Call, GlobalObject.Method_DecreaseFrame);
+    end;
+
     if fDebug then begin
-      filg.BeginFinallyBlock();
       WriteDebugStack;
       filg.Emit(OpCodes.Ldstr, aScopeName);
       filg.Emit(Opcodes.Ldloc, fExecutionContext);
       filg.Emit(Opcodes.Callvirt, DebugSink.Method_ExitScope);
-      filg.EndExceptionBlock();
+    end;
+    filg.EndExceptionBlock();
+    if fDebug then begin
       if not aEval and (aFunction = nil) then begin
         filg.BeginCatchBlock(typeof(Exception));
         var lTemp := AllocateLocal(typeof(Exception));
@@ -672,7 +689,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          filg.Emit(Opcodes.Call, Operators.Method_Minus);
+          filg.Emit(Opcodes.Call, Operators.Method_Subtract);
         end;
         BinaryOperator.MinusAssign: begin
           WriteExpression(BinaryExpression(aExpression).LeftSide);

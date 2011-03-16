@@ -33,8 +33,8 @@ end;
 class method Operators.Subtract(aLeft, aRight: Object): Object;
 begin
   if (aLeft is Int32) and (aRight is Int32) then
-    exit Int32(aLeft) + Int32(aRight);
-  exit Utilities.GetObjAsDouble(aLeft) + Utilities.GetObjAsDouble(aRight);
+    exit Int32(aLeft) - Int32(aRight);
+  exit Utilities.GetObjAsDouble(aLeft) - Utilities.GetObjAsDouble(aRight);
 end;
 
 end.

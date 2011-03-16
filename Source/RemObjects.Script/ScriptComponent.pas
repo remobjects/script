@@ -470,7 +470,7 @@ begin
   try
 	  if String.IsNullOrEmpty(SourceFileName) then SourceFileName := 'main.js';
 	  if Source = nil then Source := '';
-    
+    fGlobalObject.FrameCount := 0;
     var lCallback := fCompiler.Parse(SourceFileName, Source);
     result := lCallback(fRoot, fGlobalObject, []);
   except
