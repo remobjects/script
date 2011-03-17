@@ -31,15 +31,16 @@ end;
 
 class method Operators.Divide(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
-  if (aLeft is Int32) and (aRight is Int32) then
+  if (aLeft is Int32) and (aRight is Int32) and (Integer(aRight) <> 0) then begin
     exit Integer(aLeft) div Integer(aRight);
+  end;
   
-  exit Utilities.GetObjAsDouble(aLeft, ec) * Utilities.GetObjAsDouble(aRight, ec);
+  exit Utilities.GetObjAsDouble(aLeft, ec) / Utilities.GetObjAsDouble(aRight, ec);
 end;
 
 class method Operators.Modulus(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
-  if (aLeft is Int32) and (aRight is Int32) then
+  if (aLeft is Int32) and (aRight is Int32) and (Integer(aRight) <> 0) then
     exit Integer(aLeft) mod Integer(aRight);
   
    exit Math.IEEERemainder(Utilities.GetObjAsDouble(aLeft, ec), Utilities.GetObjAsDouble(aRight, ec));

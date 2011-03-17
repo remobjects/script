@@ -222,6 +222,7 @@ begin
   var lOrg := arg;
   if arg is EcmaScriptObject then arg := GetObjectAsPrimitive(ec, EcmaScriptObject(arg), PrimitiveType.String);
   if arg = Undefined.Instance then exit 'undefined';
+  if arg = nil then exit 'null';
   case &Type.GetTypeCode(arg.GetType) of
     TypeCode.Boolean: Result := iif(boolean(arg), 'true', 'false');
     TypeCode.Byte: result := byte(arg).ToString;
@@ -346,23 +347,23 @@ begin
   if aPrimitive = PrimitiveType.String then begin
     var func := EcmaScriptBaseFunctionObject(arg.Get('toString'));
     if func <> nil then begin
-      result := func.Call(ec, []);
+      result := func.CallEx(ec, arg, []);
       if IsPrimitive(result) then exit;
     end;
     func := EcmaScriptBaseFunctionObject(arg.Get('valueOf'));
     if func <> nil then begin
-      result := func.Call(ec, []);
+      result := func.CallEx(ec, arg, []);
       if IsPrimitive(result) then exit;
     end;
   end else begin
     var func := EcmaScriptBaseFunctionObject(arg.Get('valueOf'));
     if func <> nil then begin
-      result := func.Call(ec, []);
+      result := func.CallEx(ec, arg, []);
       if IsPrimitive(result) then exit;
     end;
     func := EcmaScriptBaseFunctionObject(arg.Get('toString'));
     if func <> nil then begin
-      result := func.Call(ec, []);
+      result := func.CallEx(ec, arg, []);
       if IsPrimitive(result) then exit;
     end;
   end;

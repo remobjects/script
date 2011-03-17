@@ -225,7 +225,8 @@ begin
   var lObj := EcmaScriptObject(Value);
   if lObj<> nil then begin
     var lCall := EcmaScriptBaseFunctionObject(lObj.Get(aExecutionContext, 2, 'toJSON'));
-    value := lCall.CallEx(aExecutionContext, lObj, aValue);
+    if lCall <> nil then
+      value := lCall.CallEx(aExecutionContext, lObj, aValue);
   end;
   if aReplacerFunction <> nil then begin
     value := aReplacerFunction.CallEx(aExecutionContext, aWork,aValue, Value);
@@ -292,7 +293,6 @@ begin
         end;
       end; 
     end else begin
-      if EcmaScriptArrayObject(lObj).Items.Count = 0 then exit '{}';
       var lStepBack := aIndent;
       aIndent := aIndent + aGap;
       var k := aProplist:ToArray;

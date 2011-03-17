@@ -290,19 +290,17 @@ begin
 var x = new Error('test');
 writeln(x);
 writeln(x.message);
-x = new Error();
-writeln(x);
 writeln(Error.prototype.name);
 writeln(Error.prototype.message);
 writeln(Error.prototype.toString());");
-var lExpected :="
+var lExpected :="Infinity
+SyntaxError: Syntax error
 object
-false
-false
-null
+true
+true
+Syntax error
 Error: test
 test
-Error
 Error
 
 Error

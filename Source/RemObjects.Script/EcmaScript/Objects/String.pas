@@ -114,14 +114,16 @@ end;
 
 method GlobalObject.StringToString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  if aSelf is not EcmaScriptStringObject then RaiseNativeError(NativeErrorType.TypeError, 'String.prototype.toString is not generic');
-  exit EcmaScriptStringObject(aSelf).Value;
+  if aSelf is String then exit aSelf;
+  if (aSelf is EcmaSCriptObject) and(EcmaScriptObject(aSelf).Class = 'String') then  exit EcmaScriptObject(aSelf).Value;
+  RaiseNativeError(NativeErrorType.TypeError, 'String.prototype.toString is not generic');
 end;
 
 method GlobalObject.StringValueOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf, aCaller), aCaller, String.Empty);
-  exit lSelf;
+  if aSelf is String then exit aSelf;
+  if (aSelf is EcmaSCriptObject) and(EcmaScriptObject(aSelf).Class = 'String') then  exit EcmaScriptObject(aSelf).Value;
+  RaiseNativeError(NativeErrorType.TypeError, 'String.prototype.valueOf is not generic');
 end;
 
 method GlobalObject.StringCharAt(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
