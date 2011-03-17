@@ -108,6 +108,7 @@ type
 		method Run; 
 		property RunResult: Object read fRunResult;
     property RunException: Exception read fExceptionResult;
+    property DebugLastPos: PositionPair read fDebugLastPos;
 		
 		/// <summary>Returns if there is a function by that name. After calling Run the global object
 		///	 will contain a list of all functions, these can be called
