@@ -337,7 +337,7 @@ type
     FEndPosition: Position := new Position();
     FLastEndPosition: Position := new Position();
     fLastWasEnter: Boolean;
-
+    fJSON: Boolean := true;
     method IdentCompare(aPos: Integer; len: Integer; Data: array of Char): Integer;
     method IsIdentifier(aPos: Integer; len: Integer): TokenKind;
     method IntNext(): Boolean;
@@ -348,6 +348,7 @@ type
 
     class method DecodeString(aString: String): String;
 
+    property JSON: Boolean read fJSON write fJSON;
     method SaveState: Object;
     method RestoreState(o: Object);
 
@@ -575,12 +576,25 @@ begin
 
       #11, #9, #12, #32, #133, #160,#$200B,#$FEFF,#$2000 .. #$200B, #$202f, #$205f, #$3000:
       begin //whitespace
+        if fJSON and (FInput[curroffset] in [#11]) then begin
+          FLen := 0;
+          if Error <> nil then Error(self, TokenizerErrorKind.UnknownCharacter, FInput[curroffset].ToString);
+          FToken := TokenKind.Error;
+          exit false;
+        end;
+
         inc(curroffset); // 
         while FInput[curroffset] in [#9, #12, 
           #11, #32, #133, #160,
           #$200B,
           #$FEFF,#$2000 .. #$200B, #$202f, #$205f, #$3000] do
         begin
+          if fJSON and (FInput[curroffset] in [#11]) then begin
+            FLen := 0;
+            if Error <> nil then Error(self, TokenizerErrorKind.UnknownCharacter, FInput[curroffset].ToString);
+            FToken := TokenKind.Error;
+            exit false;
+          end;
           inc(curroffset);
         end;
         FLen := curroffset - FPos;
@@ -903,10 +917,15 @@ begin
                 #10, '''', 'b','t','n','r','v','f','"', #9, '0', '\': ;
                 else begin
                   //if Error <> nil then Error(self, TokenizerErrorKind.InvalidEscapeSequence, '');
-                  FLen := curroffset - FPos;
+                  //FLen := curroffset - FPos;
                 end;
               end; // case
+            end else if fJSON and( fInput[curroffset] in [#$0 .. #$1f]) then begin
+              if Error <> nil then Error(self, TokenizerErrorKind.InvalidEscapeSequence, '');
+              FLen := curroffset - FPos;
+              exit false;
             end;
+
             inc(curroffset);
           end;
           FLen := curroffset - FPos + 1;

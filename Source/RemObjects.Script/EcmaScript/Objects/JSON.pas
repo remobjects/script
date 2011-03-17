@@ -51,6 +51,7 @@ end;
 method GlobalObject.JSONParse(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   var lTok := new Tokenizer();
+  lTok.JSON := true;
   lTok.Error += method (Caller: Tokenizer; Kind: TokenizerErrorKind; Parameter: String); 
     begin
       RaiseNativeError(NativeErrorType.SyntaxError, 'Error in json data at '+caller.Row+':'+caller.Col);
@@ -70,9 +71,9 @@ end;
 method GlobalObject.JSONParse(aTok: Tokenizer): Object;
 begin
   case aTok.Token of 
-    TokenKind.K_null: exit nil;
-    TokenKind.K_true: exit true;
-    TokenKind.K_false: exit false;
+    TokenKind.K_null: begin result := nil; aTok.Next; exit; end;
+    TokenKind.K_true: begin result := true; aTok.Next; exit; end;
+    TokenKind.K_false: begin result := false; aTok.Next; exit; end;
     TokenKind.OpeningBracket: begin
       aTok.Next;
       result := new EcmaScriptArrayObject(self, 0);
@@ -122,11 +123,16 @@ begin
       end;
     end;
 
-    TokenKind.String: exit Tokenizer.DecodeString(aTok.TokenStr);
+    TokenKind.String: begin
+      result := Tokenizer.DecodeString(aTok.TokenStr);
+      aTok.Next;
+      exit;
+    end;
     TokenKind.Float: begin
       var d: Double;
       if not Double.TryParse(aTok.TokenStr, System.Globalization.NumberStyles.Float, System.Globalization.NumberFormatInfo.InvariantInfo, out d) then
         RaiseNativeError(NativeErrorType.SyntaxError, 'Number expected at '+aTok.Row+':'+aTok.Col);
+      aTok.Next;
       exit d;
     end;
     TokenKind.Number: begin
@@ -136,6 +142,7 @@ begin
         if Int64.TryParse(aTok.Tokenstr, out i6) then exit i6;
         RaiseNativeError(NativeErrorType.SyntaxError, 'Number expected at '+aTok.Row+':'+aTok.Col);
       end;
+      aTok.Next;
       exit i;
     end;
   else
