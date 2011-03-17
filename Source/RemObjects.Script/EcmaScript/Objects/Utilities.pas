@@ -128,7 +128,11 @@ begin
     TypeCode.SByte: result := SByte(arg);
     TypeCode.Single: result := Integer(Single(arg));
     TypeCode.String: begin
-       Int32.TryParse(string(arg), out result);
+       if not (if string(arg).StartsWith('0x', StringComparison.InvariantCultureIgnoreCase) then
+         Int32.TryParse(string(arg).Substring(2), System.Globalization.NumberStyles.HexNumber, System.Globalization.NumberFormatInfo.InvariantInfo, out result)
+       else
+          Int32.TryParse(string(arg), out result)) then
+        Result := 0;
     end;
     TypeCode.UInt16: result := UInt16(arg);
     TypeCode.UInt32: result := UInt32(arg);

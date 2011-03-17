@@ -509,9 +509,11 @@ begin
     ElementType.ForStatement: WriteForStatement(ForStatement(el));
     ElementType.WhileStatement: WriteWhileStatement(WhileStatement(el));
     ElementType.LabelledStatement: begin
-      LabelledStatement(el).Break := fILG.DefineLabel;
+      var lWas := fILG.DefineLabel;
+      LabelledStatement(el).Break := lWas;
       WriteStatement(LabelledStatement(el).Statement);
-      filg.MarkLabel(ValueOrDefault(LabelledStatement(el).Break));
+      if lWas = Label(LabelledStatement(el).Break) then
+        filg.MarkLabel(ValueOrDefault(LabelledStatement(el).Break));
     end;
     ElementType.FunctionDeclaration: begin
       // Do nothing here; this is done elsewhere
@@ -1282,7 +1284,7 @@ begin
             filg.Emit(Opcodes.Leave, fExitLabel) else 
           filg.Emit(Opcodes.leave, Label(lIt.Continue));
         end;
-        break;
+        exit;
        end;
     end;
     raise new ScriptParsingException(el.PositionPair.File, el.PositionPair, EcmaScriptErrorKind.UnknownLabelTarget, el.Identifier);
@@ -1341,7 +1343,7 @@ begin
         end else begin
           filg.Emit(Opcodes.leave, Label(lIt.Break));
         end;
-        break;
+        exit;
        end;
     end;
     raise new ScriptParsingException(el.PositionPair.File, el.PositionPair, EcmaScriptErrorKind.UnknownLabelTarget, el.Identifier);

@@ -337,7 +337,7 @@ type
     FEndPosition: Position := new Position();
     FLastEndPosition: Position := new Position();
     fLastWasEnter: Boolean;
-    fJSON: Boolean := true;
+    fJSON: Boolean := false;
     method IdentCompare(aPos: Integer; len: Integer; Data: array of Char): Integer;
     method IsIdentifier(aPos: Integer; len: Integer): TokenKind;
     method IntNext(): Boolean;
