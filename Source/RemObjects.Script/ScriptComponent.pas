@@ -510,6 +510,7 @@ begin
   var lRoot := new ObjectEnvironmentRecord(fScope, fGlobalObject, false);
 
   froot := new ExecutionContext(lRoot, false);
+  fGlobalObject.ExecutionContext := fRoot;
   fCompiler := new EcmaScriptCompiler(new EcmaScriptCompilerOptions(EmitDebugCalls := Debug, GlobalObject := fGlobalObject, Context := fRoot.LexicalScope));
   fGlobalObject.Parser := fCompiler;
 end;

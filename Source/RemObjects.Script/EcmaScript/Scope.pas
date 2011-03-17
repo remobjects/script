@@ -1,4 +1,5 @@
-﻿namespace RemObjects.Script.EcmaScript;
+﻿
+namespace RemObjects.Script.EcmaScript;
 
 interface
 uses
@@ -331,7 +332,7 @@ class method Reference.CreateReference(aBase, aSub: Object; aExecutionContext: E
 begin
   if (aBase = nil) then aExecutionContext.Global.RaiseNativeError(NativeErrorType.TypeError, 'Cannot get property on null');
   if (aBase = Undefined.Instance) then aExecutionContext.Global.RaiseNativeError(NativeErrorType.TypeError, 'Cannot get property of undefined');
-  exit new Reference(aBase, Utilities.GetObjAsString(aSub), aStrict);
+  exit new Reference(aBase, Utilities.GetObjAsString(aSub, aExecutionContext), aStrict);
 end;
 
 class method EnvironmentRecord.GetIdentifier(aLex: EnvironmentRecord; aName: String; aStrict: Boolean): Reference;

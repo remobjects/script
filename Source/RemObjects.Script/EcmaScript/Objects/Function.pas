@@ -104,10 +104,10 @@ begin
   var lNames: string := '';
   var lBody := '';
   if Length(Args) <> 0 then begin
-    lBody := Utilities.GetArgAsString(Args, Length(Args)-1);
+    lBody := Utilities.GetArgAsString(Args, Length(Args)-1, aCaller);
     for i: Integer := 0 to Length(Args) -2 do begin
-      if i = 0 then lNames := Utilities.GetArgAsString(args, i) else
-        lNames := lNames+','+Utilities.GetArgAsString(args, i);
+      if i = 0 then lNames := Utilities.GetArgAsString(args, i, aCaller) else
+        lNames := lNames+','+Utilities.GetArgAsString(args, i, aCaller);
     end;
   end;
   var lTokenizer := new Tokenizer;
@@ -289,7 +289,7 @@ begin
   Scope := aFunc.Scope;
   var lProto := new EcmaScriptObject(aGlobal);
   lProto.DefineOwnProperty('constructor', new PropertyValue(PropertyAttributes.writable or PropertyAttributes.Configurable, self));
-  var lLength := Utilities.GetObjAsInteger(aFunc.Get(nil, 0, 'length'));
+  var lLength := Utilities.GetObjAsInteger(aFunc.Get(nil, 0, 'length'), aGlobal.ExecutionContext);
 
   fOriginal := aFunc;
   lLength := lLength - (length(args) - 1);
@@ -327,7 +327,7 @@ begin
   Scope := ascope;
   var lProto := new EcmaScriptObject(aGlobal);
   lProto.DefineOwnProperty('constructor', new PropertyValue(PropertyAttributes.writable or PropertyAttributes.Configurable, self));
-  var lLength := Utilities.GetObjAsInteger(aFunc.Get(nil, 0, 'length'));
+  var lLength := Utilities.GetObjAsInteger(aFunc.Get(nil, 0, 'length'), aGlobal.ExecutionContext);
 
   
   lLength := lLength - (length(args) - 1);

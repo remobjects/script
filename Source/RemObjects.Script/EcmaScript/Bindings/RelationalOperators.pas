@@ -12,12 +12,12 @@ type
   private
   protected
   public
-    class method LessThan(aLeft, aRight: Object): Object;
-    class method GreaterThan(aLeft, aRight: Object): Object;
-    class method LessThanOrEqual(aLeft, aRight: Object): Object;
-    class method GreaterThanOrEqual(aLeft, aRight: Object): Object;
-    class method InstanceOf(aLeft, aRight: Object): Object;
-    class method &In(aLeft, aRight: Object): Object;
+    class method LessThan(aLeft, aRight: Object; ec: ExecutionContext): Object;
+    class method GreaterThan(aLeft, aRight: Object; ec: ExecutionContext): Object;
+    class method LessThanOrEqual(aLeft, aRight: Object; ec: ExecutionContext): Object;
+    class method GreaterThanOrEqual(aLeft, aRight: Object; ec: ExecutionContext): Object;
+    class method InstanceOf(aLeft, aRight: Object; ec: ExecutionContext): Object;
+    class method &In(aLeft, aRight: Object; ec: ExecutionContext): Object;
 
     class var Method_LessThan: System.Reflection.MethodInfo := typeof(Operators).GetMethod('LessThan');
     class var Method_GreaterThan: System.Reflection.MethodInfo := typeof(Operators).GetMethod('GreaterThan');
@@ -29,7 +29,7 @@ type
 
 implementation
 
-class method Operators.InstanceOf(aLeft, aRight: Object): Object;
+class method Operators.InstanceOf(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
   var lRight := EcmaScriptObject(aRight);
   if lRight = nil then exit false;
@@ -59,42 +59,42 @@ begin
 end;
 
 
-class method Operators.In(aLeft, aRight: Object): Object;
+class method Operators.In(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
   var lObj := EcmaScriptObject(aRight);
   if lObj = nil then exit false;
 
-  exit lObj.HasProperty(Utilities.GetObjAsString(aLeft));
+  exit lObj.HasProperty(Utilities.GetObjAsString(aLeft, ec));
 end;
 
 
 
-class method Operators.LessThan(aLeft, aRight: Object): Object;
+class method Operators.LessThan(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
   if (aLeft is String) and (aRight is String) then
    exit String(aLeft) < String(aRight);
-  exit Utilities.GetObjAsDouble(aLeft) < Utilities.GetObjAsDouble(aRight); 
+  exit Utilities.GetObjAsDouble(aLeft, ec) < Utilities.GetObjAsDouble(aRight, ec); 
 end;
 
-class method Operators.GreaterThan(aLeft, aRight: Object): Object;
+class method Operators.GreaterThan(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
   if (aLeft is String) and (aRight is String) then
    exit String(aLeft) < String(aRight);
-  exit Utilities.GetObjAsDouble(aLeft) > Utilities.GetObjAsDouble(aRight); 
+  exit Utilities.GetObjAsDouble(aLeft, ec) > Utilities.GetObjAsDouble(aRight, ec); 
 end;
 
-class method Operators.LessThanOrEqual(aLeft, aRight: Object): Object;
+class method Operators.LessThanOrEqual(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
   if (aLeft is String) and (aRight is String) then
    exit String(aLeft) < String(aRight);
-  exit Utilities.GetObjAsDouble(aLeft) <= Utilities.GetObjAsDouble(aRight); 
+  exit Utilities.GetObjAsDouble(aLeft, ec) <= Utilities.GetObjAsDouble(aRight, ec); 
 end;
 
-class method Operators.GreaterThanOrEqual(aLeft, aRight: Object): Object;
+class method Operators.GreaterThanOrEqual(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
   if (aLeft is String) and (aRight is String) then
    exit String(aLeft) < String(aRight);
-  exit Utilities.GetObjAsDouble(aLeft) >= Utilities.GetObjAsDouble(aRight); 
+  exit Utilities.GetObjAsDouble(aLeft, ec) >= Utilities.GetObjAsDouble(aRight, ec); 
 end;
 
 end.

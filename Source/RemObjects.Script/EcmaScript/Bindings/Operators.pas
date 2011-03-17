@@ -14,14 +14,14 @@ type
   protected
   public
     
-    class method SameValue(aLeft, aright: Object): Boolean;
+    class method SameValue(aLeft, aright: Object; ec: ExecutionContext): Boolean;
 
 
-    class method Equal(aLeft, aRight: Object): Object;
-    class method NotEqual(aLeft, aRight: Object): Object;
-    class method StrictEqual(aLeft, aRight: Object): Object;
-    class method StrictNotEqual(aLeft, aRight: Object): Object;
-    class method _TypeOf(aValue: Object): String;
+    class method Equal(aLeft, aRight: Object; ec: ExecutionContext): Object;
+    class method NotEqual(aLeft, aRight: Object; ec: ExecutionContext): Object;
+    class method StrictEqual(aLeft, aRight: Object; ec: ExecutionContext): Object;
+    class method StrictNotEqual(aLeft, aRight: Object; ec: ExecutionContext): Object;
+    class method _TypeOf(aValue: Object; ec: ExecutionContext): String;
 
     // OR, AND, ?: have side effects in evaluation and are not specified here.
     class var Method_SameValue: System.Reflection.MethodInfo := typeof(Operators).GetMethod('SameValue');
@@ -34,7 +34,7 @@ type
 
 implementation
 
-class method Operators.Equal(aLeft, aRight: Object): Object;
+class method Operators.Equal(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
   var lLeft: TypeCode := iif(aLeft = nil, TypeCode.Empty, &Type.GetTypeCode(aLeft.GetType));
   var lRight: TypeCode := iif(aRight = nil, TypeCode.Empty, &Type.GetTypeCode(aRight.GetType));
@@ -141,7 +141,7 @@ begin
   result := aLeft.Equals(aRight);
 end;
 
-class method Operators.StrictEqual(aLeft, aRight: Object): Object;
+class method Operators.StrictEqual(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
   if (aLeft = nil) and (aRight = nil) then exit true;
   if (aLeft = nil) or (aRight = nil) then exit false;
@@ -164,7 +164,7 @@ begin
       TypeCode.UInt64,
       TypeCode.Single, 
       TypeCode.Double]) then
-        exit DoubleCompare(Utilities.GetObjAsDouble(aLeft), Utilities.GetObjAsDouble(aRight));
+        exit DoubleCompare(Utilities.GetObjAsDouble(aLeft, ec), Utilities.GetObjAsDouble(aRight, ec));
   if aLeft.GetType() <> aRight.GetType() then exit false;
   if aLeft = Undefined.Instance then exit true;
   if aLEft is Double then begin
@@ -175,9 +175,9 @@ begin
   exit &Equals(aLeft, aRight);
 end;
 
-class method Operators.StrictNotEqual(aLeft, aRight: Object): Object;
+class method Operators.StrictNotEqual(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
-  result := NOT Boolean(StrictEqual(aLeft, aRight));
+  result := NOT Boolean(StrictEqual(aLeft, aRight, ec));
 end;
 class method Operators.DoubleCompare(aLeft, aRight: Double): Boolean;
 begin
@@ -186,12 +186,12 @@ begin
   exit Math.Abs(aRight - aLeft) < 0.00000001;
 end;
 
-class method Operators.SameValue(aLeft, aright: Object): Boolean;
+class method Operators.SameValue(aLeft, aright: Object; ec: ExecutionContext): Boolean;
 begin
-  exit (aLeft = aRight) or Boolean(StrictEqual(aLeft, aRight));
+  exit (aLeft = aRight) or Boolean(StrictEqual(aLeft, aRight, ec));
 end;
 
-class method Operators._TypeOf(aValue: Object): String;
+class method Operators._TypeOf(aValue: Object; ec: ExecutionContext): String;
 begin
   if aValue = nil then exit 'object';
   if aValue = Undefined.Instance then exit 'undefined';
@@ -226,9 +226,9 @@ begin
   exit 'object';
 end;
 
-class method Operators.NotEqual(aLeft, aRight: Object): Object;
+class method Operators.NotEqual(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
-  exit Not Boolean(Equal(aLeft, aRight));
+  exit Not Boolean(Equal(aLeft, aRight, ec));
 end;
 
 end.

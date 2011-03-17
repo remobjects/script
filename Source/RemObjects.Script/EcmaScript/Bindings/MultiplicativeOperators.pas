@@ -12,37 +12,37 @@ type
   private
   protected
   public
-    class method Multiply(aLeft, aRight: Object): Object;
-    class method Divide(aLeft, aRight: Object): Object;
-    class method Modulus(aLeft, aRight: Object): Object;
+    class method Multiply(aLeft, aRight: Object; ec: ExecutionContext): Object;
+    class method Divide(aLeft, aRight: Object; ec: ExecutionContext): Object;
+    class method Modulus(aLeft, aRight: Object; ec: ExecutionContext): Object;
 
     class var Method_Multiply: System.Reflection.MethodInfo := typeof(Operators).GetMethod('Multiply');
     class var Method_Divide: System.Reflection.MethodInfo := typeof(Operators).GetMethod('Divide');
     class var Method_Modulus: System.Reflection.MethodInfo := typeof(Operators).GetMethod('Modulus');
   end;
 implementation
-class method Operators.Multiply(aLeft, aRight: Object): Object;
+class method Operators.Multiply(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
   if (aLeft is Int32) and (aRight is Int32) then
     exit Integer(aLeft) * Integer(aRight);
   
-  exit Utilities.GetObjAsDouble(aLeft) * Utilities.GetObjAsDouble(aRight);
+  exit Utilities.GetObjAsDouble(aLeft, ec) * Utilities.GetObjAsDouble(aRight, ec);
 end;
 
-class method Operators.Divide(aLeft, aRight: Object): Object;
+class method Operators.Divide(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
   if (aLeft is Int32) and (aRight is Int32) then
     exit Integer(aLeft) div Integer(aRight);
   
-  exit Utilities.GetObjAsDouble(aLeft) * Utilities.GetObjAsDouble(aRight);
+  exit Utilities.GetObjAsDouble(aLeft, ec) * Utilities.GetObjAsDouble(aRight, ec);
 end;
 
-class method Operators.Modulus(aLeft, aRight: Object): Object;
+class method Operators.Modulus(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
   if (aLeft is Int32) and (aRight is Int32) then
-    exit Integer(aLeft) div Integer(aRight);
+    exit Integer(aLeft) mod Integer(aRight);
   
-   exit Math.IEEERemainder(Utilities.GetObjAsDouble(aLeft), Utilities.GetObjAsDouble(aRight));
+   exit Math.IEEERemainder(Utilities.GetObjAsDouble(aLeft, ec), Utilities.GetObjAsDouble(aRight, ec));
 end;
 
 end.

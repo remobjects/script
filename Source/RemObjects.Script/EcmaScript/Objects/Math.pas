@@ -82,62 +82,62 @@ end;
 
 method GlobalObject.Mathabs(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  exit Math.Abs(Utilities.GetArgAsDouble(Args, 0));
+  exit Math.Abs(Utilities.GetArgAsDouble(Args, 0, aCaller));
 end;
 
 method GlobalObject.Mathacos(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  exit Math.Acos(Utilities.GetArgAsDouble(Args, 0));
+  exit Math.Acos(Utilities.GetArgAsDouble(Args, 0, aCaller));
 end;
 
 method GlobalObject.Mathasin(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  exit Math.Asin(Utilities.GetArgAsDouble(Args, 0));
+  exit Math.Asin(Utilities.GetArgAsDouble(Args, 0, aCaller));
 end;
 
 method GlobalObject.Mathatan(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  exit Math.Atan(Utilities.GetArgAsDouble(Args, 0));
+  exit Math.Atan(Utilities.GetArgAsDouble(Args, 0, aCaller));
 end;
 
 method GlobalObject.Mathatan2(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  exit Math.Atan2(Utilities.GetArgAsDouble(Args, 0), Utilities.GetArgAsDouble(Args, 1));
+  exit Math.Atan2(Utilities.GetArgAsDouble(Args, 0, aCaller), Utilities.GetArgAsDouble(Args, 1, aCaller));
 end;
 
 method GlobalObject.Mathceil(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  exit Math.Ceiling(Utilities.GetArgAsDouble(Args, 0));
+  exit Math.Ceiling(Utilities.GetArgAsDouble(Args, 0, aCaller));
 end;
 
 method GlobalObject.Mathcos(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  exit Math.Cos(Utilities.GetArgAsDouble(Args, 0));
+  exit Math.Cos(Utilities.GetArgAsDouble(Args, 0, aCaller));
 end;
 
 method GlobalObject.Mathexp(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  exit Math.Exp(Utilities.GetArgAsDouble(Args, 0));
+  exit Math.Exp(Utilities.GetArgAsDouble(Args, 0, aCaller));
 end;
 
 method GlobalObject.Mathfloor(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  exit Math.Floor(Utilities.GetArgAsDouble(Args, 0));
+  exit Math.Floor(Utilities.GetArgAsDouble(Args, 0, aCaller));
 end;
 
 method GlobalObject.Mathlog(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  exit Math.Log(Utilities.GetArgAsDouble(Args, 0));
+  exit Math.Log(Utilities.GetArgAsDouble(Args, 0, aCaller));
 end;
 
 method GlobalObject.Mathmax(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
   if Length(args) = 0 then exit Double.NegativeInfinity;
   if args.Length = 1 then exit args[0];
-  var lMaxValue := Utilities.GetArgAsDouble(Args, 0);
+  var lMaxValue := Utilities.GetArgAsDouble(Args, 0, aCaller);
   if Double.IsNaN(lMaxValue) then exit Double.NaN;
   for i: Integer := 1 to args.Length -1 do begin
-    var lValue := Utilities.GetArgAsDouble(args, i);
+    var lValue := Utilities.GetArgAsDouble(args, i, aCaller);
     if Double.IsNaN(lMaxValue) then exit Double.NaN;
     lMaxValue := Math.Max(lMaxValue, lValue);
   end;
@@ -149,10 +149,10 @@ method GlobalObject.Mathmin(aCaller: ExecutionContext;aSelf: Object; params Args
 begin
   if Length(args) = 0 then exit Double.PositiveInfinity;
   if args.Length = 1 then exit args[0];
-  var lMaxValue := Utilities.GetArgAsDouble(Args, 0);
+  var lMaxValue := Utilities.GetArgAsDouble(Args, 0, aCaller);
   if Double.IsNaN(lMaxValue) then exit Double.NaN;
   for i: Integer := 1 to args.Length -1 do begin
-    var lValue := Utilities.GetArgAsDouble(args, i);
+    var lValue := Utilities.GetArgAsDouble(args, i, aCaller);
     if Double.IsNaN(lMaxValue) then exit Double.NaN;
     lMaxValue := Math.Max(lMaxValue, lValue);
   end;
@@ -162,7 +162,7 @@ end;
 
 method GlobalObject.Mathpow(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  exit Math.Pow(Utilities.GetArgAsDouble(Args, 0), Utilities.GetArgAsDouble(Args, 1));
+  exit Math.Pow(Utilities.GetArgAsDouble(Args, 0, aCaller), Utilities.GetArgAsDouble(Args, 1, aCaller));
 end;
 
 method GlobalObject.Mathrandom(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
@@ -173,22 +173,22 @@ end;
 
 method GlobalObject.Mathsin(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  exit Math.Sin(Utilities.GetArgAsDouble(Args, 0));
+  exit Math.Sin(Utilities.GetArgAsDouble(Args, 0, aCaller));
 end;
 
 method GlobalObject.Mathsqrt(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  exit Math.Sqrt(Utilities.GetArgAsDouble(Args, 0));
+  exit Math.Sqrt(Utilities.GetArgAsDouble(Args, 0, aCaller));
 end;
 
 method GlobalObject.Mathtan(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  exit Math.Tan(Utilities.GetArgAsDouble(Args, 0));
+  exit Math.Tan(Utilities.GetArgAsDouble(Args, 0, aCaller));
 end;
 
 method GlobalObject.Mathround(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  var lVal := Utilities.GetArgAsDouble(args, 0);
+  var lVal := Utilities.GetArgAsDouble(args, 0, aCaller);
   // Javascript has a weird kind of rounding
   if (lVal < 0) and (lVal > -0.5) then exit 0;
   exit Math.Floor(lVal + 0.5);

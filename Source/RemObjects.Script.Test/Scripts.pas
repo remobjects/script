@@ -116,7 +116,7 @@ begin
   lComp.Source := s;
   fResult := '';
   var lDel: MyDelegate :=  method (params args: Array of object): Object begin
-    for each el in args do fResult := fResult + RemObjects.Script.EcmaScript.Utilities.GetObjAsString(el) + #13#10;
+    for each el in args do fResult := fResult + RemObjects.Script.EcmaScript.Utilities.GetObjAsString(el, lComp.GlobalObject.ExecutionContext) + #13#10;
   end;
   lComp.Globals.SetVariable("writeln", lDel);
   lComp.Globals.SetVariable('lda', new RemObjects.Script.EcmaScript.EcmaScriptObjectWrapper(new LDA(self), typeof(LDA), lComp.GlobalObject));

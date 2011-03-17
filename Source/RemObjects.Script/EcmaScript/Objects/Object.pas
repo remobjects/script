@@ -131,7 +131,7 @@ begin
   if IsDataDescriptor(lDesc) then
     exit lDesc.Value;
   if IsAccessorDescriptor(lDesc) and (lDesc.Get <> nil) then begin
-    exit lDesc.Get.CallEx(aExecutionContext, self);
+    exit lDesc.Get.CallEx(coalesce(aExecutionContext, Root.ExecutionContext), self);
   end;
   exit Undefined.Instance;
 end;
@@ -172,7 +172,7 @@ begin
   end;
   lOwn := GetProperty(aName);
   if assigned(lOwn) and IsAccessorDescriptor(lOwn) and (lOwn.Set <> nil) then begin
-    exit lOwn.Set.CallEx(aExecutionContext, self, [aValue]);
+    exit lOwn.Set.CallEx(coalesce(aExecutionContext, root.ExecutionContext), self, [aValue]);
   end;
   if DefineOwnProperty(aName, new PropertyValue(PropertyAttributes.All, aValue), 0 <> (aFlags and 1)) then
     exit Avalue;
@@ -227,7 +227,7 @@ end;
 method EcmaScriptObject.ToString: String;
 begin
   var lFunc := EcmaScriptObject(Get(nil, 'toString'));
-  if lFunc <> nil then exit Utilities.GetObjAsString(lFunc.CallEx(nil, self));
+  if lFunc <> nil then exit Utilities.GetObjAsString(lFunc.CallEx(nil, self), Root.ExecutionContext);
   result := '[object '+&Class+']';
 end;
 
@@ -265,15 +265,15 @@ method EcmaScriptObject.ToPropertyDescriptor(aProp: EcmaScriptObject): PropertyV
 begin
   result := new PropertyValue(PropertyAttributes.None, nil);
   if aProp.HasProperty('enumerable') then
-    if Utilities.GetObjAsBoolean(aProp.Get('enumerable')) then result.Attributes := result.Attributes or PropertyAttributes.Enumerable;
+    if Utilities.GetObjAsBoolean(aProp.Get('enumerable'), Root.ExecutionContext) then result.Attributes := result.Attributes or PropertyAttributes.Enumerable;
   if aProp.HasProperty('configurable') then
-    if Utilities.GetObjAsBoolean(aProp.Get('configurable')) then result.Attributes := result.Attributes or PropertyAttributes.configurable;
+    if Utilities.GetObjAsBoolean(aProp.Get('configurable'), Root.ExecutionContext) then result.Attributes := result.Attributes or PropertyAttributes.configurable;
   if aProp.HasProperty('value') then begin
     result.Value := aProp.Get('value');
  end else   result.Attributes := result.Attributes and not PropertyAttributes.HasValue;
 
  if aProp.HasProperty('writable') then
-    if Utilities.GetObjAsBoolean(aProp.Get('writable')) then result.Attributes := result.Attributes or PropertyAttributes.writable;
+    if Utilities.GetObjAsBoolean(aProp.Get('writable'), Root.ExecutionContext) then result.Attributes := result.Attributes or PropertyAttributes.writable;
   if aProp.HasProperty('get') then begin
     var lGet := aProp.Get('get');
     if lget <> Undefined.Instance then begin
@@ -308,7 +308,7 @@ begin
   end;
   if IsGenericDescriptor(aValue) and (aValue.Attributes = PropertyAttributes.None) then exit true;
   
-  if (aValue.Attributes = lCurrent.Attributes) and (Operators.SameValue(aValue.Value, lCurrent.Value)) and (aValue.Get = lCurrent.Get) and (aValue.Set = lCurrent.Set) then exit true;
+  if (aValue.Attributes = lCurrent.Attributes) and (Operators.SameValue(aValue.Value, lCurrent.Value, Root.ExecutionContext)) and (aValue.Get = lCurrent.Get) and (aValue.Set = lCurrent.Set) then exit true;
   if PropertyAttributes.Configurable not in lCurrent.Attributes then begin
     if PropertyAttributes.Configurable in aValue.Attributes then begin
       if aThrow then Root.RaiseNativeError(NativeErrorType.TypeError, 'Property '+aName+' not configurable');
@@ -340,7 +340,7 @@ begin
           if aThrow then Root.RaiseNativeError(NativeErrorType.TypeError, 'Property '+aName+' not writable');
           exit false;
         end;
-        if (PropertyAttributes.writable not in lCurrent.Attributes) and not Operators.SameValue(aValue.Value, lCurrent.Value) then begin
+        if (PropertyAttributes.writable not in lCurrent.Attributes) and not Operators.SameValue(aValue.Value, lCurrent.Value, Root.ExecutionContext) then begin
           if aThrow then Root.RaiseNativeError(NativeErrorType.TypeError, 'Property '+aName+' not writable');
           exit false;
         end;

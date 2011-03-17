@@ -189,10 +189,10 @@ begin
 
   if (lPrecondition <> nil) and (lPrecondition <> RemObjects.Script.EcmaScript.Undefined.Instance) then begin
     var lRes := RemObjects.Script.EcmaScript.EcmaScriptObject(lPrecondition).CallEx(fContext, o.Root);
-    Xunit.Assert.True(RemObjects.Script.EcmaScript.Utilities.GetObjAsBoolean(lRes), 'Precondition for '+RemObjects.Script.EcmaScript.Utilities.GetObjAsString(lName) +' failed. Description: '+RemObjects.Script.EcmaScript.Utilities.GetObjAsString(lDescription));
+    Xunit.Assert.True(RemObjects.Script.EcmaScript.Utilities.GetObjAsBoolean(lRes, fContext), 'Precondition for '+RemObjects.Script.EcmaScript.Utilities.GetObjAsString(lName, fContext) +' failed. Description: '+RemObjects.Script.EcmaScript.Utilities.GetObjAsString(lDescription, fContext));
   end;
   var lRes := RemObjects.Script.EcmaScript.EcmaScriptObject(lTest).Call(fContext, o.Root);
-  Xunit.Assert.True(RemObjects.Script.EcmaScript.Utilities.GetObjAsBoolean(lRes), 'Testcase '+RemObjects.Script.EcmaScript.Utilities.GetObjAsString(lName) +' failed. Description: '+RemObjects.Script.EcmaScript.Utilities.GetObjAsString(lDescription));
+  Xunit.Assert.True(RemObjects.Script.EcmaScript.Utilities.GetObjAsBoolean(lRes, fContext), 'Testcase '+RemObjects.Script.EcmaScript.Utilities.GetObjAsString(lName, fContext) +' failed. Description: '+RemObjects.Script.EcmaScript.Utilities.GetObjAsString(lDescription, fContext));
 
   //lName.ToString();
   //test: A function that performs the actual test. The test harness will call this function to execute the test.  It must return true if the test passes. Any other return value indicates a failed test. The test function is called as a method with its this value set to its defining test case object.

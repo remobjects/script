@@ -18,6 +18,8 @@ type
     property Owner: SputnikTests;
     property Name: string;
 
+    method ToString: String; override;
+
     property TypeName: System.String read 'ROEcmaScript.Test.SputnikTest';
     property ReturnType: System.String read 'System.Void';
     property MethodInfo: System.Reflection.MethodInfo read typeof(SputnikTest).GetMethod('Run');
@@ -134,6 +136,7 @@ method SputnikTests.ScanJS(aScan: String);
 begin
   var lItems :=new DirectoryInfo(aScan).GetFileSystemInfos();
   for each el in lItems do begin
+    
     if el is DirectoryInfo then continue;
     if el.FullName.EndsWith('.js') then begin
       fTests.Add(new SputnikTest(Owner := self, Name := el.FullName.Substring(fTestRoot.Length+1)));
@@ -196,6 +199,11 @@ begin
   Owner.RunTest(Name);
 end;
 
+
+method SputnikTest.ToString: String;
+begin
+  exit Name;
+end;
 
 method SputnikException.ToString: String;
 begin

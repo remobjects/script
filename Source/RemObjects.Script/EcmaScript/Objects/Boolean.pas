@@ -54,12 +54,12 @@ end;
 
 method GlobalObject.BooleanCall(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  exit Utilities.GetArgAsBoolean(args, 0);
+  exit Utilities.GetArgAsBoolean(args, 0, aCaller);
 end;
 
 method GlobalObject.BooleanCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lVal := Utilities.GetArgAsBoolean(args, 0);
+  var lVal := Utilities.GetArgAsBoolean(args, 0, aCaller);
   var lObj := new EcmaScriptObject(self, BooleanPrototype, &Class := 'Boolean', Value := lVal);
   exit lObj;
 end;
@@ -67,12 +67,12 @@ end;
 
 method GlobalObject.BooleanToString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  exit iif (Utilities.GetObjAsBoolean(aSelf), 'true', 'false');
+  exit iif (Utilities.GetObjAsBoolean(aSelf, aCaller), 'true', 'false');
 end;
 
 method GlobalObject.BooleanValueOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  exit Utilities.GetObjAsBoolean(aSelf);
+  exit Utilities.GetObjAsBoolean(aSelf, aCaller);
 end;
 
 method EcmaScriptBooleanObject.Call(context: ExecutionContext; params args: array of Object): Object;

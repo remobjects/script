@@ -28,12 +28,19 @@ type
   end;
 
   GlobalObject = public partial class(EcmaScriptObject)
+  private
+    fExecutionContext: ExecutionContext;
+    fDebug: IDebugSink;
+    method get_ExecutionContext: ExecutionContext;
+    method get_Debug: IDebugSink;
   assembly
     fParser: EcmaScriptCompiler;
     fDelegates: List<InternalFunctionDelegate> := new List<InternalFunctionDelegate>;
   public
     constructor (aParser: EcmaScriptCompiler);
 		constructor;
+
+    property ExecutionContext: ExecutionContext read get_ExecutionContext write fExecutionContext;
 
     property MaxFrames: Integer := 1024;
     property FrameCount: Integer;
@@ -102,9 +109,6 @@ type
     
     method CreateObject: EcmaScriptObject;
     method ToString: String; override;
-  private
-    fDebug: IDebugSink;
-    method get_Debug: IDebugSink;
   end;
   EcmaScriptEvalFunctionObject = public class(EcmaScriptFunctionObject);
 
@@ -230,7 +234,7 @@ end;
 
 method GlobalObject.isNaN(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
 begin
-  exit Double.IsNaN(Utilities.GetObjAsDouble(args[0]));
+  exit Double.IsNaN(Utilities.GetObjAsDouble(args[0], aCaller));
 end;
 
 method GlobalObject.isFinite(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
@@ -320,36 +324,36 @@ end;
 
 method GlobalObject.encodeURI(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
 begin
-  exit Utilities.UrlEncode(Utilities.GetArgAsString(Args, 0));
+  exit Utilities.UrlEncode(Utilities.GetArgAsString(Args, 0, aCaller));
 end;
 
 method GlobalObject.decodeURI(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
 begin
-  exit Utilities.UrlDecode(Utilities.GetArgAsString(args, 0));
+  exit Utilities.UrlDecode(Utilities.GetArgAsString(args, 0, aCaller));
 end;
 
 method GlobalObject.encodeURIComponent(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
 begin
-  exit Utilities.UrlEncodeComponent(Utilities.GetArgAsString(Args, 0));  
+  exit Utilities.UrlEncodeComponent(Utilities.GetArgAsString(Args, 0, aCaller));  
 end;
 
 method GlobalObject.decodeURIComponent(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
 begin
-  exit Utilities.UrlDecode(Utilities.GetArgAsString(args, 0));
+  exit Utilities.UrlDecode(Utilities.GetArgAsString(args, 0, aCaller));
 end;
 
 method GlobalObject.ObjectgetPrototypeOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0);
+  var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0, aCaller);
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'Type(O) is not Object');
   exit lWork.Prototype;
 end;
 
 method GlobalObject.ObjectgetOwnPropertyDescriptor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0);
+  var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0, aCaller);
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'Type(O) is not Object');
-  var lName := Utilities.GetArgAsString(args, 1);
+  var lName := Utilities.GetArgAsString(args, 1, aCaller);
   var lArr := EcmaScriptArrayObject (lWork);
   var lVal: Integer;
   if (lArr <> nil) and Int32.TryParse(lName, out lval) and (lval < lArr.Items.Count) and (lval >= 0) then begin
@@ -365,7 +369,7 @@ end;
 
 method GlobalObject.ObjectgetOwnPropertyNames(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0);
+  var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0, aCaller);
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'Type(O) is not Object');
   var lRes := EcmaScriptArrayObject(ArrayCtor(aCaller, 0));
   for each el in lWork.Values.Keys do 
@@ -375,11 +379,11 @@ end;
 
 method GlobalObject.ObjectCreate(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0);
+  var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0, aCaller);
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'Type(O) is not Object');
   var lRes := new EcmaScriptObject(self, lWork);
 
-  var lArgs := Utilities.GetArgAsEcmaScriptObject(args, 1);
+  var lArgs := Utilities.GetArgAsEcmaScriptObject(args, 1, aCaller);
   if lArgs <> nil then
     ObjectdefineProperties(aCaller, nil, lRes, largs);
   exit lRes;
@@ -387,10 +391,10 @@ end;
 
 method GlobalObject.ObjectdefineProperty(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0);
+  var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0, aCaller);
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'Type(O) is not Object');
-  var lName := Utilities.GetArgAsString(args, 1);
-  var lData:= Utilities.GetArgAsEcmaScriptObject(args, 2);
+  var lName := Utilities.GetArgAsString(args, 1, aCaller);
+  var lData:= Utilities.GetArgAsEcmaScriptObject(args, 2, aCaller);
   if lData = nil then RaiseNativeError(NativeErrorType.TypeError, 'Type(O) is not Object');
   var lValue := ToPropertyDescriptor(lData);
 
@@ -400,13 +404,13 @@ end;
 
 method GlobalObject.ObjectdefineProperties(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0);
+  var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0, aCaller);
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'Type(O) is not Object');
-  var lProps := Utilities.GetArgAsEcmaScriptObject(args, 1);
+  var lProps := Utilities.GetArgAsEcmaScriptObject(args, 1, aCaller);
   if lProps = nil then RaiseNativeError(NativeErrorType.TypeError, 'Type(Properties) is not Object');
   
   for each el in lProps.Values.Keys do begin
-    var lValue := Utilities.GetObjAsEcmaScriptObject(lProps.Get(aCaller, 0, el));
+    var lValue := Utilities.GetObjAsEcmaScriptObject(lProps.Get(aCaller, 0, el), aCaller);
     if lValue = nil then RaiseNativeError(NativeErrorType.TypeError, 'Type(Element) is not Object');
     lWork.DefineOwnProperty(el, ToPropertyDescriptor(lValue), true);
     
@@ -417,7 +421,7 @@ end;
 
 method GlobalObject.ObjectSeal(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0);
+  var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0, aCaller);
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'Type(O) is not Object');
   for each el in lWork.Values do
     el.Value.Attributes := el.Value.Attributes and not PropertyAttributes.Enumerable;
@@ -428,7 +432,7 @@ end;
 
 method GlobalObject.ObjectFreeze(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0);
+  var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0, aCaller);
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'Type(O) is not Object');
   for each el in lWork.Values do
     el.Value.Attributes := el.Value.Attributes and not (PropertyAttributes.Enumerable or PropertyAttributes.writable);
@@ -439,7 +443,7 @@ end;
 
 method GlobalObject.ObjectpreventExtensions(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0);
+  var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0, aCaller);
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'Type(O) is not Object');
   lWork.Extensible := false;
 
@@ -448,7 +452,7 @@ end;
 
 method GlobalObject.ObjectisSealed(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0);
+  var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0, aCaller);
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'Type(O) is not Object');
   if lWork.Extensible then exit false;
   for each el in lWork.Values do
@@ -458,7 +462,7 @@ end;
 
 method GlobalObject.ObjectisFrozen(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0);
+  var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0, aCaller);
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'Type(O) is not Object');
   if lWork.Extensible then exit false;
   for each el in lWork.Values do begin
@@ -470,14 +474,14 @@ end;
 
 method GlobalObject.ObjectisExtensible(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0);
+  var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0, aCaller);
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'Type(O) is not Object');
   exit lWork.Extensible;
 end;
 
 method GlobalObject.ObjectKeys(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0);
+  var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0, aCaller);
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'Type(O) is not Object');
   var lResult := new EcmaScriptArrayObject(0, self);
   if lWork is EcmaScriptArrayObject then begin
@@ -514,7 +518,7 @@ end;
 
 method GlobalObject.ObjectToLocaleString(aCaller: ExecutionContext; aSelf: Object; params args: Array of Object): Object;
 begin
-  var lWork := Utilities.GetObjAsEcmaScriptObject(aSelf);
+  var lWork := Utilities.GetObjAsEcmaScriptObject(aSelf, aCaller);
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'this is not Object');
   var lToString := EcmaScriptFunctionObject(lWork.Get(aCaller, 0, 'toString'));
   if lToString = nil then RaiseNativeError(NativeErrorType.TypeError, 'toString is not callable');
@@ -523,22 +527,22 @@ end;
 
 method GlobalObject.ObjectHasOwnProperty(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lWork := Utilities.GetObjAsEcmaScriptObject(aSelf);
+  var lWork := Utilities.GetObjAsEcmaScriptObject(aSelf, aCaller);
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'this is not Object');
-  exit lWork.GetOwnProperty(Utilities.GetArgAsString(Args, 0)) <> nil;
+  exit lWork.GetOwnProperty(Utilities.GetArgAsString(Args, 0, aCaller)) <> nil;
 end;
 
 method GlobalObject.ObjectPropertyIsEnumerable(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lWork := Utilities.GetObjAsEcmaScriptObject(aSelf);
+  var lWork := Utilities.GetObjAsEcmaScriptObject(aSelf, aCaller);
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'this is not Object');
-  var lProp := lWork.GetOwnProperty(Utilities.GetArgAsString(Args, 0));
+  var lProp := lWork.GetOwnProperty(Utilities.GetArgAsString(Args, 0, aCaller));
   exit (lProp <> nil) and (PropertyATtributes.Enumerable in lProp.Attributes);
 end;
 
 method GlobalObject.escape(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
 begin
-  var lWork := Utilities.GetArgAsString(args, 0);
+  var lWork := Utilities.GetArgAsString(args, 0, aCaller);
   var sb := new StringBuilder;
   for i: Integer := 0 to Length(lWork) -1 do begin
     case lWork[i] of 
@@ -564,7 +568,7 @@ end;
 
 method GlobalObject.unescape(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
 begin
- var lWork := Utilities.GetArgAsString(args, 0);
+ var lWork := Utilities.GetArgAsString(args, 0, aCaller);
   var sb := new StringBuilder;
   var i: Integer := 0;
   while i < Length(lWork) do begin
@@ -604,6 +608,12 @@ end;
 method GlobalObject.DecreaseFrame;
 begin
   FrameCount := FrameCount - 1;
+end;
+
+method GlobalObject.get_ExecutionContext: ExecutionContext;
+begin
+  if fExecutionContext = nil then fExecutionContext := new ExecutionContext(new ObjectEnvironmentRecord(nil, self), false);
+  exit fExecutionContext;
 end;
 
 method Undefined.ToString: String;

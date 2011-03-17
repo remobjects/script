@@ -74,6 +74,15 @@ type
     property GlobalObject: GlobalObject;
   end;
 
+  FinallyInfo = public class
+  private
+  public
+    property FinallyLabel: Label;
+    property FinallyState: LocalBuilder;
+    method AddUnique(aLabel: Label): Integer;
+    property JumpTable: List<Label> := new List<Label>; readonly;
+  end;
+
   EcmaScriptCompiler = public class
   assembly
     fRoot: EnvironmentRecord;
@@ -452,10 +461,25 @@ begin
     end;
 
     ElementType.ReturnStatement: begin
-      WriteExpression(ReturnStatement(el).ExpressionElement);
-      CallGetValue(ReturnStatement(el).ExpressionElement.Type);
+      if ReturnStatement(el).ExpressionElement = nil then 
+        filg.Emit(Opcodes.Call, Undefined.Method_Instance)
+      else begin
+        WriteExpression(ReturnStatement(el).ExpressionElement);
+        CallGetValue(ReturnStatement(el).ExpressionElement.Type);
+      end;
       filg.Emit(Opcodes.Stloc, fResultVar);
-      filg.Emit(Opcodes.Leave, fExitLabel);
+      var lFinallyInfo := Enumerable.Reverse(fStatementStack).Where(a-> (a.Type = ElementType.TryStatement) and (TryStatement(a).FinallyData <> nil)).Select(a->TryStatement(a).FinallyData).ToArray;
+      if lFinallyInfo.Length > 0 then begin
+        for i: Integer := 0 to lFinallyInfo.length -1 do begin
+          filg.Emit(Opcodes.Ldc_I4,  lFinallyInfo[i].AddUnique(if i < lFinallyInfo.length -1 then lFinallyInfo[i+1].FinallyLabel else fExitLabel));
+          filg.Emit(Opcodes.Stloc, lFinallyInfo[i].FinallyState);
+        end;
+        if TryStatement(Enumerable.Reverse(fStatementStack).FirstOrDefault(a->a.Type = ElementType.TryStatement)).Catch <> nil then
+          filg.Emit(Opcodes.Leave, lFinallyInfo[0].FinallyLabel) 
+        else
+          filg.Emit(Opcodes.Br, lFinallyInfo[0].FinallyLabel);
+      end else
+        filg.Emit(Opcodes.Leave, fExitLabel); // there's always an outside finally
     end;
     ElementType.ExpressionStatement: begin
       WriteExpression(ExpressionStatement(el).ExpressionElement);
@@ -487,7 +511,7 @@ begin
     ElementType.LabelledStatement: begin
       LabelledStatement(el).Break := fILG.DefineLabel;
       WriteStatement(LabelledStatement(el).Statement);
-      filg.MarkLabel(LabelledStatement(el).Break);
+      filg.MarkLabel(ValueOrDefault(LabelledStatement(el).Break));
     end;
     ElementType.FunctionDeclaration: begin
       // Do nothing here; this is done elsewhere
@@ -570,11 +594,13 @@ begin
         UnaryOperator.BinaryNot: begin
           WriteExpression(UnaryExpression(aExpressioN).Value);
           CallGetValue(UnaryExpression(aExpressioN).Value.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_BitwiseNot);
         end;
         UnaryOperator.BoolNot: begin
           WriteExpression(UnaryExpression(aExpressioN).Value);
           CallGetValue(UnaryExpression(aExpressioN).Value.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_LogicalNot);
         end;
 
@@ -588,12 +614,14 @@ begin
         UnaryOperator.Minus: begin
           WriteExpression(UnaryExpression(aExpressioN).Value);
           CallGetValue(UnaryExpression(aExpressioN).Value.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_Minus);
         end;
 
         UnaryOperator.Plus: begin
           WriteExpression(UnaryExpression(aExpressioN).Value);
           CallGetValue(UnaryExpression(aExpressioN).Value.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_Plus);
         end;
         UnaryOperator.PostDecrement: begin
@@ -620,6 +648,7 @@ begin
         UnaryOperator.TypeOf: begin
           WriteExpression(UnaryExpression(aExpressioN).Value);
           CallGetValue(UnaryExpression(aExpressioN).Value.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_TypeOf);
         end;
         UnaryOperator.Void: begin
@@ -655,6 +684,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_Add);
         end;
         BinaryOperator.PlusAssign: begin
@@ -663,6 +693,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_Add);
           filg.Emit(OpCodes.Ldloc, fExecutionContext);
           fILG.Emit(Opcodes.Call, Reference.Method_SetValue);
@@ -672,6 +703,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_Divide);
         end;
         BinaryOperator.DivideAssign: begin
@@ -680,6 +712,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_Divide);
           filg.Emit(OpCodes.Ldloc, fExecutionContext);
           fILG.Emit(Opcodes.Call, Reference.Method_SetValue);
@@ -689,6 +722,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_Subtract);
         end;
         BinaryOperator.MinusAssign: begin
@@ -697,7 +731,8 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          filg.Emit(Opcodes.Call, Operators.Method_Minus);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
+          filg.Emit(Opcodes.Call, Operators.Method_Subtract);
           filg.Emit(OpCodes.Ldloc, fExecutionContext);
           fILG.Emit(Opcodes.Call, Reference.Method_SetValue);
         end;
@@ -707,6 +742,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_Modulus);
         end;
         BinaryOperator.ModulusAssign: begin
@@ -715,6 +751,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_Modulus);
           filg.Emit(OpCodes.Ldloc, fExecutionContext);
           fILG.Emit(Opcodes.Call, Reference.Method_SetValue);
@@ -725,6 +762,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_Multiply);
         end;
         BinaryOperator.MultiplyAssign: begin
@@ -733,6 +771,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_Multiply);
           filg.Emit(OpCodes.Ldloc, fExecutionContext);
           fILG.Emit(Opcodes.Call, Reference.Method_SetValue);
@@ -743,6 +782,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_ShiftLeft);
         end;
         BinaryOperator.ShiftLeftAssign: begin
@@ -751,6 +791,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_ShiftLeft);
           filg.Emit(OpCodes.Ldloc, fExecutionContext);
           fILG.Emit(Opcodes.Call, Reference.Method_SetValue);
@@ -761,6 +802,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_ShiftRight);
         end;
         BinaryOperator.ShiftRightSignedAssign: begin
@@ -769,6 +811,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_ShiftRight);
           filg.Emit(OpCodes.Ldloc, fExecutionContext);
           fILG.Emit(Opcodes.Call, Reference.Method_SetValue);
@@ -779,6 +822,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_ShiftRightUnsigned);
         end;
         BinaryOperator.ShiftRightUnsignedAssign: begin
@@ -787,6 +831,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_ShiftRightUnsigned);
           filg.Emit(OpCodes.Ldloc, fExecutionContext);
           fILG.Emit(Opcodes.Call, Reference.Method_SetValue);
@@ -796,6 +841,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_And);
         end;
         BinaryOperator.AndAssign: begin
@@ -804,6 +850,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_And);
           filg.Emit(OpCodes.Ldloc, fExecutionContext);
           fILG.Emit(Opcodes.Call, Reference.Method_SetValue);
@@ -813,6 +860,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_Or);
         end;
         BinaryOperator.OrAssign: begin
@@ -821,6 +869,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_OR);
           filg.Emit(OpCodes.Ldloc, fExecutionContext);
           fILG.Emit(Opcodes.Call, Reference.Method_SetValue);
@@ -830,6 +879,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_XOr);
         end;
         BinaryOperator.XorAssign: begin
@@ -838,6 +888,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_XOr);
           filg.Emit(OpCodes.Ldloc, fExecutionContext);
           fILG.Emit(Opcodes.Call, Reference.Method_SetValue);
@@ -848,6 +899,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_Equal);
         end;
 
@@ -856,6 +908,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_NotEqual);
         end;
 
@@ -864,6 +917,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_StrictEqual);
         end;
 
@@ -872,6 +926,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_StrictNotEqual);
         end;
 
@@ -880,6 +935,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_LessThan);
         end;
         BinaryOperator.Greater: begin
@@ -887,6 +943,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_GreaterThan);
         end;
         BinaryOperator.LessOrEqual: begin
@@ -894,6 +951,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_LessThanOrEqual);
         end;
         BinaryOperator.GreaterOrEqual: begin
@@ -901,6 +959,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_GreaterThanOrEqual);
         end;        
         BinaryOperator.InstanceOf: begin
@@ -908,6 +967,7 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_InstanceOf);
         end;
         BinaryOperator.In: begin
@@ -915,12 +975,14 @@ begin
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           WriteExpression(BinaryExpression(aExpression).RightSide);
           CallGetValue(BinaryExpression(aExpression).RightSide.Type);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_In);
         end;
         BinaryOperator.DoubleAnd: begin
           WriteExpression(BinaryExpression(aExpression).LeftSide);
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           filg.Emit(Opcodes.Dup);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
           var lGotIt := filg.DefineLabel;
           filg.Emit(OpCodes.Brfalse, lGotIt);
@@ -933,6 +995,7 @@ begin
           WriteExpression(BinaryExpression(aExpression).LeftSide);
           CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
           filg.Emit(Opcodes.Dup);
+          filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
           var lGotIt := filg.DefineLabel;
           filg.Emit(OpCodes.Brtrue, lGotIt);
@@ -948,6 +1011,7 @@ begin
     ElementType.ConditionalExpression: begin
       WriteExpression(ConditionalExpression(aExpression).Condition);
       CallGetValue(ConditionalExpression(aExpression).Condition.Type);
+      filg.Emit(Opcodes.Ldloc, fExecutionContext);
       filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
       var lFalse := filg.DefineLabel;
       var lExit := filg.DefineLabel;
@@ -986,6 +1050,7 @@ begin
         else
           WriteExpression(el.Name);
         end; // case
+        filg.Emit(Opcodes.Ldloc, fExecutionContext);
         filg.Emit(Opcodes.Call, Utilities.Method_GetObjAsString);
         filg.Emit(OpCodes.Ldc_I4, Integer(el.Mode));
         WriteExpression(el.Value);
@@ -1075,6 +1140,7 @@ begin
   case aFromElement of
     ElementType.SubExpression,
     ElementType.CallExpression,
+    ElementType.ArrayAccessExpression,
     ElementType.IdentifierExpression: ;
   else
     exit; // not needed
@@ -1127,6 +1193,7 @@ method EcmaScriptCompiler.WriteIfStatement(el: IfStatement);
 begin
   if el.False = nil then begin
     WriteExpression(el.ExpressionElement);
+    filg.Emit(Opcodes.Ldloc, fExecutionContext);
     filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
     var lFalse := filg.DefineLabel;
     filg.Emit(Opcodes.Brfalse, lFalse);
@@ -1134,6 +1201,7 @@ begin
     filg.MarkLabel(lFalse);
   end else if el.True = nil then begin
     WriteExpression(el.ExpressionElement);
+    filg.Emit(Opcodes.Ldloc, fExecutionContext);
     filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
     var lTrue := filg.DefineLabel;
     filg.Emit(Opcodes.Brtrue, lTrue);
@@ -1141,6 +1209,7 @@ begin
     filg.MarkLabel(lTrue);
   end else begin
     WriteExpression(el.ExpressionElement);
+    filg.Emit(Opcodes.Ldloc, fExecutionContext);
     filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
     var lFalse := filg.DefineLabel;
     filg.Emit(Opcodes.Brfalse, lFalse);
@@ -1154,39 +1223,126 @@ begin
 end;
 
 method EcmaScriptCompiler.WriteContinue(el: ContinueStatement);
+var
+  lPassedTry: Boolean := false;
 begin
+  var lFinallyInfo: List<FinallyInfo> := nil;
   if el.Identifier = nil then begin
     if fContinue = nil then 
-     raise new ScriptParsingException(el.PositionPair.File, el.PositionPair, EcmaScriptErrorKind.CannotBreakHere);
-    filg.Emit(Opcodes.Leave, Label(fContinue));
+     raise new ScriptParsingException(el.PositionPair.File, el.PositionPair, EcmaScriptErrorKind.CannotContinueHere);
+    for i: Integer := fStatementStack.Count -1 downto 0 do begin
+      if fStatementStack[i].Type = ElementType.TryStatement then begin
+        lPassedTry := true;
+        if TryStatement(fStatementStack[i]).FinallyData <> nil then begin
+          if  lFinallyInfo = nil then lFinallyInfo := new List<FinallyInfo>;
+          lFinallyInfo.Add(TryStatement(fStatementStack[i]).FinallyData);
+        end;
+      end else if IterationStatement(fStatementStack[i]):&Continue = fContinue then begin
+        break;
+      end;
+    end;
+    if lPassedTry then begin
+      if lFinallyInfo <> nil then begin
+        for i: Integer := 0 to lFinallyInfo.Count -1 do begin
+          filg.Emit(Opcodes.Ldc_I4,  lFinallyInfo[i].AddUnique(if i < lFinallyInfo.Count -1 then lFinallyInfo[i+1].FinallyLabel else Label(fContinue)));
+          filg.Emit(Opcodes.Stloc, lFinallyInfo[i].FinallyState);
+        end;
+        if TryStatement(Enumerable.Reverse(fStatementStack).FirstOrDefault(a->a.Type = ElementType.TryStatement)).Catch <> nil then
+          filg.Emit(Opcodes.Leave, lFinallyInfo[0].FinallyLabel) 
+        else
+          filg.Emit(Opcodes.Br, lFinallyInfo[0].FinallyLabel);
+      end else
+        filg.Emit(Opcodes.Leave, Label(fContinue));
+    end else
+      filg.Emit(Opcodes.br, Label(fContinue));
   end else begin
     for i: Integer := fStatementStack.Count -1 downto 0 do begin
       var lIt := LabelledStatement(fStatementStack[i]);
-      if (lIt.Identifier = el.Identifier) then begin
-        if lIt.Continue  = nil then
-          filg.Emit(Opcodes.Leave, fExitLabel)
-        else
-          filg.Emit(Opcodes.Leave, lIt.Continue);
-        exit;
-      end;
+      if fStatementStack[i].Type = ElementType.TryStatement then begin
+        lPassedTry := true;
+        if TryStatement(fStatementStack[i]).Finally <> nil then begin
+          if  lFinallyInfo = nil then lFinallyInfo := new List<FinallyInfo>;
+          lFinallyInfo.Add(TryStatement(fStatementStack[i]).FinallyData);
+        end;
+      end else if (lIt <> nil) and (lIt.Identifier = el.Identifier) then begin
+        if lPassedTry then begin
+          if lFinallyInfo <> nil then begin
+            for j: Integer := 0 to lFinallyInfo.Count -1 do begin
+              filg.Emit(Opcodes.Ldc_I4,  lFinallyInfo[j].AddUnique(if j < lFinallyInfo.Count -1 then lFinallyInfo[j+1].FinallyLabel else Label(lIt.Continue)));
+              filg.Emit(Opcodes.Stloc, lFinallyInfo[j].FinallyState);
+            end;
+            if TryStatement(Enumerable.Reverse(fStatementStack).FirstOrDefault(a->a.Type = ElementType.TryStatement)).Catch <> nil then
+              filg.Emit(Opcodes.Leave, lFinallyInfo[0].FinallyLabel) 
+            else
+            filg.Emit(Opcodes.Br, lFinallyInfo[0].FinallyLabel);
+          end else
+            filg.Emit(Opcodes.Leave, Label(lIt.Continue));
+        end else begin
+          if lIt.Continue = nil then 
+            filg.Emit(Opcodes.Leave, fExitLabel) else 
+          filg.Emit(Opcodes.leave, Label(lIt.Continue));
+        end;
+        break;
+       end;
     end;
     raise new ScriptParsingException(el.PositionPair.File, el.PositionPair, EcmaScriptErrorKind.UnknownLabelTarget, el.Identifier);
   end;
 end;
 
 method EcmaScriptCompiler.WriteBreak(el: BreakStatement);
+var
+  lPassedTry: Boolean := false;
 begin
+  var lFinallyInfo: List<FinallyInfo> := nil;
   if el.Identifier = nil then begin
     if fBreak = nil then 
      raise new ScriptParsingException(el.PositionPair.File, el.PositionPair, EcmaScriptErrorKind.CannotBreakHere);
-    filg.Emit(Opcodes.Leave, Label(fBreak));
+    for i: Integer := fStatementStack.Count -1 downto 0 do begin
+      if fStatementStack[i].Type = ElementType.TryStatement then begin
+        lPassedTry := true;
+        if TryStatement(fStatementStack[i]).FinallyData <> nil then begin
+          if  lFinallyInfo = nil then lFinallyInfo := new List<FinallyInfo>;
+          lFinallyInfo.Add(TryStatement(fStatementStack[i]).FinallyData);
+        end;
+      end else if IterationStatement(fStatementStack[i]):&Break = fBreak then begin
+        break;
+      end;
+    end;
+    if lPassedTry then begin
+      if lFinallyInfo <> nil then begin
+        for i: Integer := 0 to lFinallyInfo.Count -1 do begin
+          filg.Emit(Opcodes.Ldc_I4,  lFinallyInfo[i].AddUnique(if i < lFinallyInfo.Count -1 then lFinallyInfo[i+1].FinallyLabel else Label(fBreak)));
+          filg.Emit(Opcodes.Stloc, lFinallyInfo[i].FinallyState);
+        end;
+        filg.Emit(Opcodes.Br, lFinallyInfo[0].FinallyLabel);
+      end else
+        filg.Emit(Opcodes.Leave, Label(fBreak));
+    end else
+      filg.Emit(Opcodes.br, Label(fBreak));
   end else begin
     for i: Integer := fStatementStack.Count -1 downto 0 do begin
       var lIt := LabelledStatement(fStatementStack[i]);
-      if lIt.Identifier = el.Identifier then begin
-        filg.Emit(Opcodes.Leave, lIt.Break);
-        exit;
-      end;
+      if fStatementStack[i].Type = ElementType.TryStatement then begin
+        lPassedTry := true;
+        if TryStatement(fStatementStack[i]).Finally <> nil then begin
+          if  lFinallyInfo = nil then lFinallyInfo := new List<FinallyInfo>;
+          lFinallyInfo.Add(TryStatement(fStatementStack[i]).FinallyData);
+        end;
+      end else if (lIt <> nil) and (lIt.Identifier = el.Identifier) then begin
+        if lPassedTry then begin
+          if lFinallyInfo <> nil then begin
+            for j: Integer := 0 to lFinallyInfo.Count -1 do begin
+              filg.Emit(Opcodes.Ldc_I4,  lFinallyInfo[j].AddUnique(if j < lFinallyInfo.Count -1 then lFinallyInfo[j+1].FinallyLabel else Label(lIt.Break)));
+              filg.Emit(Opcodes.Stloc, lFinallyInfo[j].FinallyState);
+            end;
+            filg.Emit(Opcodes.Br, lFinallyInfo[0].FinallyLabel);
+          end else
+            filg.Emit(Opcodes.Leave, Label(lIt.Break));
+        end else begin
+          filg.Emit(Opcodes.leave, Label(lIt.Break));
+        end;
+        break;
+       end;
     end;
     raise new ScriptParsingException(el.PositionPair.File, el.PositionPair, EcmaScriptErrorKind.UnknownLabelTarget, el.Identifier);
   end;
@@ -1195,6 +1351,12 @@ end;
 
 method EcmaScriptCompiler.MarkLabelled(aBreak, aContinue: nullable Label);
 begin
+  var lLoopItem := IterationStatement(fStatementStack[fStatementStack.Count -1]);
+  if lLoopItem <> nil then begin
+    lLoopItem.Break := aBreak;
+    lLoopItem.Continue := aContinue;
+  end;
+
   for i: Integer := fStatementStack.Count -2 downto 0 do begin // -1 = current
     var lItem := LabelledStatement(fStatementStack[i]);
     if lItem = nil then exit;
@@ -1258,6 +1420,7 @@ begin
   WriteStatement(el.Body);
 
   WriteExpression(el.ExpressionElement);
+  filg.Emit(Opcodes.Ldloc, fExecutionContext);
   filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
   filg.Emit(Opcodes.Brtrue, Label(fContinue));
   filg.MarkLabel(Label(fBreak));
@@ -1275,6 +1438,7 @@ begin
   MarkLabelled(fBreak, fContinue);
   filg.MarkLabel(Label(fContinue));
   WriteExpression(el.ExpressionElement);
+  filg.Emit(Opcodes.Ldloc, fExecutionContext);
   filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
   filg.Emit(Opcodes.Brfalse, Label(fBreak));
 
@@ -1344,16 +1508,21 @@ begin
   fBreak := filg.DefineLabel;
   MarkLabelled(fBreak, fContinue);
 
-  if el.Initializer <> nil then
+  if el.Initializer <> nil then begin
     WriteExpression(el.Initializer);
+    filg.Emit(Opcodes.Pop);
+  end;
   for each eli in el.Initializers do begin
-    if eli.Initializer <> nil then
+    if eli.Initializer <> nil then begin
       WriteExpression(new BinaryExpression(eli.PositionPair, new IdentifierExpression(eli.PositionPair, eli.Identifier), eli.Initializer, BinaryOperator.Assign));
+      filg.Emit(Opcodes.Pop);
+    end;
   end;
   var lLoopStart := filg.DefineLabel;
   filg.MarkLabel(lLoopStart);
   if el.Comparison <> nil then begin
     WriteExpression(el.Comparison);
+    filg.Emit(Opcodes.Ldloc, fExecutionContext);
     filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
     filg.Emit(Opcodes.Brfalse, Label(fBreak));
   end;
@@ -1400,10 +1569,15 @@ end;
 
 method EcmaScriptCompiler.WriteTryStatement(el: TryStatement);
 begin
+  if el.Finally <> nil then begin
+    el.FinallyData := new FinallyInfo();
+    el.FinallyData.FinallyLabel := filg.DefineLabel;
+    el.FinallyData.FinallyState := AllocateLocal(typeof(Integer));
+    filg.BeginExceptionBlock;
+  end;
   if el.Catch <> nil then filg.BeginExceptionBlock;
-  if el.Finally <> nil then filg.BeginExceptionBlock;
 
-  if el.Body <> nil then WriteStatement(el.Body);
+   if el.Body <> nil then WriteStatement(el.Body);
   
   if el.Catch <> nil then begin
     filg.BeginCatchBlock(typeof(Exception));
@@ -1425,8 +1599,18 @@ begin
   end;
 
   if el.Finally <> nil then begin
-    filg.BeginFinallyBlock();
+    var lData := el.FinallyData;
+    el.FinallyData := nil;
+    filg.Emit(Opcodes.Ldc_I4_M1);
+    filg.Emit(Opcodes.Stloc, lData.FinallyState);
+    filg.MarkLabel(lData.FinallyLabel);
     WriteStatement(el.Finally);
+    filg.Emit(Opcodes.Ldloc, lData.FinallyState);
+    filg.Emit(Opcodes.Switch, lData.JumpTable.ToArray);
+    filg.BeginCatchBlock(typeof(Exception));
+    filg.Emit(Opcodes.Pop);
+    WriteStatement(el.Finally);
+    filg.Emit(Opcodes.Rethrow);
     filg.EndExceptionBlock();
   end;
 end;
@@ -1449,6 +1633,7 @@ begin
       filg.Emit(opcodes.Ldloc, lWork);
       WriteExpression(el.Clauses[i].ExpressionElement);
       CallGetValue(el.ExpressionElement.Type);
+      filg.Emit(Opcodes.Ldloc, fExecutionContext);
       filg.Emit(Opcodes.Call, Operators.Method_StrictEqual);
       filg.Emit(Opcodes.Brtrue, lLabels[i]);
     end;
@@ -1518,6 +1703,14 @@ begin
       end;
     end;
   end;
+end;
+
+method FinallyInfo.AddUnique(aLabel: Label): Integer;
+begin
+  for i: Integer := 0 to JumpTable.Count - 1 do
+    if JumpTable[i].Equals(aLabel) then exit i;
+  JumpTable.Add(aLabel);
+  exit JumpTable.Count -1;
 end;
 
 end.

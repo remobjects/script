@@ -15,6 +15,7 @@ uses
   RemObjects.Script.EcmaScript.Internal;
 
 type
+  PrimitiveType = public enum (None, String, Number);
   Utilities = public static class
   private
   public
@@ -22,24 +23,27 @@ type
     class method UrlEncodeComponent(s: String): String;
     class method UrlDecode(s: String): String;
     class method GetArg(arg: Array of object; &index: Integer): Object;
-    class method GetArgAsEcmaScriptObject(arg: Array of object; &index: Integer): EcmaScriptObject;
-    class method GetArgAsInteger(arg: Array of object; &index: Integer): Integer;
-    class method GetArgAsInt64(arg: Array of object; &index: Integer): Int64;
-    class method GetArgAsDouble(arg: Array of object; &index: Integer): Double;
-    class method GetArgAsBoolean(arg: Array of object; &index: Integer): Boolean;
-    class method GetArgAsString(arg: Array of object; &index: Integer): string;
-    class method GetObjAsEcmaScriptObject(arg: object): EcmaScriptObject;
-    class method GetObjAsInteger(arg: object): Integer;
-    class method GetObjAsInt64(arg: object): Int64;
-    class method GetObjAsDouble(arg: object): Double;
-    class method GetObjAsBoolean(arg: Object): Boolean;
-    class method GetObjAsString(arg: object): string;
+    class method GetArgAsEcmaScriptObject(arg: Array of object; &index: Integer; ec: ExecutionContext): EcmaScriptObject;
+    class method GetArgAsInteger(arg: Array of object; &index: Integer; ec: ExecutionContext): Integer;
+    class method GetArgAsInt64(arg: Array of object; &index: Integer; ec: ExecutionContext): Int64;
+    class method GetArgAsDouble(arg: Array of object; &index: Integer; ec: ExecutionContext): Double;
+    class method GetArgAsBoolean(arg: Array of object; &index: Integer; ec: ExecutionContext): Boolean;
+    class method GetArgAsString(arg: Array of object; &index: Integer; ec: ExecutionContext): string;
+    class method GetObjAsEcmaScriptObject(arg: object; ec: ExecutionContext): EcmaScriptObject;
+    class method GetObjAsInteger(arg: object; ec: ExecutionContext): Integer;
+    class method GetObjAsInt64(arg: object; ec: ExecutionContext): Int64;
+    class method GetObjAsDouble(arg: object; ec: ExecutionContext): Double;
+    class method GetObjAsBoolean(arg: Object; ec: ExecutionContext): Boolean;
+    class method GetObjAsString(arg: object; ec: ExecutionContext): string;
+
+    class method GetObjectAsPrimitive(ec: ExecutionContext; arg: EcmaScriptObject; aPrimitive: PrimitiveType): Object;
 
     class var method_GetObjAsBoolean: System.Reflection.MethodInfo := typeof(Utilities).GetMethod('GetObjAsBoolean'); readonly;
     class var Method_GetObjAsString: System.Reflection.MethodInfo := typeof(UtilitieS).GetMethod('GetObjAsString'); readonly;
 
     class method GetPrimitive(aExecutionContext: ExecutionContext; arg: EcmaScriptObject): Object;
     class method ToObject(ec: ExecutionContext; o: Object): EcmaScriptObject;
+    class method IsPrimitive(arg: Object): Boolean;
 
     class method IsCallable(o: Object): Boolean;
   end;
@@ -52,65 +56,65 @@ begin
     result := arg[&index];
 end;
 
-class method Utilities.GetArgAsEcmaScriptObject(arg: Array of object; &index: Integer): EcmaScriptObject;
+class method Utilities.GetArgAsEcmaScriptObject(arg: Array of object; &index: Integer; ec: ExecutionContext): EcmaScriptObject;
 begin
   var lValue := GetArg(arg, index);
     result := EcmaScriptObject(lValue);
 end;
 
-class method Utilities.GetArgAsInteger(arg: Array of object; &index: Integer): Integer;
+class method Utilities.GetArgAsInteger(arg: Array of object; &index: Integer; ec: ExecutionContext): Integer;
 begin
   var lValue := GetArg(arg, index);
   if (lValue = nil) or (lValue = Undefined.Instance) then begin
     result := 0;
   end else
-    result := GetObjAsInteger(lValue);
+    result := GetObjAsInteger(lValue, ec);
 end;
 
-class method Utilities.GetArgAsInt64(arg: Array of object; &index: Integer): Int64;
+class method Utilities.GetArgAsInt64(arg: Array of object; &index: Integer; ec: ExecutionContext): Int64;
 begin
     var lValue := GetArg(arg, index);
   if (lValue = nil) or (lValue = Undefined.Instance) then begin
     result := 0;
   end else 
-    result := GetObjAsInt64(lValue);
+    result := GetObjAsInt64(lValue, ec);
 end;
 
-class method Utilities.GetArgAsDouble(arg: Array of object; &index: Integer): Double;
+class method Utilities.GetArgAsDouble(arg: Array of object; &index: Integer; ec: ExecutionContext): Double;
 begin
   var lValue := GetArg(arg, index);
   if (lValue = nil) or (lValue = Undefined.Instance) then begin
     result := 0;
   end else
-   result :=  GetObjAsDouble(lValue);
+   result :=  GetObjAsDouble(lValue, ec);
 end;
 
-class method Utilities.GetArgAsBoolean(arg: Array of object; &index: Integer): Boolean;
+class method Utilities.GetArgAsBoolean(arg: Array of object; &index: Integer; ec: ExecutionContext): Boolean;
 begin
     var lValue := GetArg(arg, index);
   if (lValue = nil) or (lValue = Undefined.Instance) then begin
     result := false;
   end else 
-   result := GetObjAsBoolean(lValue);
+   result := GetObjAsBoolean(lValue, ec);
 end;
 
-class method Utilities.GetArgAsString(arg: Array of object; &index: Integer): string;
+class method Utilities.GetArgAsString(arg: Array of object; &index: Integer; ec: ExecutionContext): string;
 begin
   var lValue := GetArg(arg, index);
 
   if (lValue = nil) or (lValue = Undefined.Instance) then begin
     result := nil;
   end else 
-    result := GetObjAsString(lValue);
+    result := GetObjAsString(lValue, ec);
 end;
-class method Utilities.GetObjAsEcmaScriptObject(arg: object): EcmaScriptObject;
+class method Utilities.GetObjAsEcmaScriptObject(arg: object; ec: ExecutionContext): EcmaScriptObject;
 begin
     result := EcmaScriptObject(arg);
 end;
 
-class method Utilities.GetObjAsInteger(arg: object): Integer;
+class method Utilities.GetObjAsInteger(arg: object; ec: ExecutionContext): Integer;
 begin
-  if arg is EcmaScriptObject then arg := EcmaScriptObject(arg).Value;
+  if arg is EcmaScriptObject then arg := GetPrimitive(ec, EcmaScriptObject(arg));
   if (arg = nil) then exit 0;
   case &Type.GetTypeCode(arg.GetType) of
     TypeCode.Boolean: Result := iif(boolean(arg), 1, 0);
@@ -134,9 +138,9 @@ begin
   end; // case
 end;
 
-class method Utilities.GetObjAsInt64(arg: object): Int64;
+class method Utilities.GetObjAsInt64(arg: object; ec: ExecutionContext): Int64;
 begin
-  if arg is EcmaScriptObject then arg := EcmaScriptObject(arg).Value;
+  if arg is EcmaScriptObject then arg := GetPrimitive(ec, EcmaScriptObject(arg));
   if (arg = nil)  then exit 0;
   case &Type.GetTypeCode(arg.GetType) of
     TypeCode.Boolean: Result := iif(boolean(arg), 1, 0);
@@ -160,11 +164,12 @@ begin
   end; // case
 end;
 
-class method Utilities.GetObjAsDouble(arg: object): Double;
+class method Utilities.GetObjAsDouble(arg: object; ec: ExecutionContext): Double;
 begin
-    if arg is EcmaScriptObject then arg := EcmaScriptObject(arg).Value;
+  if arg is EcmaScriptObject then arg := GetPrimitive(ec, EcmaScriptObject(arg));
 
   if (arg = nil)  then exit 0;
+  if arg = Undefined.Instance then exit Double.NaN;
   case &Type.GetTypeCode(arg.GetType) of
     TypeCode.Boolean: Result := iif(boolean(arg), 1, 0);
     TypeCode.Byte: result := byte(arg);
@@ -187,9 +192,9 @@ begin
   end; // case
 end;
 
-class method Utilities.GetObjAsBoolean(arg: Object): Boolean;
+class method Utilities.GetObjAsBoolean(arg: Object; ec: ExecutionContext): Boolean;
 begin
-    if arg is EcmaScriptObject then arg := EcmaScriptObject(arg).Value;
+  if arg is EcmaScriptObject then exit true;
   
   if (arg = nil) or (arg = Undefined.Instance)  then exit false;
   case &Type.GetTypeCode(arg.GetType) of
@@ -212,11 +217,10 @@ begin
   end; // case
 end;
 
-class method Utilities.GetObjAsString(arg: object): string;
+class method Utilities.GetObjAsString(arg: object; ec: ExecutionContext): string;
 begin
   var lOrg := arg;
-  if arg is EcmaScriptObject then arg := EcmaScriptObject(arg).Value;
-  if (arg = nil)  then exit coalesce(lOrg:ToString(), 'null');
+  if arg is EcmaScriptObject then arg := GetObjectAsPrimitive(ec, EcmaScriptObject(arg), PrimitiveType.String);
   if arg = Undefined.Instance then exit 'undefined';
   case &Type.GetTypeCode(arg.GetType) of
     TypeCode.Boolean: Result := iif(boolean(arg), 'true', 'false');
@@ -333,6 +337,58 @@ begin
   if o is String then exit ec.Global.StringCtor(ec, nil, [o]) as EcmaScriptObject;
   if (o is Int32) or (o is Double) then exit ec.Global.NumberCtor(ec, nil, [o]) as EcmaScriptObject;
   ec.Global.RaiseNativeError(NativeErrorType.TypeError, 'Object expected');
+end;
+
+class method Utilities.GetObjectAsPrimitive(ec: ExecutionContext; arg: EcmaScriptObject; aPrimitive: PrimitiveType): Object;
+begin
+  if aPrimitive = PrimitiveType.None then
+    aPrimitive := if arg.Class = 'Date' then PrimitiveType.String else PrimitiveType.Number;
+  if aPrimitive = PrimitiveType.String then begin
+    var func := EcmaScriptBaseFunctionObject(arg.Get('toString'));
+    if func <> nil then begin
+      result := func.Call(ec, []);
+      if IsPrimitive(result) then exit;
+    end;
+    func := EcmaScriptBaseFunctionObject(arg.Get('valueOf'));
+    if func <> nil then begin
+      result := func.Call(ec, []);
+      if IsPrimitive(result) then exit;
+    end;
+  end else begin
+    var func := EcmaScriptBaseFunctionObject(arg.Get('valueOf'));
+    if func <> nil then begin
+      result := func.Call(ec, []);
+      if IsPrimitive(result) then exit;
+    end;
+    func := EcmaScriptBaseFunctionObject(arg.Get('toString'));
+    if func <> nil then begin
+      result := func.Call(ec, []);
+      if IsPrimitive(result) then exit;
+    end;
+  end;
+  ec.Global.RaiseNativeError(NativeErrorType.TypeError, 'toString/valueOf does not return a value primitive value');
+end;
+
+class method Utilities.IsPrimitive(arg: Object): Boolean;
+begin
+  if (arg = nil) or (arg = Undefined.Instance) then exit true;
+  case &Type.GetTypeCode(arg.GetType) of
+    TypeCode.Boolean,
+    TypeCode.Byte,
+    TypeCode.Char,
+    TypeCode.Decimal,
+    TypeCode.Double,
+    TypeCode.Int16,
+    TypeCode.Int32,
+    TypeCode.Int64,
+    TypeCode.SByte,
+    TypeCode.Single,
+    TypeCode.String,
+    TypeCode.UInt16,
+    TypeCode.UInt32,
+    TypeCode.UInt64: exit true;
+  end; // case
+  exit false;
 end;
 
 end.

@@ -122,7 +122,7 @@ end;
 method GlobalObject.ArrayCtor(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
   if Args.Length = 1 then begin
-    result := new EcmaScriptArrayObject(self, Utilities.GetArgAsInteger(Args, 0)); // create a new array of length arg
+    result := new EcmaScriptArrayObject(self, Utilities.GetArgAsInteger(Args, 0, aCaller)); // create a new array of length arg
   end else begin
     result := new EcmaScriptArrayObject(self, 0).AddValues(Args);
   end;
@@ -141,7 +141,7 @@ begin
   var lSelf := Utilities.ToObject(aCaller, aSelf);
   var lRes: EcmaScriptArrayObject;
   lRes := new EcmaScriptArrayObject(self, 0);
-  for i: Integer := 0 to Utilities.GetObjAsInteger(lSelf.Get('length')) -1 do begin
+  for i: Integer := 0 to Utilities.GetObjAsInteger(lSelf.Get('length'), aCaller) -1 do begin
     lRes.Items.Add(lSelf.Get(aCaller, 3, i.ToString()));
   end;
 
@@ -156,13 +156,13 @@ end;
 
 method GlobalObject.ArrayJoin(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  var lSep := Utilities.GetArgAsString(Args, 0);
+  var lSep := Utilities.GetArgAsString(Args, 0, aCaller);
   if (lSep = nil) then lSep := ',';
   var lSelf := Utilities.ToObject(aCaller, aSelf);
   var lRes := new StringBuilder;
-  for i: Integer := 0 to Utilities.GetObjAsInteger(lSelf.Get('length')) -1 do begin
+  for i: Integer := 0 to Utilities.GetObjAsInteger(lSelf.Get('length'), aCaller) -1 do begin
     if i <> 0 then lRes.Append(lSep);
-    var lItem := Utilities.GetObjAsString(lSelf.Get(aCaller, 3, i.ToString()));
+    var lItem := Utilities.GetObjAsString(lSelf.Get(aCaller, 3, i.ToString()), aCaller);
     if (lItem = nil) then lItem := '';
     lRes.Append(lItem);
   end;
@@ -209,9 +209,9 @@ method GlobalObject.ArraySlice(aCaller: ExecutionContext;aSelf: Object; params A
 begin
   var lSelf := EcmaScriptArrayObject(aSelf);
   if lSelf = nil then exit Undefined.Instance;
-  var lStart := Utilities.GetArgAsInteger(Args, 0);
+  var lStart := Utilities.GetArgAsInteger(Args, 0, aCaller);
   var lObj := Utilities.GetArg(Args, 1);
-  var lEnd := Iif((lObj = nil) or (lObj = Undefined.Instance), Int32.MaxValue, Utilities.GetObjAsInteger(lObj));
+  var lEnd := Iif((lObj = nil) or (lObj = Undefined.Instance), Int32.MaxValue, Utilities.GetObjAsInteger(lObj, aCaller));
   if lStart < 0 then begin
     lStart := lSelf.Items.Count + lStart;
     if lStart < 0 then 
@@ -245,7 +245,7 @@ begin
 
   lSelf.Items.Sort(
     method(x, y: Object): Integer begin
-      exit Utilities.GetObjAsInteger(lDel(aCaller, lSelf, x, y));
+      exit Utilities.GetObjAsInteger(lDel(aCaller, lSelf, x, y), aCaller);
     end);
 end;
 
@@ -253,8 +253,8 @@ method GlobalObject.ArraySplice(aCaller: ExecutionContext;aSelf: Object; params 
 begin
   var lSelf := EcmaScriptArrayObject(aSelf);
   if lSelf = nil then exit Undefined.Instance;
-  var lStart := Utilities.GetArgAsInteger(Args, 0);
-  var lEnd := Utilities.GetArgAsInteger(Args, 1);
+  var lStart := Utilities.GetArgAsInteger(Args, 0, aCaller);
+  var lEnd := Utilities.GetArgAsInteger(Args, 1, aCaller);
   if lStart < 0 then begin
     lStart := lSelf.Items.Count + lStart;
     if lStart < 0 then 
@@ -297,12 +297,12 @@ begin
   if lRight = nil then exit -1;
 
   if (lLeft is String) or (lRight is String) then 
-    exit String.Compare(Utilities.GetObjAsString(lLeft), Utilities.GetObjAsString(lRight));
+    exit String.Compare(Utilities.GetObjAsString(lLeft, aCaller), Utilities.GetObjAsString(lRight, aCaller));
   if lLeft is EcmaScriptObject then 
     exit iif(lRight is EcmaScriptObject, 1, 0);
   if lRight is EcmaScriptObject then 
     exit -1;
-  exit Utilities.GetObjAsDouble(lLeft).CompareTo(Utilities.GetObjAsDouble(lRight));
+  exit Utilities.GetObjAsDouble(lLeft, aCaller).CompareTo(Utilities.GetObjAsDouble(lRight, aCaller));
 end;
 
 
@@ -310,7 +310,7 @@ method GlobalObject.ArrayToLocaleString(aCaller: ExecutionContext;aSelf: Object;
 begin
   var lObj := Utilities.ToObject(aCaller, aSelf);
   if lObj = nil then RaiseNativeError(NativeErrorType.ReferenceError, 'Object type expected');
-  var lLen := Utilities.GetObjAsInteger(lObj.Get(aCaller, 0, 'length'));
+  var lLen := Utilities.GetObjAsInteger(lObj.Get(aCaller, 0, 'length'), aCaller);
   var lRes := new StringBuilder;
   for i: Integer := 0 to lLen -1 do begin
     var lVal := Utilities.ToObject(aCaller, lObj.Get(aCaller, 2, i.ToString));
@@ -320,7 +320,7 @@ begin
     end else begin
       var lLocale := EcmaSCriptFunctionObject(lVAl.Get('toLocaleString'));
       if lLocale = nil then RaiseNativeError(NativeErrorType.ReferenceError, 'element '+i+' in array does not have a callable toLocaleString');
-      lData := Utilities.GetObjAsString(lLocale.CallEx(aCaller, lVal));
+      lData := Utilities.GetObjAsString(lLocale.CallEx(aCaller, lVal), aCaller);
     end;
     
     if i <> 0 then lRes.Append(',');
@@ -339,15 +339,15 @@ end;
 method GlobalObject.ArrayIndexOf(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
   var lObj := Utilities.ToObject(aCaller, aSelf);
-  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'));
+  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'), aCaller);
   var lElement := utilities.GetArg(Args, 0);
-  var lStart := Utilities.GetArgAsInteger(args, 1);
+  var lStart := Utilities.GetArgAsInteger(args, 1, aCaller);
   if lStart >= lLen then exit -1;
   if lStart < 0 then lStart := lLen + lStart;
   while lStart < lLen do begin
     var lIndex := lStart.ToString;
     if lObj.HasProperty(lIndex) then
-      if Boolean(Operators.StrictEqual(lObj.Get(aCaller, 2, lIndex), lElement)) then exit lStart;
+      if Boolean(Operators.StrictEqual(lObj.Get(aCaller, 2, lIndex), lElement, aCaller)) then exit lStart;
     lStart := lStart + 1;
   end;
   exit -1;
@@ -356,14 +356,14 @@ end;
 method GlobalObject.ArrayEvery(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
   var lObj := Utilities.ToObject(aCaller, aSelf);
-  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'));
+  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'), aCaller);
   var lCallback := EcmaScriptBaseFunctionObject(Utilities.GetArg(args, 0));
   var lCallbackThis := coalesce(UTilities.GetArg(args, 1), Undefined.Instance);
   if lCallback = nil then RaiseNativeError(nativeErrorType.TypeError, 'Delegate expected');
   for i: Integer := 0 to lLen -1 do begin
     var lIndex := i.ToString;
     if lObj.HasProperty(lIndex) then
-      if not Utilities.GetObjAsBoolean(lCallback.CallEx(aCaller, lCallbackThis, lObj.Get(aCaller, 2, lIndex), i, lObj)) then exit false;
+      if not Utilities.GetObjAsBoolean(lCallback.CallEx(aCaller, lCallbackThis, lObj.Get(aCaller, 2, lIndex), i, lObj), aCaller) then exit false;
   end;
   exit true;
 end;
@@ -371,16 +371,16 @@ end;
 method GlobalObject.ArrayLastIndexOf(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
   var lObj := Utilities.ToObject(aCaller, aSelf);
-  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'));
+  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'), aCaller);
   var lElement := utilities.GetArg(Args, 0);
-  var lStart := if Args.length >= 2 then Utilities.GetArgAsInteger(args, 1) else lLen;
+  var lStart := if Args.length >= 2 then Utilities.GetArgAsInteger(args, 1, aCaller) else lLen;
   if lLen = 0 then exit false;
   if lStart >= lLen then lStart := lLen -1;
   if lStart < 0 then lStart := lLen + lStart;
   while lStart >= 0 do begin
     var lIndex := lStart.ToString;
     if lObj.HasProperty(lIndex) then
-      if Boolean(Operators.StrictEqual(lObj.Get(aCaller, 2, lIndex), lElement)) then exit lStart;
+      if Boolean(Operators.StrictEqual(lObj.Get(aCaller, 2, lIndex), lElement, aCaller)) then exit lStart;
     lStart := lStart - 1;
   end;
   exit -1;
@@ -389,14 +389,14 @@ end;
 method GlobalObject.ArraySome(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
   var lObj := Utilities.ToObject(aCaller, aSelf);
-  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'));
+  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'), aCaller);
   var lCallback := EcmaScriptBaseFunctionObject(Utilities.GetArg(args, 0));
   var lCallbackThis := coalesce(UTilities.GetArg(args, 1), Undefined.Instance);
   if lCallback = nil then RaiseNativeError(nativeErrorType.TypeError, 'Delegate expected');
   for i: Integer := 0 to lLen -1 do begin
     var lIndex := i.ToString;
     if lObj.HasProperty(lIndex) then
-      if Utilities.GetObjAsBoolean(lCallback.CallEx(aCaller, lCallbackThis, lObj.Get(aCaller, 2, lIndex), i, lObj)) then exit true;
+      if Utilities.GetObjAsBoolean(lCallback.CallEx(aCaller, lCallbackThis, lObj.Get(aCaller, 2, lIndex), i, lObj), aCaller) then exit true;
   end;
   exit false;
 end;
@@ -404,7 +404,7 @@ end;
 method GlobalObject.ArrayMap(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
   var lObj := Utilities.ToObject(aCaller, aSelf);
-  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'));
+  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'), aCaller);
   var lCallback := EcmaScriptBaseFunctionObject(Utilities.GetArg(args, 0));
   var lCallbackThis := coalesce(UTilities.GetArg(args, 1), Undefined.Instance);
   if lCallback = nil then RaiseNativeError(nativeErrorType.TypeError, 'Delegate expected');
@@ -421,7 +421,7 @@ end;
 method GlobalObject.ArrayForeach(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
   var lObj := Utilities.ToObject(aCaller, aSelf);
-  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'));
+  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'), aCaller);
   var lCallback := EcmaScriptBaseFunctionObject(Utilities.GetArg(args, 0));
   var lCallbackThis := coalesce(UTilities.GetArg(args, 1), Undefined.Instance);
   if lCallback = nil then RaiseNativeError(nativeErrorType.TypeError, 'Delegate expected');
@@ -436,7 +436,7 @@ end;
 method GlobalObject.ArrayFilter(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
   var lObj := Utilities.ToObject(aCaller, aSelf);
-  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'));
+  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'), aCaller);
   var lCallback := EcmaScriptBaseFunctionObject(Utilities.GetArg(args, 0));
   var lCallbackThis := coalesce(UTilities.GetArg(args, 1), Undefined.Instance);
   if lCallback = nil then RaiseNativeError(nativeErrorType.TypeError, 'Delegate expected');
@@ -445,7 +445,7 @@ begin
     var lIndex := i.ToString;
     if lObj.HasProperty(lIndex) then begin
       var lGet := lObj.Get(aCaller, 2, lIndex);
-      if Utilities.GetObjAsBoolean(lCallback.CallEx(aCaller, lCallbackThis, lGet, i, lObj)) then
+      if Utilities.GetObjAsBoolean(lCallback.CallEx(aCaller, lCallbackThis, lGet, i, lObj), aCaller) then
         lRes.AddValue(lGet);
     end;
   end;
@@ -455,7 +455,7 @@ end;
 method GlobalObject.ArrayReduce(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
   var lObj := Utilities.ToObject(aCaller, aSelf);
-  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'));
+  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'), aCaller);
   var lCallback := EcmaScriptBaseFunctionObject(Utilities.GetArg(args, 0));
   if lCallback = nil then RaiseNativeError(nativeErrorType.TypeError, 'Delegate expected');
   var lInitialValue := Utilities.GetArg(args, 1);
@@ -489,7 +489,7 @@ end;
 method GlobalObject.ArrayReduceRight(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
   var lObj := Utilities.ToObject(aCaller, aSelf);
-  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'));
+  var lLen := UTilities.GetObjAsInteger(lObj.Get('length'), aCaller);
   var lCallback := EcmaScriptBaseFunctionObject(Utilities.GetArg(args, 0));
   if lCallback = nil then RaiseNativeError(nativeErrorType.TypeError, 'Delegate expected');
   var lInitialValue := Utilities.GetArg(args, 1);
@@ -534,7 +534,7 @@ end;
 method EcmaScriptArrayObject.Put(aExecutionContext: ExecutionContext; aName: String; aValue: Object; aThrow: Integer): Object; 
 begin
   if aName = 'length' then begin
-    var lLength := Utilities.GetObjAsInteger(aValue);
+    var lLength := Utilities.GetObjAsInteger(aValue, aExecutionContext);
     if lLength < 0 then lLength := 0;
     if lLength < fItems.Count then 
       fItems.RemoveRange(lLength, fItems.Count - lLength)

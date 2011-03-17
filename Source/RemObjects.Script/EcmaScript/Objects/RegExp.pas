@@ -37,7 +37,7 @@ type
     constructor(aGlobal: GlobalObject; aPattern, aFlags: String);
     property &GlobalVal: Boolean read fGlobalVal;
     property RegEx: Regex read fRegEx;
-    property LastIndex: Integer read Utilities.GetObjAsInteger(Get(nil, 0, 'lastIndex')) write set_LastIndex;
+    property LastIndex: Integer read Utilities.GetObjAsInteger(Get(nil, 0, 'lastIndex'), Root.ExecutionContext) write set_LastIndex;
   end;
 implementation
 method GlobalObject.CreateRegExp: EcmaScriptObject;
@@ -67,18 +67,18 @@ end;
 
 method GlobalObject.RegExpCtor(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  result := new EcmaScriptRegexpObject(self, Utilities.GetArgAsString(args, 0), Utilities.GetArgAsString(args, 1));
+  result := new EcmaScriptRegexpObject(self, Utilities.GetArgAsString(args, 0, aCaller), Utilities.GetArgAsString(args, 1, aCaller));
 end;
 
 method GlobalObject.RegExpExec(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
   var lSelf := aSelf as EcmaScriptRegexpObject;
   var lIndex := iif(lSelf.GlobalVal, lSelf.LastIndex, 0);
-  var lMatch := lSelf.RegEx.Match(coalesce(Utilities.GetArgAsString(args, 0), string.Empty));
+  var lMatch := lSelf.RegEx.Match(coalesce(Utilities.GetArgAsString(args, 0, aCaller), string.Empty), lIndex);
   if (lMAtch = nil) or (not lMatch.Success) then exit nil;
 
   if lSelf.GlobalVal then 
-    lSelf.LastIndex := lMatch.Index;
+    lSelf.LastIndex := lMatch.Index + lMatch.Length;
 
   exit MatchToArray(lMatch);
 end;
@@ -106,9 +106,9 @@ begin
   var lObj := new EcmaScriptArrayObject(self, 0);
   lObj.AddValue('index', aMatch.Index);
   lObj.AddValue('length', aMatch.Captures.Count);
-  lObj.AddValue('0', aMAtch.Value);
+  lObj.AddValue(aMAtch.Value);
   for i: Integer := 1 to Math.Min(32, aMatch.Captures.Count)-1 do begin
-    lObj.AddValue(i.ToString, aMatch.Captures[i].Value);
+    lObj.AddValue(aMatch.Captures[i].Value);
   end;
   exit lObj;
 end;
@@ -118,8 +118,8 @@ begin
   var lObj := EcmaScriptRegexpObject(aSelf);
   if lObj = nil then RaiseNativeError(NativeErrorType.TypeError, 'this is not a RegEx object');
   var lOpt := RegexOptions.ECMAScript;
-  var aFlags := Utilities.GetArgAsString(args, 1);
-  var aPattern := Utilities.GetArgAsString(args, 0);
+  var aFlags := Utilities.GetArgAsString(args, 1, aCaller);
+  var aPattern := Utilities.GetArgAsString(args, 0, aCaller);
   if (aFlags <> nil) and (aFlags.contains('i')) then lOpt := lOpt or RegExOptions.IgnoreCase;
   if (aFlags <> nil) and (aFlags.contains('m')) then lOpt := lOpt or RegExOptions.Multiline;
   if (aFlags <> nil) and (aFlags.contains('g')) then lObj.fGlobalVal := true;

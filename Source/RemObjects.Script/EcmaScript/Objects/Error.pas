@@ -59,16 +59,16 @@ end;
 
 method GlobalObject.ErrorCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lMessage := if 0 = Length(args) then nil else Utilities.GetArgAsString(args, 0);
+  var lMessage := if 0 = Length(args) then nil else Utilities.GetArgAsString(args, 0, aCaller);
   result := new EcmaScriptObject(self, ErrorPrototype, &Class := 'Error');
   EcmaScriptObject(result).AddValue('message', lMessage);
 end;
 
 method GlobalObject.ErrorToString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lSelf := Utilities.GetObjAsEcmaScriptObject(aSelf);
-  var lMsg := if lSelf.Get(aCaller, 0, 'message') = nil then nil else Utilities.GetObjAsString(lSelf.Get(aCaller, 0, 'message'));
-  var lName := coalesce(Utilities.GetObjAsString(lSelf.Get(aCaller, 0, 'name')), 'Error');
+  var lSelf := Utilities.GetObjAsEcmaScriptObject(aSelf, aCaller);
+  var lMsg := if lSelf.Get(aCaller, 0, 'message') = nil then nil else Utilities.GetObjAsString(lSelf.Get(aCaller, 0, 'message'), aCaller);
+  var lName := coalesce(Utilities.GetObjAsString(lSelf.Get(aCaller, 0, 'name'), aCaller), 'Error');
   if STring.IsNullOrEmpty(lMsg) then
     exit lName
 
@@ -123,7 +123,7 @@ end;
 
 method GlobalObject.NativeErrorCtor(proto: EcmaScriptObject; arg: string): EcmaScriptObject;
 begin
-  var lMessage := Utilities.GetObjAsString(arg);
+  var lMessage := arg;
   result := new EcmaScriptObject(self, proto, &Class := 'Error');
   EcmaScriptObject(result).AddValue('message', lMessage);
 end;

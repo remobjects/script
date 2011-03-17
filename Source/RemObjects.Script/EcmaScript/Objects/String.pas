@@ -92,12 +92,12 @@ end;
 
 method GlobalObject.StringCall(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  exit coalesce(Utilities.GetArgAsString(args, 0), String.Empty);
+  exit coalesce(Utilities.GetArgAsString(args, 0, aCaller), String.Empty);
 end;
 
 method GlobalObject.StringCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lVal := Coalesce(Utilities.GetArgAsString(args, 0), String.Empty);
+  var lVal := Coalesce(Utilities.GetArgAsString(args, 0, aCaller), String.Empty);
   var lObj := new EcmaScriptObject(self, StringPrototype, &Class := 'String', Value := lVal);
   lObj.Values.Add('length', PropertyValue.NotDeleteAndReadOnly(lVal.Length));
   exit lObj;
@@ -107,7 +107,7 @@ method GlobalObject.StringFromCharCode(aCaller: ExecutionContext;aSelf: Object; 
 begin
   var lRes := new char[Length(args)];
   for i: Integer := 0 to lRes.Length -1 do begin
-    lRes[i] := Char(Utilities.GetArgAsInteger(args, i));
+    lRes[i] := Char(Utilities.GetArgAsInteger(args, i, aCaller));
   end;
   exit new String(lRes);
 end;
@@ -120,73 +120,73 @@ end;
 
 method GlobalObject.StringValueOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf), String.Empty);
+  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf, aCaller), aCaller, String.Empty);
   exit lSelf;
 end;
 
 method GlobalObject.StringCharAt(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf), String.Empty);
-  var lIndex := Utilities.GetArgAsInteger(args, 0);
+  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
+  var lIndex := Utilities.GetArgAsInteger(args, 0, aCaller);
   if (lIndex < 0) or (lIndex>=lSelf.Length) then exit string.Empty;
   exit new string(lSelf[lIndex], 1);
 end;
 
 method GlobalObject.StringCharCodeAt(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf), String.Empty);
-  var lIndex := Utilities.GetArgAsInteger(args, 0);
+  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
+  var lIndex := Utilities.GetArgAsInteger(args, 0, aCaller);
   if (lIndex < 0) or (lIndex>=lSelf.Length) then exit Double.NaN;
   exit Integer(lSelf[lIndex]);
 end;
 
 method GlobalObject.StringConcat(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf), String.Empty);
+  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
   if args.Length = 0 then exit lSelf;
-  if args.Length = 1 then exit lSelf + Utilities.GetArgAsString(args, 0);
-  if args.Length = 2 then exit lSelf + Utilities.GetArgAsString(args, 0)+ Utilities.GetArgAsString(args, 1);
+  if args.Length = 1 then exit lSelf + Utilities.GetArgAsString(args, 0, aCaller);
+  if args.Length = 2 then exit lSelf + Utilities.GetArgAsString(args, 0, aCaller)+ Utilities.GetArgAsString(args, 1, aCaller);
   var fsb := new StringBuilder;
   fsb.Append(lSelf);
   for i: Integer := 0 to args.Length -1 do begin
-    fsb.Append(Utilities.GetArgAsString(args, i));
+    fsb.Append(Utilities.GetArgAsString(args, i, aCaller));
   end;
   exit fsb.ToString;
 end;
 
 method GlobalObject.StringIndexOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf), String.Empty);
-  var lNeedle := Coalesce(Utilities.GetArgAsString(args, 0), String.Empty);
-  var lIndex := Utilities.GetArgAsInteger(args, 1);
+  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
+  var lNeedle := Coalesce(Utilities.GetArgAsString(args, 0, aCaller), String.Empty);
+  var lIndex := Utilities.GetArgAsInteger(args, 1, aCaller);
   if lIndex >= lSelf.Length then exit -1;
   exit lSelf.IndexOf(lNeedle, lIndex);
 end;
 
 method GlobalObject.StringLastIndexOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf), String.Empty);
-  var lNeedle := Coalesce(Utilities.GetArgAsString(args, 0), String.Empty);
-  var lIndex := Utilities.GetArgAsInteger(args, 1);
+  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
+  var lNeedle := Coalesce(Utilities.GetArgAsString(args, 0, aCaller), String.Empty);
+  var lIndex := Utilities.GetArgAsInteger(args, 1, aCaller);
   if (lIndex >= lSelf.Length) or (lIndex = 0) then exit lSelf.Length;
   exit lSelf.LastIndexOf(lNeedle, lIndex);
 end;
 
 method GlobalObject.StringReplace(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf), String.Empty);
-  var lSearch := Coalesce(Utilities.GetArgAsString(args, 0), String.Empty);
-  var lReplace := Coalesce(Utilities.GetArgAsString(args, 1), String.Empty);
+  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
+  var lSearch := Coalesce(Utilities.GetArgAsString(args, 0, aCaller), String.Empty);
+  var lReplace := Coalesce(Utilities.GetArgAsString(args, 1, aCaller), String.Empty);
   exit lSelf.Replace(lSearch, lReplace);
 end;
 
 method GlobalObject.StringSlice(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf), String.Empty);
+  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
   if lSelf = nil then exit Undefined.Instance;
-  var lStart := Utilities.GetArgAsInteger(Args, 0);
+  var lStart := Utilities.GetArgAsInteger(Args, 0, aCaller);
   var lObj := Utilities.GetArg(Args, 1);
-  var lEnd := Iif((lObj = nil) or (lObj = Undefined.Instance), Int32.MaxValue, Utilities.GetObjAsInteger(lObj));
+  var lEnd := Iif((lObj = nil) or (lObj = Undefined.Instance), Int32.MaxValue, Utilities.GetObjAsInteger(lObj, aCaller));
   if lStart < 0 then begin
     lStart := lSelf.Length + lStart;
     if lStart < 0 then 
@@ -205,9 +205,9 @@ end;
 
 method GlobalObject.StringSplit(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf), String.Empty);
-  var lNeedle := Coalesce(Utilities.GetArgAsString(args, 0), String.Empty);
-  var lMax := Utilities.GetArgAsInteger(args, 1);
+  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
+  var lNeedle := Coalesce(Utilities.GetArgAsString(args, 0, aCaller), String.Empty);
+  var lMax := Utilities.GetArgAsInteger(args, 1, aCaller);
   if lMax <= 0 then lMax := Int32.MaxValue;
   exit new EcmaScriptArrayObject(self, 0).AddValues(lSelf.Split([lNeedle], lMax, StringSplitOptions.None));
 end;
@@ -255,10 +255,10 @@ end;
 
 method GlobalObject.StringSearch(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf), String.Empty);
+  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
   var lObj: EcmaScriptRegexpObject;
   if (Length(args) = 0) or (args[0] is not EcmaScriptRegexpObject) then begin
-    lObj := new EcmaScriptRegexpObject(self, Utilities.GetArgAsString(args,0), '');
+    lObj := new EcmaScriptRegexpObject(self, Utilities.GetArgAsString(args,0, aCaller), '');
   end else lObj := EcmaScriptRegexpObject(args[0]);
 
   var lMatch := lObj.RegEx.Match(lSelf);
@@ -267,10 +267,10 @@ end;
 
 method GlobalObject.StringMatch(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf), String.Empty);
+  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
   var lObj: EcmaScriptRegexpObject;
   if (Length(args) = 0) or (args[0] is not EcmaScriptRegexpObject) then begin
-    lObj := new EcmaScriptRegexpObject(self, Utilities.GetArgAsString(args,0), '');
+    lObj := new EcmaScriptRegexpObject(self, Utilities.GetArgAsString(args,0, aCaller), '');
   end else lObj := EcmaScriptRegexpObject(args[0]);
   if not lObj.GlobalVal then exit RegExpExec(aCaller, lObj, lSelf);
   var lRes := lObj.RegEx.Matches(lSelf);
@@ -285,13 +285,13 @@ end;
 method GlobalObject.StringLocaleCompare(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   if (aSelf = nil) or (aSelf = Undefined.Instance) then RaiseNativeError(NativeErrorType.TypeError, 'null/undefined not coercible');
-  exit String.Compare(Utilities.GetObjAsString(aSelf), Utilities.GetArgAsString(args, 0), StringComparison.CurrentCulture);
+  exit String.Compare(Utilities.GetObjAsString(aSelf, aCaller), Utilities.GetArgAsString(args, 0, aCaller), StringComparison.CurrentCulture);
 end;
 
 method GlobalObject.StringTrim(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   if (aSelf = nil) or (aSelf = Undefined.Instance) then RaiseNativeError(NativeErrorType.TypeError, 'null/undefined not coercible');
-  exit Utilities.GetObjAsString(aSelf).Trim();
+  exit Utilities.GetObjAsString(aSelf, aCaller).Trim();
 end;
 
 method EcmaScriptStringObject.Call(context: ExecutionContext; params args: array of Object): Object;

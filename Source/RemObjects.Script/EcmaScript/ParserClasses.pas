@@ -157,6 +157,8 @@ type
   IterationStatement  = public abstract class(Statement)
   private
   public
+    property &Break: nullable Label;
+    property &Continue: nullable Label;
   end;
 
   ForStatement  = public class(IterationStatement)
@@ -268,8 +270,6 @@ type
     constructor (aPositionPair: PositionPair; anIdentifier: String; aStatement: Statement);
     property Identifier: String read fIdentifier;
     property Statement: Statement read fStatement;
-    property &Break: Label;
-    property &Continue: Label;
     property &Type: ElementType read ElementType.LabelledStatement; override;
   end;
 
@@ -289,7 +289,7 @@ type
     property &Type: ElementType read ElementType.CaseClause; override;
   end;
 
-  SwitchStatement  = public class(Statement, IList<CaseClause>)
+  SwitchStatement  = public class(IterationStatement, IList<CaseClause>)
   private
     fClauses: List<CaseClause>;
     fExpression: ExpressionElement;
@@ -338,6 +338,8 @@ type
     property Body: Statement read fBody;
     property &Finally: Statement read fFinally;
     property Catch: CatchBlock read fCatch;
+
+    property FinallyData: RemObjects.Script.EcmaScript.FinallyInfo;
 
     property &Type: ElementType read ElementType.TryStatement; override;
   end;

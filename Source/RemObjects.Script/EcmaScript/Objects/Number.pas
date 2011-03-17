@@ -69,12 +69,12 @@ end;
 
 method GlobalObject.NumberCall(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  exit Utilities.GetArgAsDouble(args, 0);
+  exit Utilities.GetArgAsDouble(args, 0, aCaller);
 end;
 
 method GlobalObject.NumberCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lVal := Utilities.GetArgAsDouble(args, 0);
+  var lVal := Utilities.GetArgAsDouble(args, 0, aCaller);
   var lObj := new EcmaScriptObject(self, NumberPrototype, &Class := 'Number', Value := lVal);
   exit lObj;
 end;
@@ -82,40 +82,40 @@ end;
 
 method GlobalObject.NumberToString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lRadix := Utilities.GetArgAsInteger(args, 0);
+  var lRadix := Utilities.GetArgAsInteger(args, 0, aCaller);
   if (lRadix < 0) or (lRadix > 36) then lRadix := 10;
-  exit Utilities.GetObjAsDouble(aSelf).ToString(System.Globalization.NumberFormatInfo.InvariantInfo);
+  exit Utilities.GetObjAsDouble(aSelf, aCaller).ToString(System.Globalization.NumberFormatInfo.InvariantInfo);
 end;
 
 method GlobalObject.NumberValueOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  exit Utilities.GetObjAsDouble(aSelf);
+  exit Utilities.GetObjAsDouble(aSelf, aCaller);
 end;
 
 method GlobalObject.NumberLocaleString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  exit Utilities.GetObjAsDouble(aSelf).ToString;
+  exit Utilities.GetObjAsDouble(aSelf, aCaller).ToString;
 end;
 
 method GlobalObject.NumberToFixed(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lFrac := Utilities.GetArgAsInteger(args, 0);
-  var lValue := Utilities.GetObjAsDouble(aSelf);
+  var lFrac := Utilities.GetArgAsInteger(args, 0, aCaller);
+  var lValue := Utilities.GetObjAsDouble(aSelf, aCaller);
   exit lValue.ToString('F'+lFrac.ToString);
 end;
 
 method GlobalObject.NumberToExponential(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lFrac := Utilities.GetArgAsInteger(args, 0);
-  var lValue := Utilities.GetObjAsDouble(aSelf);
+  var lFrac := Utilities.GetArgAsInteger(args, 0, aCaller);
+  var lValue := Utilities.GetObjAsDouble(aSelf, aCaller);
   exit lValue.ToString('E'+lFrac.ToString);
 end;
 
 method GlobalObject.NumberToPrecision(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lFrac := Utilities.GetArgAsInteger(args, 0);
-  var lValue := Utilities.GetObjAsDouble(aSelf);
-  exit lValue.ToString('N'+lFrac.ToString);
+  var lFrac := Utilities.GetArgAsInteger(args, 0, aCaller);
+  var lValue := Utilities.GetObjAsDouble(aSelf, aCaller);
+  exit lValue.ToString('N'+lFrac.ToString)  ;
 end;
 method EcmaScriptNumberObject.Call(context: ExecutionContext; params args: array of Object): Object;
 begin

@@ -55,7 +55,7 @@ begin
     begin
       RaiseNativeError(NativeErrorType.SyntaxError, 'Error in json data at '+caller.Row+':'+caller.Col);
     end;
-  lTok.SetData(UTilities.GetArgAsString(args, 0), '');
+  lTok.SetData(UTilities.GetArgAsString(args, 0, aCaller), '');
   result := JSONParse(lTok);
   if lTok.Token <> TokenKind.EOF then 
     RaiseNativeError(NativeErrorType.SyntaxError, 'EOF expected '+lTok.Row+':'+lTok.Col);
@@ -164,13 +164,13 @@ begin
   var lSpace := Utilities.GetArg(args, 2);
   if lSpace is EcmaScriptObject then begin
     if EcmaScriptObject(lSpace).Class = 'Number' then
-      lGap := new String(' ', Utilities.GetObjAsInteger(lSpace))
+      lGap := new String(' ', Utilities.GetObjAsInteger(lSpace, aCaller))
     else if EcmaScriptObject(lSpace).Class = 'String' then
-      lGap := Utilities.GetObjAsString(lSpace);
+      lGap := Utilities.GetObjAsString(lSpace, aCaller);
   end else if lSpace is string then
     lGap := String(lSpace)
   else if (lSpace is Int32) or (lSpace is Double) then
-    lGap := new String(' ', Utilities.GetObjAsInteger(lSpace));
+    lGap := new String(' ', Utilities.GetObjAsInteger(lSpace, aCaller));
   if Length(lGap) > 10 then lGap := lGap.Substring(0,10);
   var lWork := new EcmaScriptObject(self);
   lWork.DefineOwnProperty('', new PropertyValue(PropertyAttributes.All, Utilities.GetArg(args, 0)), false);

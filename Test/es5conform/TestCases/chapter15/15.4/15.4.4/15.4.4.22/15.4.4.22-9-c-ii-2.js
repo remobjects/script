@@ -31,7 +31,7 @@ test: function testcase() {
   var bParCorrect = false;
   function callbackfn(prevVal, curVal, idx, obj)
   {
-    if(idx === obj.length-1 && obj[idx] === curVal && prevVal === initialvalue)
+    if(idx === obj.length-1 && obj[idx] === curVal && prevVal === initialValue)
       return curVal;
     else if (idx+1 < obj.length && obj[idx] === curVal && obj[idx+1] === prevVal)
       return curVal;

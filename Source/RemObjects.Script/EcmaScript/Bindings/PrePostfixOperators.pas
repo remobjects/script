@@ -37,7 +37,7 @@ begin
   if aLeft is Integer then 
     aLeft := Integer(aLeft) -1
   else
-    aLeft := Utilities.GetObjAsDouble(aLeft) -1.0;
+    aLeft := Utilities.GetObjAsDouble(aLeft, aExec) -1.0;
   Reference.SetValue(lRef, aLeft, aExec);
   exit lOldValue;
 end;
@@ -55,7 +55,7 @@ begin
   if aLeft is Integer then 
     aLeft := Integer(aLeft) +1
   else
-    aLeft := Utilities.GetObjAsDouble(aLeft) +1.0;
+    aLeft := Utilities.GetObjAsDouble(aLeft, aExec) +1.0;
   Reference.SetValue(lRef, aLeft, aExec);
   exit lOldValue;
 end;
@@ -72,7 +72,7 @@ begin
   if aLeft is Integer then 
     aLeft := Integer(aLeft) -1
   else
-    aLeft := Utilities.GetObjAsDouble(aLeft) -1.0;
+    aLeft := Utilities.GetObjAsDouble(aLeft, aexec) -1.0;
   exit Reference.SetValue(lRef, aLeft, aExec);
 end;
 
@@ -88,7 +88,7 @@ begin
   if aLeft is Integer then 
     aLeft := Integer(aLeft) +1
   else
-    aLeft := Utilities.GetObjAsDouble(aLeft) +1.0;
+    aLeft := Utilities.GetObjAsDouble(aLeft, aexec) +1.0;
   exit Reference.SetValue(lRef, aLeft, aExec);
 end;
 

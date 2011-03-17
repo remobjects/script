@@ -28,17 +28,17 @@ type
   //ScriptException = 
   ScriptRuntimeException = public class(ScriptException)
   private
-    fOriginal: RemObjects.Script.EcmaScript.EcmaScriptObject;
+    fOriginal: Object;
   public
-    class method SafeEcmaScriptToObject(o: RemObjects.Script.EcmaScript.EcmaScriptObject): string;
+    class method SafeEcmaScriptToObject(o: Object): string;
     class method Wrap(arg: Object): Exception;
     class method Unwrap(arg: Object): Object;
 
     class var Method_Unwrap: MethodInfo := typeof(ScriptRuntimeException).GetMethod('Unwrap'); readonly;
     class var Method_Wrap: MethodInfo := typeof(ScriptRuntimeException).GetMethod('Wrap'); readonly;
 
-    constructor(aOriginal: RemObjects.Script.EcmaScript.EcmaScriptObject);
-    property Original: RemObjects.Script.EcmaScript.EcmaScriptObject read fOriginal;
+    constructor(aOriginal: Object);
+    property Original: Object read fOriginal;
     method ToString: String; override;
   end;
 
@@ -238,7 +238,7 @@ begin
   result := BindCall('set_'+binder.Name, binder.IgnoreCase, [value]);
 end;
 *)
-class method ScriptRuntimeException.SafeEcmaScriptToObject(o: RemObjects.Script.EcmaScript.EcmaScriptObject): string;
+class method ScriptRuntimeException.SafeEcmaScriptToObject(o: Object): string;
 begin
   try
     exit o.ToString;
@@ -247,7 +247,7 @@ begin
   end;
 end;
 
-constructor ScriptRuntimeException(aOriginal: RemObjects.Script.EcmaScript.EcmaScriptObject);
+constructor ScriptRuntimeException(aOriginal: Object);
 begin
   inherited constructor(SafeEcmaSCriptToObject(aOriginal));
   fOriginal := aOriginal;
@@ -263,8 +263,7 @@ begin
   result := Exception(arg);
   if assigned(result) then exit;
 
-  var ln := RemObjects.Script.EcmaScript.EcmaScriptObject(arg);
-  if ln <> nil then exit new ScriptRuntimeException(ln);
+  if arg <> nil then exit new ScriptRuntimeException(arg);
   
   if arg = nil then arg := 'empty exception';
   exit new Exception(arg.ToString);

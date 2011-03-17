@@ -12,10 +12,10 @@ type
   private
   protected
   public
-    class method BitwiseNot(aData: Object): Object; // ~
-    class method LogicalNot(aData: Object): OBject; // !
-    class method Minus(aData: Object): OBject; // -
-    class method Plus(aData: Object): OBject; // -
+    class method BitwiseNot(aData: Object; ec: ExecutionContext): Object; // ~
+    class method LogicalNot(aData: Object; ec: ExecutionContext): OBject; // !
+    class method Minus(aData: Object; ec: ExecutionContext): OBject; // -
+    class method Plus(aData: Object; ec: ExecutionContext): OBject; // -
     
     class var Method_BitwiseNot: System.Reflection.MethodInfo := typeof(Operators).GetMethod('BitwiseNot');
     class var Method_LogicalNot: System.Reflection.MethodInfo := typeof(Operators).GetMethod('LogicalNot');
@@ -25,28 +25,28 @@ type
 
 implementation
 
-class method Operators.BitwiseNot(aData: Object): Object;
+class method Operators.BitwiseNot(aData: Object; ec: ExecutionContext): Object;
 begin
-  exit not Utilities.GetObjAsInteger(aData);
+  exit not Utilities.GetObjAsInteger(aData, ec);
 end;
 
-class method Operators.LogicalNot(aData: Object): OBject;
+class method Operators.LogicalNot(aData: Object; ec: ExecutionContext): OBject;
 begin
-  exit not Utilities.GetObjAsBoolean(aData);
+  exit not Utilities.GetObjAsBoolean(aData, ec);
 end;
 
-class method Operators.Minus(aData: Object): OBject;
+class method Operators.Minus(aData: Object; ec: ExecutionContext): OBject;
 begin
   if aData is Integer then
     exit - Integer(aData);
-  exit -Utilities.GetObjAsDouble(aData);
+  exit -Utilities.GetObjAsDouble(aData, ec);
 end;
 
-class method Operators.Plus(aData: Object): OBject;
+class method Operators.Plus(aData: Object; ec: ExecutionContext): OBject;
 begin
   if aData is Integer then
     exit aData;
-  exit Utilities.GetObjAsDouble(aData);
+  exit Utilities.GetObjAsDouble(aData, ec);
 end;
 
 end.
