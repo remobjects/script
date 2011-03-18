@@ -427,7 +427,7 @@ begin
   var lExpr: ExpressionElement := nil;
   lExpr := ParseExpression(true);
   if lExpr = nil then exit nil;
-  fTok.Next;
+  
 
   if fTok.Token = TokenKind.Semicolon then fTok.Next;
   result := new ThrowStatement(new PositionPair(lPos, fTok.LastEndPosition), lExpr);
