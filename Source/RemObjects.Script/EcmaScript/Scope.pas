@@ -278,7 +278,11 @@ begin
   if lRef.Base is Boolean then exit aExecutionContext.Global.BooleanPrototype.Get(aExecutionContext, lRef.Name);
   if lRef.Base is Integer then exit aExecutionContext.Global.NumberPrototype.Get(aExecutionContext, lRef.Name);
   if lRef.Base is Double then exit aExecutionContext.Global.NumberPrototype.Get(aExecutionContext, lRef.Name);
-  if lRef.Base is String then exit aExecutionContext.Global.StringPrototype.Get(aExecutionContext, lRef.Name);
+  if lRef.Base is String then begin
+    if lRef.Name = 'length' then 
+      exit string(lREf.Base).Length;
+    exit aExecutionContext.Global.StringPrototype.Get(aExecutionContext, lRef.Name);
+  end;
 end;
 
 class method Reference.SetValue(aReference: Object; aValue: Object; aExecutionContext: ExecutionContext): Object;

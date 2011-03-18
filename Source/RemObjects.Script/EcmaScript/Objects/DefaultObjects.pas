@@ -68,7 +68,9 @@ type
     property RegExpPrototype:EcmaScriptObject;
     property ErrorPrototype:EcmaScriptObject;
     property Thrower: EcmaScriptFunctionObject;
+    property NativePrototype: EcmaScriptObject;
     property NotStrictGlobalEvalFunc: EcmaScriptFunctionObject;
+    method NativeToString(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
     method eval(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
     method NotStrictGlobalEval(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
     method InnerEval(aCaller: ExecutionContext; aStrict: Boolean; aSelf: Object; params args: Array of object): Object;
@@ -165,6 +167,10 @@ begin
   Values.Add('unescape', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'unescape', @unescape, 1)));
   Values.Add('decodeURIComponent', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'decodeURIComponent', @decodeURIComponent, 1)));
   Values.Add('encodeURIComponent', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'encodeURIComponent', @encodeURIComponent, 1)));
+
+  NativePrototype := new EcmaScriptObject(self);
+  NativePrototype.Extensible := false;
+  NativePrototype.Values['toString'] := new PropertyValue(PropertyAttributes.None, new EcmaScriptFunctionObject(self, 'toString', @NativeToString, 0));
 end;
 
 
@@ -298,7 +304,7 @@ begin
   result.Values.Add('isExtensible', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'isExtensible', @ObjectisExtensible, 1)));
   result.Values.Add('keys', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'keys', @ObjectKeys, 1)));
 
-  ObjectPrototype.Values['constructor'] := PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'Object', @ObjectCtor, 1, &Class := 'Object'));
+  ObjectPrototype.Values['constructor'] := PropertyValue.NotEnum(result);
 
   ObjectPrototype.Values.Add('toString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toString', @ObjectToString, 0)));
   ObjectPrototype.Values.Add('toLocaleString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toLocaleString', @ObjectToLocaleString, 0)));
@@ -614,6 +620,13 @@ method GlobalObject.get_ExecutionContext: ExecutionContext;
 begin
   if fExecutionContext = nil then fExecutionContext := new ExecutionContext(new ObjectEnvironmentRecord(nil, self), false);
   exit fExecutionContext;
+end;
+
+method GlobalObject.NativeToString(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
+begin
+  var lEl := EcmaScriptObjectWrapper(aSelf);
+  if lEl = nil then RaiseNativeError(NativeErrorType.ReferenceError, 'native toString() is not generic');
+  exit lEl.Type.ToString;
 end;
 
 method Undefined.ToString: String;

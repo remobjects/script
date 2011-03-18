@@ -73,28 +73,39 @@ begin
     else exit false;
     end; // case
   end;
-  if (aLeft is EcmaScriptObject) <> (aRight is EcmaScriptObject) then begin
-    if EcmaScriptObject(aLeft):Value <> nil then begin
-      aLeft := EcmaScriptObject(aLeft):Value;
-      lLeft := &Type.GetTypeCode(aLeft.GetType);
-    end;
-    if EcmaScriptObject(aRight):Value <> nil then begin
-      aRight := EcmaScriptObject(aRight):Value;
-      lRight := &Type.GetTypeCode(aRight.GetType);
-    end;
-  end;
+
+  if ((lLeft in [TypeCode.SByte, 
+      TypeCode.Int16,
+      TypeCode.Int32, 
+      TypeCode.Int64,
+      TypeCode.Byte,
+      TypeCode.UInt16,
+      TypeCode.UInt32,
+      TypeCode.UInt64]) and (lRight = typeCode.String)) or ((lRight in [TypeCode.SByte, 
+      TypeCode.Int16,
+      TypeCode.Int32, 
+      TypeCode.Int64,
+      TypeCode.Byte,
+      TypeCode.UInt16,
+      TypeCode.UInt32,
+      TypeCode.UInt64]) and (lLeft = typeCode.String) ) then
+    exit Utilities.GetObjAsInteger(aLeft, ec) = Utilities.GetObjAsInteger(aRight, ec);
+    
+  if ((lLeft in [TypeCode.Single,
+      TypeCode.Double]) and (lRight = typeCode.String)) or ((lRight in [TypeCode.Single,
+      TypeCode.Double]) and (lLeft = typeCode.String) ) then
+    exit Utilities.GetObjAsDouble(aLeft, ec) = Utilities.GetObjAsDouble(aRight, ec);
+   
+  if (lLeft = TypeCode.Boolean) or (lRight = TypeCode.Boolean) then
+    exit Utilities.GetObjAsInteger(aLeft, ec) = Utilities.GetObjAsInteger(aRight, ec);
 
   if (lLeft = TypeCode.String) or (lRight = TypeCode.String) then begin
-    if lRight = TypeCode.Single then
-      aRight := Single(aRight).ToString(System.Globalization.NumberFormatInfo.InvariantInfo)
-    else if lRight = TypeCode.Double then
-      aRight := Double(aRight).ToString(System.Globalization.NumberFormatInfo.InvariantInfo)
-    else aRight := aRight.ToString;
+    aRight := Utilities.GetObjAsString(aRight, ec);
     if lLeft = TypeCode.Single then
       aLeft := Single(aLeft).ToString(System.Globalization.NumberFormatInfo.InvariantInfo)
     else if lLeft = TypeCode.Double then
       aLeft := Double(aLeft).ToString(System.Globalization.NumberFormatInfo.InvariantInfo)
-    else aLeft := aLeft.ToString;
+    else aLeft := Utilities.GetObjAsString(aLeft, ec);
 
     exit string.Equals(string(aLeft), string(aRight));
   end;
@@ -179,11 +190,12 @@ class method Operators.StrictNotEqual(aLeft, aRight: Object; ec: ExecutionContex
 begin
   result := NOT Boolean(StrictEqual(aLeft, aRight, ec));
 end;
+
 class method Operators.DoubleCompare(aLeft, aRight: Double): Boolean;
 begin
   if Double.IsNegativeInfinity(aLeft) and Double.IsNegativeInfinity(aRight) then exit true;
   if Double.IsPositiveInfinity(aLeft) and Double.IsPositiveInfinity(aRight) then exit true;
-  exit Math.Abs(aRight - aLeft) < 0.00000001;
+  exit aRight = aLeft;
 end;
 
 class method Operators.SameValue(aLeft, aright: Object; ec: ExecutionContext): Boolean;
@@ -196,10 +208,6 @@ begin
   if aValue = nil then exit 'object';
   if aValue = Undefined.Instance then exit 'undefined';
   var lObj := EcmaScriptObject(aValue);
-  if (lObj <> nil) and (lObj.Value <> nil) then begin
-    aValue:= lObj.Value;
-    lObj := nil;
-  end;
 
   if lObj <> nil then begin
     if lObj is EcmaScriptBaseFunctionObject then 

@@ -213,6 +213,8 @@ end;
 
 method GlobalObject.DateToString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
+  aSelf := coalesce(EcmaScriptObject(aSelf):Value, aSelf);
+
   exit UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime.ToString(System.Globalization.DateTimeFormatInfo.InvariantInfo);
 end;
 
@@ -248,6 +250,7 @@ end;
 
 method GlobalObject.DateValueOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
+  aSelf := coalesce(EcmaScriptObject(aSelf):Value, aSelf);
   exit Utilities.GetObjAsInt64(aSelf, aCaller);
 end;
 

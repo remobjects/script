@@ -30,7 +30,7 @@ type
     method GetCustomAttributes(attributeType: System.Type): sequence of Xunit.Sdk.IAttributeInfo;
     method CreateInstance: System.Object; empty;
     method ToStartXml: System.Xml.XmlNode; empty;
-    property Timeout: System.Int32 read 20000;
+    property Timeout: System.Int32 read 30000;
     property ShouldCreateInstance: System.Boolean read false;
     method Execute(testClass: System.Object): Xunit.Sdk.MethodResult;
     property DisplayName: System.String read Name;

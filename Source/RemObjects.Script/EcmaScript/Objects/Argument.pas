@@ -52,8 +52,11 @@ end;
 method EcmaScriptArgumentObject.Get(aExecutionContext: ExecutionContext; aFlags: Integer; aName: String): Object;
 begin
   var lIndex: Integer;
-  if not fStrict and Int32.TryParse(aname, out lIndex) and (lIndex < Math.Min(Length(fNames), Length(fArgs))) then begin
-    exit fExecutionScope.LexicalScope.GetBindingValue(fNames[lIndex], false);
+  if not fStrict and Int32.TryParse(aname, out lIndex) then begin
+    if (lIndex < Math.Min(Length(fNames), Length(fArgs))) then
+      exit fExecutionScope.LexicalScope.GetBindingValue(fNames[lIndex], false)
+    else if lIndex < length(fArgs) then
+      exit fArgs[lIndex];
   end;
   exit inherited;
 end;
@@ -70,8 +73,14 @@ end;
 method EcmaScriptArgumentObject.DefineOwnProperty(aName: String; aValue: PropertyValue; aThrow: Boolean): Boolean;
 begin
   var lIndex: Integer;
-  if not fStrict and Int32.TryParse(aname, out lIndex) and (lIndex < Math.Min(Length(fNames), Length(fArgs))) then begin
-    fExecutionScope.LexicalScope.SetMutableBinding(fnames[lIndex], aValue.Value, aThrow);
+  if not fStrict and Int32.TryParse(aname, out lIndex) then begin
+    if lIndex < Math.Min(Length(fNames), Length(fArgs)) then begin
+      fExecutionScope.LexicalScope.SetMutableBinding(fnames[lIndex], aValue.Value, aThrow);
+      exit true;
+    end else if (lIndex < length(fArgs)) and (PropertyAttributes.HasValue in aValue.Attributes) then begin
+      fArgs[lIndex] := aValue.Value;
+      exit true;
+    end;
     exit true;
   end;
   exit inherited;

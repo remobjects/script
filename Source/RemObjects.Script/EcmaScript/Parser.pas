@@ -1016,18 +1016,9 @@ begin
       fTok.Next();
     end;
     TokenKind.Float: begin
-      var lValue: Double ;
-      var lExp := fTok.TokenStr.IndexOfAny(['e','E']);
-      if lExp >= 0 then begin
-       
-        if not Double.TryParse(fTok.TokenStr.Substring(0, lExp), System.Globalization.NumberStyles.Float, System.Globalization.NumberFormatInfo.InvariantInfo, out lValue) or
-          not Int32.TryParse(fTok.TokenStr.Substring(lExp+1), out lExp) then begin
-          Error(ParserErrorKind.SyntaxError, '');
-          exit nil;
-        end;
-        lValue := lValue * Math.Pow(10, lExp);
-      end else
-      if not Double.TryParse(fTok.TokenStr, System.Globalization.NumberStyles.Float, System.Globalization.NumberFormatInfo.InvariantInfo, out lValue) then begin
+      var lValue := RemObjects.Script.EcmaScript.Utilities.ParseDouble(ftok.TokenStr); 
+      
+      if Double.IsNaN(lValue) then begin
         Error(ParserErrorKind.SyntaxError, '');
         exit nil;
       end;
@@ -1070,23 +1061,20 @@ begin
       fTok.Next;
       lVal := ParseLeftHandSideExpression(false);
       if lVal = nil then exit;
-      if fTok.Token <> TokenKind.OpeningParenthesis then begin
-        Error(ParserErrorKind.OpeningParenthesisExpected, '');
-        exit nil;
-      end;
-
-      fTok.Next;
       var lArgs: List<ExpressionElement> := new List<ExpressionElement>;
-      if fTok.Token <> TokenKind.ClosingParenthesis then begin
-        loop begin
-          var lSub := ParseExpression(true);
-          if lSub = nil then exit nil;
-          lArgs.Add(lSub);
-          if fTok.Token = TokenKind.Comma then fTok.Next else 
-          if fTok.Token = TokenKind.ClosingParenthesis then break else
-          begin
-            Error(ParserErrorKind.ClosingParenthesisExpected, '');
-            exit nil;
+      if fTok.Token = TokenKind.OpeningParenthesis then begin
+        fTok.Next;
+        if fTok.Token <> TokenKind.ClosingParenthesis then begin
+          loop begin
+            var lSub := ParseExpression(true);
+            if lSub = nil then exit nil;
+            lArgs.Add(lSub);
+            if fTok.Token = TokenKind.Comma then fTok.Next else 
+            if fTok.Token = TokenKind.ClosingParenthesis then break else
+            begin
+              Error(ParserErrorKind.ClosingParenthesisExpected, '');
+              exit nil;
+            end;
           end;
         end;
       end;

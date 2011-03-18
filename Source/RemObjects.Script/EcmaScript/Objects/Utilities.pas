@@ -19,6 +19,7 @@ type
   Utilities = public static class
   private
   public
+    class method ParseDouble(arg: String): Double;
     class method UrlEncode(s: String): String;
     class method UrlEncodeComponent(s: String): String;
     class method UrlDecode(s: String): String;
@@ -41,7 +42,6 @@ type
     class var method_GetObjAsBoolean: System.Reflection.MethodInfo := typeof(Utilities).GetMethod('GetObjAsBoolean'); readonly;
     class var Method_GetObjAsString: System.Reflection.MethodInfo := typeof(UtilitieS).GetMethod('GetObjAsString'); readonly;
 
-    class method GetPrimitive(aExecutionContext: ExecutionContext; arg: EcmaScriptObject): Object;
     class method ToObject(ec: ExecutionContext; o: Object): EcmaScriptObject;
     class method IsPrimitive(arg: Object): Boolean;
 
@@ -114,7 +114,7 @@ end;
 
 class method Utilities.GetObjAsInteger(arg: object; ec: ExecutionContext): Integer;
 begin
-  if arg is EcmaScriptObject then arg := GetPrimitive(ec, EcmaScriptObject(arg));
+  if arg is EcmaScriptObject then arg := GetObjectAsPrimitive(ec, EcmaScriptObject(arg), PrimitiveType.Number);
   if (arg = nil) then exit 0;
   case &Type.GetTypeCode(arg.GetType) of
     TypeCode.Boolean: Result := iif(boolean(arg), 1, 0);
@@ -128,6 +128,7 @@ begin
     TypeCode.SByte: result := SByte(arg);
     TypeCode.Single: result := Integer(Single(arg));
     TypeCode.String: begin
+       arg := String(arg).Trim();
        if not (if string(arg).StartsWith('0x', StringComparison.InvariantCultureIgnoreCase) then
          Int32.TryParse(string(arg).Substring(2), System.Globalization.NumberStyles.HexNumber, System.Globalization.NumberFormatInfo.InvariantInfo, out result)
        else
@@ -144,7 +145,7 @@ end;
 
 class method Utilities.GetObjAsInt64(arg: object; ec: ExecutionContext): Int64;
 begin
-  if arg is EcmaScriptObject then arg := GetPrimitive(ec, EcmaScriptObject(arg));
+  if arg is EcmaScriptObject then arg := GetObjectAsPrimitive(ec, EcmaScriptObject(arg), PrimitiveType.Number);
   if (arg = nil)  then exit 0;
   case &Type.GetTypeCode(arg.GetType) of
     TypeCode.Boolean: Result := iif(boolean(arg), 1, 0);
@@ -158,7 +159,12 @@ begin
     TypeCode.SByte: result := SByte(arg);
     TypeCode.Single: result := Int64(Single(arg));
     TypeCode.String: begin
-        Int64.TryParse(string(arg), out result);
+       arg := String(arg).Trim();
+       if not (if string(arg).StartsWith('0x', StringComparison.InvariantCultureIgnoreCase) then
+         Int64.TryParse(string(arg).Substring(2), System.Globalization.NumberStyles.HexNumber, System.Globalization.NumberFormatInfo.InvariantInfo, out result)
+       else
+          Int64.TryParse(string(arg), out result)) then
+        Result := 0;
     end;
     TypeCode.UInt16: result := UInt16(arg);
     TypeCode.UInt32: result := UInt32(arg);
@@ -170,7 +176,7 @@ end;
 
 class method Utilities.GetObjAsDouble(arg: object; ec: ExecutionContext): Double;
 begin
-  if arg is EcmaScriptObject then arg := GetPrimitive(ec, EcmaScriptObject(arg));
+  if arg is EcmaScriptObject then arg := GetObjectAsPrimitive(ec, EcmaScriptObject(arg), PrimitiveType.Number);
 
   if (arg = nil)  then exit 0;
   if arg = Undefined.Instance then exit Double.NaN;
@@ -186,7 +192,7 @@ begin
     TypeCode.SByte: result := SByte(arg);
     TypeCode.Single: result := Single(arg);
     TypeCode.String: begin
-        Double.TryParse(string(arg), System.Globalization.NumberStyles.Float, System.Globalization.NumberFormatInfo.InvariantInfo, out result);
+       result := ParseDouble(String(arg).Trim());
     end;
     TypeCode.UInt16: result := UInt16(arg);
     TypeCode.UInt32: result := UInt32(arg);
@@ -206,7 +212,7 @@ begin
     TypeCode.Byte: result := byte(arg) <> 0;
     TypeCode.Char: result := Char(arg) <> #0;
     TypeCode.Decimal: result := Decimal(arg) <> 0;
-    TypeCode.Double: result := Double(arg) <> 0;
+    TypeCode.Double: result := if not Double.IsNaN(Double(arg)) then Double(arg) <> 0 else false;
     TypeCode.Int16: result := Int16(arg) <> 0;
     TypeCode.Int32: result := Int32(arg) <> 0;
     TypeCode.Int64: result := Int64(arg) <> 0;
@@ -255,16 +261,6 @@ begin
     result := result and (o is EcmaScriptBaseFunctionObject);
 end;
 
-class method Utilities.GetPrimitive(aExecutionContext: ExecutionContext; arg: EcmaScriptObject): Object;
-begin
-  if arg = nil then exit nil;
-  if assigned(arg.Value) then
-    exit arg.Value;
-  if arg is EcmaScriptDateObject then
-    exit arg.ToString()
-  else 
-    exit if EcmaScriptBaseFunctionObject(arg.Get('valueOf')) <> nil then EcmaScriptBaseFunctionObject(arg.Get('valueOf')).Call(aExecutionContext) else arg.ToString();
-end;
 
 class method Utilities.UrlEncode(s: String): String;
 begin
@@ -394,6 +390,41 @@ begin
     TypeCode.UInt64: exit true;
   end; // case
   exit false;
+end;
+
+class method Utilities.ParseDouble(arg: String): Double;
+begin
+  if arg = '' then result := 0.0 else 
+  if String.Compare(arg, 'Infinity', StringComparison.InvariantCultureIgnoreCase) =0 then result := Double.PositiveInfinity else
+  if String.Compare(arg, '+Infinity', StringComparison.InvariantCultureIgnoreCase)= 0 then result := Double.PositiveInfinity else
+  if String.Compare(arg, '-Infinity', StringComparison.InvariantCultureIgnoreCase) = 0 then result := Double.NegativeInfinity else
+  if arg.StartsWith('0x', StringComparison.InvariantCultureIgnoreCase) then begin
+    var lWork: Int64;
+    if not Int64.TryParse(arg.Substring(2), System.Globalization.NumberStyles.HexNumber, System.Globalization.NumberFormatInfo.InvariantInfo, out lWork) then 
+      result := Double.NaN
+    else
+      result := lWork;
+  end else begin 
+    var lExp := arg.IndexOfAny(['e','E']);
+    if lExp <> -1 then begin
+      var lTmp := arg.Substring(lExp+1);
+      arg := arg.Substring(0, lExp);
+      if not Int32.TryParse(lTmp, out lExp) then
+        exit Double.NaN;
+    end else
+      lExp := 0;
+    
+    if arg.StartsWith('-') then begin
+      if not Double.TryParse(arg.Substring(1), System.Globalization.NumberStyles.Number, System.Globalization.NumberFormatInfo.InvariantInfo, out result) then
+        exit Double.NaN
+      else
+        result := -Result;
+    end else
+      if not Double.TryParse(arg, System.Globalization.NumberStyles.Number, System.Globalization.NumberFormatInfo.InvariantInfo, out result) then
+        exit Double.NaN;
+    if lExp <> 0 then
+      result := result * Math.Pow(10, lExp);
+  end;
 end;
 
 end.

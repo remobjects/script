@@ -80,7 +80,7 @@ end;
 
 constructor EcmaScriptObjectWrapper(aValue: Object; aType: &Type; aGlobal: GlobalObject);
 begin
-  inherited constructor(aGlobal, aGlobal.ObjectPrototype);
+  inherited constructor(aGlobal, aGlobal.NativePrototype);
   self.Class := 'Native '+aType;
   fValue := aValue;
   fType := aType;
