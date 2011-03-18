@@ -121,7 +121,12 @@ begin
     TypeCode.Byte: result := byte(arg);
     TypeCode.Char: result := Integer(Char(arg));
     TypeCode.Decimal: result := Integer(Decimal(arg));
-    TypeCode.Double: result := IntegeR(Double(arg));
+    TypeCode.Double: begin
+      var lVal := Double(arg);
+      if Double.IsNaN(lVal) or (Double.IsInfinity(lVal)) then 
+        exit 0;
+      result := Integer(Cardinal(Math.Sign(lVal) * Math.Floor(Math.Abs(lVal))));
+    end;
     TypeCode.Int16: result := Int16(arg);
     TypeCode.Int32: result := Int32(arg);
     TypeCode.Int64: result := Int64(arg);
@@ -132,8 +137,10 @@ begin
        if not (if string(arg).StartsWith('0x', StringComparison.InvariantCultureIgnoreCase) then
          Int32.TryParse(string(arg).Substring(2), System.Globalization.NumberStyles.HexNumber, System.Globalization.NumberFormatInfo.InvariantInfo, out result)
        else
-          Int32.TryParse(string(arg), out result)) then
-        Result := 0;
+          Int32.TryParse(string(arg), out result)) then begin
+        var lWork: Double := Utilities.ParseDouble(string(arg));
+          result := Integer(Cardinal(Math.Sign(lWork) * Math.Floor(Math.Abs(lWork))));
+      end;
     end;
     TypeCode.UInt16: result := UInt16(arg);
     TypeCode.UInt32: result := UInt32(arg);
@@ -416,7 +423,10 @@ begin
       exit Double.NaN;
   end else
     lExp := 0;
-    
+  if s = '' then  begin
+    if lNegative then exit - 0 else exit 0;
+  end;
+
   if not Double.TryParse(s, System.Globalization.NumberStyles.Float, System.Globalization.NumberFormatInfo.InvariantInfo, out Result) then exit Double.NaN;
 
   

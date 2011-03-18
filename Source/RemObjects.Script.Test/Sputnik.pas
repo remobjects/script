@@ -26,7 +26,7 @@ type
     property IsStatic: System.Boolean read false;
     property IsAbstract: System.Boolean read false;
     method Invoke(testClass: System.Object; params parameters: array of System.Object); empty;
-    method HasAttribute(attributeType: System.Type): System.Boolean; empty;
+    method HasAttribute(attributeType: System.Type): System.Boolean; 
     method GetCustomAttributes(attributeType: System.Type): sequence of Xunit.Sdk.IAttributeInfo;
     method CreateInstance: System.Object; empty;
     method ToStartXml: System.Xml.XmlNode; empty;
@@ -57,6 +57,8 @@ type
     class var fInclude: System.Text.RegularExpressions.Regex := new System.Text.RegularExpressions.Regex('\$INCLUDE\(\"(.*)\"\);');
     class var fSpecialCall: System.Text.RegularExpressions.Regex := new System.Text.RegularExpressions.Regex('\$([A-Z]+)(?=\()');
     method ScanJS(aScan: String);
+  assembly
+    fBlacklist: Dictionary<string, string> := new Dictionary<String,String>;
   public
     constructor;
 
@@ -97,6 +99,16 @@ begin
   
   fSputnikRoot := Path.GetFullPath(Path.Combine(Path.Combine(Path.Combine(Path.GetDirectoryName(lPath), '..'), 'Test'), 'sputniktests'));
   fTestRoot := Path.Combine(fSputnikRoot, 'tests');
+
+  var lBlacklistFile := Path.Combine(fTestRoot, 'Blacklist.txt');
+  if File.Exists(lBlacklistFile) then begin
+    for each el: string in File.ReadAllLines(lBlacklistFile) do begin
+      if (el  = '') or (el[0] =' ') then continue;
+      var lWork := el.Split([' '], 2);
+      if Length(lWork) = 2 then fBlacklist.Add(lWork[0], lWork[1]);
+        
+    end;
+  end;
   fLib := Path.Combine(fSputnikRoot, 'lib');
 
   try
@@ -177,7 +189,10 @@ end;
 method SputnikTest.Execute(testClass: System.Object): Xunit.Sdk.MethodResult;
 begin
   try
-   Run(self);
+    var lSkip: string;
+    if Owner.fBlacklist.TryGetValue(Name, out lSkip) then
+      exit new SkipResult(self, DisplayName, lSkip);
+    Run(self);
   except
     on e: exception do exit new Xunit.Sdk.FailedResult(self, e, DisplayName);
   end;
@@ -203,6 +218,11 @@ end;
 method SputnikTest.ToString: String;
 begin
   exit Name;
+end;
+
+method SputnikTest.HasAttribute(attributeType: System.Type): System.Boolean;
+begin
+  exit false;
 end;
 
 method SputnikException.ToString: String;

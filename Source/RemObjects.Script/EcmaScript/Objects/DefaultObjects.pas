@@ -271,10 +271,15 @@ end;
 
 method GlobalObject.ObjectIsPrototypeOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  if (args.Length = 0) or (aSelf is not EcmaScriptObject) then exit false;
+  var lThis := Utilities.ToObject(aCaller, aSelf);
+  if (args.Length = 0) then exit false;
   var lValue := EcmaScriptObject(args[0]);
-
-  if lValue = nil then result := false else result := lValue.Prototype = aSelf;
+  if lValue = nil then exit nil;
+  repeat
+    lValue := lValue.Prototype;
+    if lThis = lValue then exit true;
+  until lValue = nil;
+  exit false;
 end;
 
 method GlobalObject.CreateObject: EcmaScriptObject;

@@ -525,7 +525,7 @@ begin
       begin
         if FInput[curroffset + 1] = '/' then begin // single line commment
           inc(curroffset);
-          while FInput[curroffset] not in [#0, #10, #13, #$2028, #$2029] do 
+          while (FInput[curroffset] not in [#10, #13, #$2028, #$2029]) and not ((FInput[curroffset] = #0) and (curroffset >= FInput.Length - 4)) do 
             inc(curroffset);
           FLen := curroffset - FPos;
           FToken := TokenKind.LineComment
@@ -1097,7 +1097,7 @@ begin
   FPos := FPos + FLen; // should be 1 at this point, the / 
   var curroffset := FPos;
   while FInput[curroffset] <> '/' do begin
-    if fInput[curroffset] = #0 then begin
+    if (FInput[curroffset] = #0) and (curroffset >= FInput.Length - 4) then begin
       if Error <> nil then Error(self, TokenizerErrorKind.EOFInRegex, '');
       FLen := curroffset - FPos + 1;
       FToken := TokenKind.Error;

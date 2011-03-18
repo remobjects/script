@@ -195,9 +195,9 @@ class method Operators.DoubleCompare(aLeft, aRight: Double): Boolean;
 begin
   if Double.IsNegativeInfinity(aLeft) and Double.IsNegativeInfinity(aRight) then exit true;
   if Double.IsPositiveInfinity(aLeft) and Double.IsPositiveInfinity(aRight) then exit true;
-  aLeft := aLeft - aRight;
-  if aLeft < 0 then aLeft := -aLeft;
-  exit aLEft < 0.0000000000001;
+  var bits := BitConverter.DoubleToInt64Bits(aLeft);
+    // Note that the shift is sign-extended, hence the test against -1 not 1
+  exit 		Math.Abs(aLeft - aRight ) <= Math.Abs(aLeft * 0.0000000000001);
 end;
 
 class method Operators.SameValue(aLeft, aright: Object; ec: ExecutionContext): Boolean;

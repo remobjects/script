@@ -997,6 +997,11 @@ begin
       fTok.NextAsRegularExpression(out lStr, out lMod);
       lVal := new RegExExpression(fTok.PositionPair, lStr, lMod);
     end;
+    TokenKind.DivideAssign: begin
+      var lStr, lMod: String;
+      fTok.NextAsRegularExpression(out lStr, out lMod);
+      lVal := new RegExExpression(fTok.PositionPair, '='+lStr, lMod);
+    end;
 
     TokenKind.K_null: begin
       lVal := new NullExpression(fTok.PositionPair);
