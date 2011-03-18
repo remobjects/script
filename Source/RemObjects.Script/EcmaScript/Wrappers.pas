@@ -57,6 +57,7 @@ end;
 class method EcmaScriptScope.DoTryWrap(&Global: GlobalObject; aValue: Object): Object;
 begin
   if (aValue = nil) or (aValue is EcmaScriptObject) then exit aValue;
+  if Avalue = Undefined.Instance then exit aValue;
   var lType := aValue.GetType();
   case &Type.GetTypeCode(lType) of
     TypeCode.Boolean: exit aValue;

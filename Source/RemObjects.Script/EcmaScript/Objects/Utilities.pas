@@ -19,7 +19,7 @@ type
   Utilities = public static class
   private
   public
-    class method ParseDouble(arg: String): Double;
+    class method ParseDouble(s: String): Double;
     class method UrlEncode(s: String): String;
     class method UrlEncodeComponent(s: String): String;
     class method UrlDecode(s: String): String;
@@ -392,39 +392,48 @@ begin
   exit false;
 end;
 
-class method Utilities.ParseDouble(arg: String): Double;
+class method Utilities.ParseDouble(s: String): Double;
+var 
+  lNegative: Boolean := false;
 begin
-  if arg = '' then result := 0.0 else 
-  if String.Compare(arg, 'Infinity', StringComparison.InvariantCultureIgnoreCase) =0 then result := Double.PositiveInfinity else
-  if String.Compare(arg, '+Infinity', StringComparison.InvariantCultureIgnoreCase)= 0 then result := Double.PositiveInfinity else
-  if String.Compare(arg, '-Infinity', StringComparison.InvariantCultureIgnoreCase) = 0 then result := Double.NegativeInfinity else
-  if arg.StartsWith('0x', StringComparison.InvariantCultureIgnoreCase) then begin
-    var lWork: Int64;
-    if not Int64.TryParse(arg.Substring(2), System.Globalization.NumberStyles.HexNumber, System.Globalization.NumberFormatInfo.InvariantInfo, out lWork) then 
-      result := Double.NaN
-    else
-      result := lWork;
-  end else begin 
-    var lExp := arg.IndexOfAny(['e','E']);
-    if lExp <> -1 then begin
-      var lTmp := arg.Substring(lExp+1);
-      arg := arg.Substring(0, lExp);
-      if not Int32.TryParse(lTmp, out lExp) then
-        exit Double.NaN;
-    end else
-      lExp := 0;
-    
-    if arg.StartsWith('-') then begin
-      if not Double.TryParse(arg.Substring(1), System.Globalization.NumberStyles.Number, System.Globalization.NumberFormatInfo.InvariantInfo, out result) then
-        exit Double.NaN
-      else
-        result := -Result;
-    end else
-      if not Double.TryParse(arg, System.Globalization.NumberStyles.Number, System.Globalization.NumberFormatInfo.InvariantInfo, out result) then
-        exit Double.NaN;
-    if lExp <> 0 then
-      result := result * Math.Pow(10, lExp);
+  if s.StartsWith('+') then begin
+    s := s.Substring(1);
+  end else if s.StartsWith('-') then begin
+    s := s.Substring(1);
+    lNegative := true;
   end;
+  if String.Compare(s, 'Infinity', StringComparison.InvariantCultureIgnoreCase) =0 then begin
+    if lNegative then 
+      exit Double.NegativeInfinity
+    else
+      exit Double.PositiveInfinity;
+  end;
+  var lExp := s.IndexOfAny(['e','E']);
+  if lExp <> -1 then begin
+    var lTmp := s.Substring(lExp+1);
+    s:= s.Substring(0, lExp);
+    if not Int32.TryParse(lTmp, out lExp) then
+      exit Double.NaN;
+  end else
+    lExp := 0;
+    
+  if not Double.TryParse(s, System.Globalization.NumberStyles.Float, System.Globalization.NumberFormatInfo.InvariantInfo, out Result) then exit Double.NaN;
+
+  
+  var lIncVal: Double;
+  if lExp < 0 then  begin
+    lIncVal := 0.1;
+    lExp := -lExp;
+  end else 
+    lIncVal := 10.0;
+  while lExp > 0 do begin
+    result := result * lIncVal;
+    dec(lExp);
+  end;
+  if lNegative then
+    result := -result;
 end;
+
+
 
 end.

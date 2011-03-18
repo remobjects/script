@@ -24,7 +24,7 @@ implementation
 class method Operators.Add(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
   if aLeft is EcmaScriptObject then aLeft := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aLeft), PrimitiveType.None);
-  if aRight is EcmaScriptObject then aLeft := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aRight), PrimitiveType.None);
+  if aRight is EcmaScriptObject then aRight := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aRight), PrimitiveType.None);
   if (aLeft is String) or (aRight is String) then
      exit Utilities.GetObjAsString(aLeft, ec) + Utilities.GetObjAsString(aRight, ec);
   if (aLeft is Int32) and (aRight is Int32) then
