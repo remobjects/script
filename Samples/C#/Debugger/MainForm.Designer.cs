@@ -27,6 +27,7 @@
 		/// </summary>
 		private void InitializeComponent ()
 		{
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.mainsplit = new System.Windows.Forms.SplitContainer();
             this.tbMain = new ICSharpCode.TextEditor.TextEditorControl();
             this.tabs = new System.Windows.Forms.TabControl();
@@ -344,6 +345,7 @@
             // ScriptEngine
             // 
             this.ScriptEngine.Debug = true;
+            this.ScriptEngine.RootContext = null;
             this.ScriptEngine.RunInThread = true;
             this.ScriptEngine.Source = null;
             this.ScriptEngine.SourceFileName = null;
@@ -355,9 +357,10 @@
             this.ClientSize = new System.Drawing.Size(811, 545);
             this.Controls.Add(this.mainsplit);
             this.Controls.Add(this.menuStrip1);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "MainForm";
-            this.Text = "Script Editor";
+            this.Text = "Debugger";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.mainsplit.Panel1.ResumeLayout(false);
             this.mainsplit.Panel2.ResumeLayout(false);
