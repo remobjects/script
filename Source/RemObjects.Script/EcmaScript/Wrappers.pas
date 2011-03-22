@@ -259,11 +259,11 @@ begin
     if lIsInt then begin
       var lCall := lItems.Where(a->a.GetIndexParameters()[0].ParameterType = Typeof(Integer)).FirstOrDefault():GetGetMethod();
       if lCall <> nil then
-        exit lCall.Invoke(Value, [lIntValue]);
+        exit EcmaScriptScope.DoTryWrap(Root, lCall.Invoke(Value, [lIntValue]));
     end;
     var lCall := lItems.Where(a->a.GetIndexParameters()[0].ParameterType = Typeof(String)).FirstOrDefault():GetGetMethod();
     if lCall <> nil then
-      exit lCall.Invoke(Value, [aName]);
+      exit EcmaScriptScope.DoTryWrap(Root,lCall.Invoke(Value, [aName]));
     root.RaiseNativeError(NativeErrorType.ReferenceError, 'No default indexer with string or integer parameter');
   end;
   exit inherited;
@@ -279,11 +279,11 @@ begin
     if lIsInt then begin
       var lCall := lItems.Where(a->a.GetIndexParameters()[0].ParameterType = Typeof(Integer)).FirstOrDefault():GetSetMethod();
       if lCall <> nil then
-        exit lCall.Invoke(Value, [lIntValue, aValue]);
+        exit coalesce(EcmaScriptScope.DoTryWrap(Root,lCall.Invoke(Value, [lIntValue, aValue])), Undefined.Instance);
     end;
     var lCall := lItems.Where(a->a.GetIndexParameters()[0].ParameterType = Typeof(String)).FirstOrDefault():GetSetMethod();
     if lCall <> nil then
-      exit lCall.Invoke(Value, [aName, aValue]);
+      exit coalesce(EcmaScriptScope.DoTryWrap(Root, lCall.Invoke(Value, [aName, aValue])), Undefined.Instance);
     root.RaiseNativeError(NativeErrorType.ReferenceError, 'No default indexer setter with string or integer parameter');
   end;
   exit inherited;
