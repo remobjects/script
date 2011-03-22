@@ -45,6 +45,9 @@ type
     method Construct(context: ExecutionContext; params args: array of Object): Object; override;
     method Call(context: ExecutionContext; params args: array of Object): Object; override;
     method CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object; override;
+
+    method GetOwnNames: IEnumerable<String>;
+    method GetNames: IEnumerator<String>; override;
   end;
 
 implementation
@@ -284,6 +287,17 @@ begin
     root.RaiseNativeError(NativeErrorType.ReferenceError, 'No default indexer setter with string or integer parameter');
   end;
   exit inherited;
+end;
+
+method EcmaScriptObjectWrapper.GetNames: IEnumerator<String>;
+begin
+  exit Enumerable.Concat(IntGetNames(),
+    GetOwnNames).GetEnumerator;
+end;
+
+method EcmaScriptObjectWrapper.GetOwnNames: IEnumerable<String>;
+begin
+  exit fType.GetProperties(BindingFlags.Public or bindingFlags.FlattenHierarchy or if Static then BindingFlags.Static else BindingFlags.Instance).Where(a->0 = Length(a.GetIndexParameters)).Select(a->a.Name);
 end;
 
 constructor Overloads(aInstance: Object; aItems: array of MethodBase);

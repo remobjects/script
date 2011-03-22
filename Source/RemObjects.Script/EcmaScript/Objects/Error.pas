@@ -84,7 +84,7 @@ begin
 
   var lPrototype := new EcmaScriptObject(self, &Class := 'EvalError');
   lPrototype.Values.Add('constructor', PropertyValue.NotEnum(result));
-  lPrototype.Prototype := ObjectPrototype;
+  lPrototype.Prototype := ErrorPrototype;
   EvalError.Values['prototype'] := PropertyValue.NotAllFlags(lPrototype);
   EvalError.Prototype := lPrototype;
 
@@ -96,7 +96,7 @@ begin
 
   lPrototype := new EcmaScriptObject(self, &Class := 'RangeError');
   lPrototype.Values.Add('constructor', PropertyValue.NotEnum(result));
-  lPrototype.Prototype := ObjectPrototype;
+  lPrototype.Prototype := ErrorPrototype;
   RangeError.Values['prototype'] := PropertyValue.NotAllFlags(lPrototype);
   RangeError.Prototype := lPrototype;
 
@@ -106,7 +106,7 @@ begin
     
   lPrototype := new EcmaScriptObject(self, &Class := 'ReferenceError');
   lPrototype.Values.Add('constructor', PropertyValue.NotEnum(result));
-  lPrototype.Prototype := ObjectPrototype;
+  lPrototype.Prototype := ErrorPrototype;
   ReferenceError.Values['prototype'] := PropertyValue.NotAllFlags(lPrototype);
   ReferenceError.Prototype := lPrototype;
 
@@ -116,7 +116,7 @@ begin
   
   lPrototype := new EcmaScriptObject(self, &Class := 'SyntaxError');
   lPrototype.Values.Add('constructor', PropertyValue.NotEnum(result));
-  lPrototype.Prototype := ObjectPrototype;
+  lPrototype.Prototype := ErrorPrototype;
   SyntaxError.Values['prototype'] := PropertyValue.NotAllFlags(lPrototype);
   SyntaxError.Prototype := lPrototype;
 
@@ -126,7 +126,7 @@ begin
   
   lPrototype := new EcmaScriptObject(self, &Class := 'TypeError');
   lPrototype.Values.Add('constructor', PropertyValue.NotEnum(result));
-  lPrototype.Prototype := ObjectPrototype;
+  lPrototype.Prototype := ErrorPrototype;
   TypeError.Values['prototype'] := PropertyValue.NotAllFlags(lPrototype);
   TypeError := lPrototype;
   
@@ -136,7 +136,7 @@ begin
   
   lPrototype := new EcmaScriptObject(self, &Class := 'URIError');
   lPrototype.Values.Add('constructor', PropertyValue.NotEnum(result));
-  lPrototype.Prototype := ObjectPrototype;
+  lPrototype.Prototype := ErrorPrototype;
   URIError.Values['prototype'] := PropertyValue.NotAllFlags(lPrototype);
   URIError.Prototype := lPrototype;
 end;

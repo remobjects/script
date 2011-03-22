@@ -82,6 +82,7 @@ type
     method ToPropertyDescriptor(aProp: EcmaScriptObject): PropertyValue;
 
     method GetNames: IEnumerator<String>; virtual;  // recursive, but unique 
+    method IntGetNames: sequence of String;
 
     property Names: sequence of string read Values.Keys;
 
@@ -415,6 +416,11 @@ end;
 
 method EcmaScriptObject.GetNames: IEnumerator<String>;
 begin
+  exit IntGetNames.GetEnumerator;
+end;
+
+method EcmaScriptObject.IntGetNames: sequence of String;
+begin
   var lItems := new List<string>;
   var lCurr := self;
   while assigned(lCurr) do begin
@@ -425,7 +431,7 @@ begin
     end;
     lCurr := lCurr.Prototype;
   end;
-  exit System.Linq.Enumerable.Where(lItems, a-> HasProperty(a)).GetEnumerator;
+  exit System.Linq.Enumerable.Where(lItems, a-> HasProperty(a))
 end;
 
 constructor PropertyValue(aAttributes: PropertyAttributes; aValue: Object);

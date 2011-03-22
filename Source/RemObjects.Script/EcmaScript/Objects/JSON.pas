@@ -221,10 +221,10 @@ end;
 method GlobalObject.JSONStr(aExecutionContext: ExecutionContext; aStack: List<Object>; aGap, aIndent: string; aReplacerFunction: EcmaScriptBaseFunctionObject; 
       aProplist: List<String>; aWork: EcmaScriptObject; aValue: String): string;
 begin
-  var value := aWork.Get(aExecutionContext, 2, aValue);
+  var value := aWork.Get(aExecutionContext, 0, aValue);
   var lObj := EcmaScriptObject(Value);
   if lObj<> nil then begin
-    var lCall := EcmaScriptBaseFunctionObject(lObj.Get(aExecutionContext, 2, 'toJSON'));
+    var lCall := EcmaScriptBaseFunctionObject(lObj.Get(aExecutionContext, 0, 'toJSON'));
     if lCall <> nil then
       value := lCall.CallEx(aExecutionContext, lObj, aValue);
   end;
@@ -253,7 +253,7 @@ begin
   if value is Int32 then exit Int32(Value).ToString;
   if value is Int64 then exit Int64(Value).ToString;
   lObj := EcmaScriptObject(VAlue);
-  if (lObj <> nil) and (lObj is not EcmaScriptBaseFunctionObject) then begin
+  if (lObj <> nil) and ((lObj is not EcmaScriptBaseFunctionObject) or (lObj is EcmaScriptObjectWrapper)) then begin
     if aStack.Contains(lObj) then RaiseNativeError(NativeErrorType.TypeError, 'Recursive JSON structure');
     aStack.Add(lObj);
     var lWork := new StringBuilder;
@@ -296,8 +296,12 @@ begin
       var lStepBack := aIndent;
       aIndent := aIndent + aGap;
       var k := aProplist:ToArray;
-      if k = nil then
-        k := lObj.Values.Where(a->PropertyAttributes.Enumerable in a.Value.Attributes).Select(a->a.Key).ToArray;
+      if Length(k) = 0 then begin
+        if lObj is EcmaScriptObjectWrapper then
+          k := EcmaScriptObjectWrapper(lObj).GetOwnNames.ToArray
+        else
+          k := lObj.Values.Where(a->PropertyAttributes.Enumerable in a.Value.Attributes).Select(a->a.Key).ToArray;
+      end;
       var lItems := new List<string>;
       for each el in k do begin
         var lVal := JSONStr(aExecutionContext, aStack, aGap, aIndent, aReplacerFunction, aProplist, lObj, el);
