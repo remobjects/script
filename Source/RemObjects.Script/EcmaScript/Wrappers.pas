@@ -128,9 +128,9 @@ begin
 
   if lItems.Length = 1 then begin
     if lItems[0].MemberType = MemberTypes.Field then     
-      exit new PropertyValue(if FieldInfo(lItems[0]).IsInitOnly then PropertyAttributes.None else PropertyAttributes.writable, FieldInfo(lItems[0]).GetValue(fValue));
+      exit new PropertyValue(if FieldInfo(lItems[0]).IsInitOnly then PropertyAttributes.None else PropertyAttributes.writable, EcmaScriptScope.DoTryWrap(Root,FieldInfo(lItems[0]).GetValue(fValue)));
     if lItems[0].MemberType = MemberTypes.Property then
-      exit new PropertyValue(if PropertyInfo(lItems[0]).CanWrite then PropertyAttributes.writable else PropertyAttributes.none, if PropertyInfo(lItems[0]).CanRead then PropertyInfo(lItems[0]).GetValue(fValue, []));
+      exit new PropertyValue(if PropertyInfo(lItems[0]).CanWrite then PropertyAttributes.writable else PropertyAttributes.none, if PropertyInfo(lItems[0]).CanRead then EcmaScriptScope.DoTryWrap(Root,PropertyInfo(lItems[0]).GetValue(fValue, [])));
   end;
   if (lItems.Length > 0) and (lItems.All(a->a.MemberType = MemberTypes.Method)) then
     exit new PropertyValue(PropertyAttributes.None, new EcmaScriptObjectWrapper(new Overloads(fValue, lItems.Cast<MethodBase>().ToArray), typeof(Overloads), Root));
@@ -273,6 +273,7 @@ method EcmaScriptObjectWrapper.Put(aExecutionContext: ExecutionContext; aName: S
 begin
   if ((aFlags and 2) <> 0) and not Static then begin
     // default property
+    if aValue is EcmaScriptObjectWrapper then aValue := EcmaScriptObjectWrapper(aValue).value;
     var lItems := fType.GetDefaultMembers.Where(a->a.MemberType = MemberTypes.Property).Cast<PropertyInfo>().Where(a-> Length(a.GetIndexParameters) = 1).ToArray();
     var lIntValue: Integer;
     var lIsInt := Int32.TryParse(aName, out lIntValue);
