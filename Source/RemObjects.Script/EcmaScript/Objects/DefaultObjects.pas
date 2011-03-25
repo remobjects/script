@@ -112,10 +112,10 @@ type
     method CreateObject: EcmaScriptObject;
     method ToString: String; override;
   end;
-  EcmaScriptEvalFunctionObject = public class(EcmaScriptFunctionObject);
+  EcmaScriptEvalFunctionObject = class(EcmaScriptFunctionObject);
 
 
-  EcmaScriptObjectObject = public class(EcmaScriptBaseFunctionObject)
+  EcmaScriptObjectObject = class(EcmaScriptBaseFunctionObject)
   private
   public
     constructor(aOwner: GlobalObject; aName: string);

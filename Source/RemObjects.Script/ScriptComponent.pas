@@ -52,7 +52,7 @@ type
     property &Method: string read fMethod;
   end;
 
-  ScriptComponent = public abstract class(Component, IDebugSink)
+  ScriptComponent = public abstract class({$IFNDEF SILVERLIGHT} Component, {$ENDIF}IDebugSink, IDisposable)
 	private
 		fWorkThread: System.Threading.Thread;
 		fRunResult: Object;
@@ -64,6 +64,7 @@ type
     fStackItems: System.Collections.ObjectModel.ReadOnlyCollection<ScriptStackFrame>;
     fDebugLastPos: PositionPair;
     fLastFrame: Integer;
+    fWaitEvent: System.Threading.ManualResetEvent := new System.Threading.ManualResetEvent(true);
     method DebugLine(aFilename: string; aStartRow, aStartCol, aEndRow, aEndCol: Integer); 
     method EnterScope(aName: string; athis: Object; aContext: ExecutionContext); // enter method
     method ExitScope(aName: string; aContext: ExecutionContext); // exit method
@@ -96,6 +97,11 @@ type
     property CallStack: ReadOnlyCollection<ScriptStackFrame> read fStackItems;
 		[Browsable(false)]
 		property Globals: ScriptScope read; abstract;
+    {$IFDEF SILVERLIGHT} 
+    method Dispose;
+    {$ELSE}
+    method Dispose(disposing: Boolean); override;
+    {$ENDIF}
 
 		method ExposeType(&type: &Type; Name: String := nil); abstract;
 		//method UseNamespace(ns: String); virtual;
@@ -214,9 +220,7 @@ begin
     if Status in [ScriptStatus.Paused, ScriptStatus.Pausing, ScriptStatus.Running] then begin
       if Status = ScriptStatus.Paused then begin
         Status := ScriptStatus.StepInto;
-{$HIDE PW3}
-        fWorkThread.Resume;
-{$SHOW PW3}
+        fWaitEvent.Set();
       end else 
         Status := ScriptStatus.StepInto;
       fLastFrame := fStackList.Count;
@@ -236,9 +240,7 @@ begin
     if Status in [ScriptStatus.Paused, ScriptStatus.Pausing, ScriptStatus.Running] then begin
       if Status = ScriptStatus.Paused then begin
         Status := ScriptStatus.StepOver;
-{$HIDE PW3}
-        fWorkThread.Resume;
-{$SHOW PW3}
+        fWaitEvent.Set();
       end else 
       Status := ScriptStatus.StepOver;
       fLastFrame := fStackList.Count;
@@ -258,9 +260,7 @@ begin
     if Status in [ScriptStatus.Paused, ScriptStatus.Pausing, ScriptStatus.Running] then begin
       if Status = ScriptStatus.Paused then begin
         Status := ScriptStatus.StepOut;
-{$HIDE PW3}
-        fWorkThread.Resume;
-{$SHOW PW3}
+        fWaitEvent.Set();
       end else 
         Status := ScriptStatus.StepOut;
       fLastFrame := fStackList.Count;
@@ -272,9 +272,7 @@ method ScriptComponent.Stop;
 begin
 	locking self do begin
 		case Status of
-{$HIDE PW3}
-			ScriptStatus.Paused: begin Status := ScriptStatus.Stopping; fWorkThread.Resume; end;
-{$SHOW PW3}
+			ScriptStatus.Paused: begin Status := ScriptStatus.Stopping; fWaitEvent.Set(); end;
 			ScriptStatus.Stopping,
 			ScriptStatus.Pausing, 
 			ScriptStatus.Running, 
@@ -311,9 +309,7 @@ begin
 			  exit;
   		end else if Status = ScriptStatus.Paused  then begin
 		    Status := ScriptStatus.Running;
-{$HIDE PW3}
-	  		fWorkThread.Resume;
-{$SHOW PW3}
+        fWaitEvent.Set();
 		  	exit;
   		end else if Status <> ScriptStatus.Stopped then raise new ScriptComponentException(RemObjects.Script.Properties.Resources.eAlreadyRunning);
 			Status := ScriptStatus.Running;
@@ -444,11 +440,21 @@ begin
   if Status in [ScriptStatus.Paused, ScriptStatus.Pausing] then begin
     if fRunInThread then begin
       Status := ScriptStatus.Paused;
-{$HIDE PW3}
-      fWorkThread.Suspend;
-{$SHOW PW3}
+      fWaitEvent.Reset();
+      fWaitEvent.WaitOne();
     end else Idle;
   end;
+end;
+
+{$IFDEF SILVERLIGHT} 
+method ScriptComponent.Dispose;
+{$ELSE}
+method ScriptComponent.Dispose(disposing: Boolean);
+{$ENDIF}
+begin
+  {$IFNDEF SILVERLIGHT} if disposing then {$ENDIF}
+  fWaitEvent.Close;
+
 end;
 
 method EcmaScriptComponent.HasFunction(aName: String): Boolean;

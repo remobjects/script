@@ -278,7 +278,7 @@ begin
       filg.Emit(Opcodes.Newobj, ExecutionContext.Constructor);
       filg.Emit(Opcodes.Stloc, fExecutionContext);
 
-      for i: Integer := 0 to aFunction.Parameters.Count -1 do begin
+      for i: Integer := aFunction.Parameters.Count -1 downto 0 do begin
         filg.Emit(Opcodes.Ldloc, fExecutionContext);
         filg.Emit(Opcodes.Ldarg_2);
         filg.Emit(opcodes.Ldc_I4, i);

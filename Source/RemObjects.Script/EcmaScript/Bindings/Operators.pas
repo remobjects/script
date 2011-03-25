@@ -174,14 +174,11 @@ begin
       TypeCode.UInt32,
       TypeCode.UInt64,
       TypeCode.Single, 
-      TypeCode.Double]) then
+      TypeCode.Double]) then begin
         exit DoubleCompare(Utilities.GetObjAsDouble(aLeft, ec), Utilities.GetObjAsDouble(aRight, ec));
+      end;
   if aLeft.GetType() <> aRight.GetType() then exit false;
   if aLeft = Undefined.Instance then exit true;
-  if aLEft is Double then begin
-    if Double(aLeft) = Double.NaN then exit false;
-    if Double(aRight) = Double.NaN then exit false;
-  end;
 
   exit &Equals(aLeft, aRight);
 end;
@@ -195,6 +192,10 @@ class method Operators.DoubleCompare(aLeft, aRight: Double): Boolean;
 begin
   if Double.IsNegativeInfinity(aLeft) and Double.IsNegativeInfinity(aRight) then exit true;
   if Double.IsPositiveInfinity(aLeft) and Double.IsPositiveInfinity(aRight) then exit true;
+  if Double.IsNegativeInfinity(aLeft) and Double.IsPositiveInfinity(aRight) then exit false;
+  if Double.IsPositiveInfinity(aLeft) and Double.IsNegativeInfinity(aRight) then exit false;
+  if Double.IsNaN(aLeft) then exit false;
+  if Double.IsNaN(aRight) then exit false;
   var bits := BitConverter.DoubleToInt64Bits(aLeft);
     // Note that the shift is sign-extended, hence the test against -1 not 1
   exit 		Math.Abs(aLeft - aRight ) <= Math.Abs(aLeft * 0.0000000000001);

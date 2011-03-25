@@ -35,7 +35,10 @@ end;
 
 class method Operators.ShiftRightUnsigned(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
-  exit Integer(Cardinal(Utilities.GetObjAsInteger(aLeft, ec)) shl Cardinal(Utilities.GetObjAsInteger(aright, ec)));
+  var l := Cardinal(Utilities.GetObjAsInteger(aLeft, ec));
+  var r := Cardinal(Utilities.GetObjAsInteger(aright, ec));
+  var res := Int64(l shr r);
+  exit double(res);
 end;
 
 end.

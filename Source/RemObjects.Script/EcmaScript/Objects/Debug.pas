@@ -18,7 +18,7 @@ type
     method Debugger; 
   end;
 
-  DebugSink = public class(IDebugSink)
+  RemObjects.Script.EcmaScript.Internal.DebugSink = class(IDebugSink)
   public
     method DebugLine(aFilename: string; aStartRow, aStartCol, aEndRow, aEndCol: Integer); virtual; empty;
     method EnterScope(aName: string; aThis: Object; aContext: ExecutionContext); virtual; empty;// enter method
@@ -31,7 +31,7 @@ type
     class var Method_DebugLine: System.Reflection.MethodInfo := typeOf(IDebugSink).GetMethod('DebugLine'); readonly;
     class var Method_EnterScope: System.Reflection.MethodInfo := typeOf(IDebugSink).GetMethod('EnterScope'); readonly;
     class var Method_ExitScope: System.Reflection.MethodInfo := typeOf(IDebugSink).GetMethod('ExitScope'); readonly;
-    class var Method_CaughtException: System.Reflection.MethodInfo := typeOf(IDebugSink).GetMethod('CaughtException'); readonly;
+    //class var Method_CaughtException: System.Reflection.MethodInfo := typeOf(IDebugSink).GetMethod('CaughtException'); readonly;
     class var Method_UncaughtException: System.Reflection.MethodInfo := typeOf(IDebugSink).GetMethod('UncaughtException'); readonly;
   end;
 

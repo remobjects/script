@@ -28,7 +28,7 @@ type
     method RegExpToString(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method RegExpCompile(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
   end;
-  EcmaScriptRegexpObject = public class(EcmaScriptObject)
+  RemObjects.Script.EcmaScript.Internal.EcmaScriptRegexpObject = public class(EcmaScriptObject)
   private
     method set_LastIndex(value: Integer);
   public
@@ -144,7 +144,13 @@ begin
   Values['ignoreCase'] := PropertyValue.NotAllFlags(RegExOptions.IgnoreCase in lOpt);
   Values['multiline'] := PropertyValue.NotAllFlags(RegExOptions.Multiline in lOpt);
   Values['lastIndex'] := new PropertyValue(PropertyAttributes.writable, undefined.Instance);
+  try
   fRegEx := new Regex(aPattern, lOpt);
+  except
+    on e: ArgumentException do begin
+      aGlobal.RaiseNativeError(NativeErrorType.SyntaxError, e.Message);
+    end;
+  end;
 end;
 
 method EcmaScriptRegexpObject.set_LastIndex(value: Integer);

@@ -25,7 +25,7 @@ type
     method BooleanToString(aCaller: ExecutionContext; aSelf: Object; params args: Array of Object): Object;
     method BooleanValueOf(aCaller: ExecutionContext; aSelf: Object; params args: Array of Object): Object;
   end;
-  EcmaScriptBooleanObject = public class(EcmaScriptFunctionObject)
+  EcmaScriptBooleanObject = class(EcmaScriptFunctionObject)
   public
     method Call(context: ExecutionContext; params args: array of Object): Object; override;
     method Construct(context: ExecutionContext; params args: array of Object): Object; override;
@@ -43,7 +43,7 @@ begin
   Values.Add('Boolean', PropertyValue.NotEnum(Result));
 
   BooleanPrototype := new EcmaScriptObject(self, &Class := 'Boolean');
-  BooleanPrototype.Values.Add('constructor', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'Boolean', @BooleanCtor, 1, &Class := 'Boolean')));
+  BooleanPrototype.Values.Add('constructor', PropertyValue.NotEnum(result));
   BooleanPrototype.Prototype := ObjectPrototype;
   result.Values['prototype'] := PropertyValue.NotAllFlags(BooleanPrototype);
   
@@ -67,12 +67,24 @@ end;
 
 method GlobalObject.BooleanToString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  exit iif (Utilities.GetObjAsBoolean(aSelf, aCaller), 'true', 'false');
+  if aSelf is Boolean then
+    exit if Boolean(aSelf) then 'true' else 'false';
+  var El := EcmaScriptObject(aSelf);
+  if (El = nil) or (el.Class <> 'Boolean') then
+    RaiseNativeError(NativeErrorType.TypeError, 'Boolean.toString() is not generic');
+
+  exit iif (Utilities.GetObjAsBoolean(el.Value, aCaller), 'true', 'false');
 end;
 
 method GlobalObject.BooleanValueOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  exit Utilities.GetObjAsBoolean(aSelf, aCaller);
+  if aSelf is Boolean then
+    exit if Boolean(aSelf) then 'true' else 'false';
+  var El := EcmaScriptObject(aSelf);
+  if (El = nil) or (el.Class <> 'Boolean') then
+    RaiseNativeError(NativeErrorType.TypeError, 'Boolean.toString() is not generic');
+
+  exit Utilities.GetObjAsBoolean(el.Value, aCaller);
 end;
 
 method EcmaScriptBooleanObject.Call(context: ExecutionContext; params args: array of Object): Object;

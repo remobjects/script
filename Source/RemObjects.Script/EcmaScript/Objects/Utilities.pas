@@ -18,6 +18,7 @@ type
   PrimitiveType = public enum (None, String, Number);
   Utilities = public static class
   private
+    class method DoubleToString(ld: Double): string;
   public
     class method ParseDouble(s: String): Double;
     class method UrlEncode(s: String): String;
@@ -83,10 +84,7 @@ end;
 class method Utilities.GetArgAsDouble(arg: Array of object; &index: Integer; ec: ExecutionContext): Double;
 begin
   var lValue := GetArg(arg, index);
-  if (lValue = nil) or (lValue = Undefined.Instance) then begin
-    result := 0;
-  end else
-   result :=  GetObjAsDouble(lValue, ec);
+ result :=  GetObjAsDouble(lValue, ec);
 end;
 
 class method Utilities.GetArgAsBoolean(arg: Array of object; &index: Integer; ec: ExecutionContext): Boolean;
@@ -102,10 +100,7 @@ class method Utilities.GetArgAsString(arg: Array of object; &index: Integer; ec:
 begin
   var lValue := GetArg(arg, index);
 
-  if (lValue = nil) or (lValue = Undefined.Instance) then begin
-    result := nil;
-  end else 
-    result := GetObjAsString(lValue, ec);
+  result := GetObjAsString(lValue, ec);
 end;
 class method Utilities.GetObjAsEcmaScriptObject(arg: object; ec: ExecutionContext): EcmaScriptObject;
 begin
@@ -139,6 +134,8 @@ begin
        else
           Int32.TryParse(string(arg), out result)) then begin
         var lWork: Double := Utilities.ParseDouble(string(arg));
+        if Double.IsNaN(lWork) then result := 0
+        else
           result := Integer(Cardinal(Math.Sign(lWork) * Math.Floor(Math.Abs(lWork))));
       end;
     end;
@@ -211,7 +208,8 @@ end;
 
 class method Utilities.GetObjAsBoolean(arg: Object; ec: ExecutionContext): Boolean;
 begin
-  if arg is EcmaScriptObject then exit true;
+  //if (arg is EcmaScriptObject)and (EcmaScriptObject(arg).Class = 'Boolean') then arg := GetObjectAsPrimitive(ec, EcmaScriptObject(arg), PrimitiveType.Number);
+  if (arg is EcmaScriptObject) then exit true;
   
   if (arg = nil) or (arg = Undefined.Instance)  then exit false;
   case &Type.GetTypeCode(arg.GetType) of
@@ -245,7 +243,9 @@ begin
     TypeCode.Byte: result := byte(arg).ToString;
     TypeCode.Char: result := Char(arg).ToString;
     TypeCode.Decimal: result := Decimal(arg).ToString(System.Globalization.NumberFormatInfo.InvariantInfo);
-    TypeCode.Double: result := Double(arg).ToString(System.Globalization.NumberFormatInfo.InvariantInfo);
+    TypeCode.Double: begin
+      result := DoubleToString(Double(arg));
+    end;
     TypeCode.Int16: result := Int16(arg).ToString;
     TypeCode.Int32: result := Int32(arg).ToString;
     TypeCode.Int64: result := Int64(arg).ToString;
@@ -415,6 +415,12 @@ begin
     else
       exit Double.PositiveInfinity;
   end;
+  if s.StartsWith('0x', StringComparison.InvariantCultureIgnoreCase) then begin
+    var v: Int64;
+    if Int64.TryParse(s.Substring(2), System.Globalization.NumberStyles.HexNumber, System.Globalization.NumberFormatInfo.InvariantInfo, out v) then
+      exit v;
+  end;
+
   var lExp := s.IndexOfAny(['e','E']);
   if lExp <> -1 then begin
     var lTmp := s.Substring(lExp+1);
@@ -445,5 +451,18 @@ begin
 end;
 
 
+
+class method Utilities.DoubleToString(ld: Double): string;
+begin
+  if Double.IsNaN(ld) then exit 'NaN';
+  if (ld = -0) or (ld = 0) then exit '0';
+  if Double.IsNegativeInfinity(ld) then exit '-Infinity';
+  if Double.IsPositiveInfinity(ld) then exit 'Infinity';
+  // K = digits in ld; k >= 1
+  // 
+
+    result := ld.ToString(System.Globalization.NumberFormatInfo.InvariantInfo);
+
+end;
 
 end.

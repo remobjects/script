@@ -29,7 +29,7 @@ type
     method NumberToExponential(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method NumberToPrecision(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
   end;
-  EcmaScriptNumberObject = public class(EcmaScriptFunctionObject)
+  EcmaScriptNumberObject = class(EcmaScriptFunctionObject)
   public
     method Call(context: ExecutionContext; params args: array of Object): Object; override;
     method Construct(context: ExecutionContext; params args: array of Object): Object; override;
@@ -47,7 +47,7 @@ begin
   result := new EcmaScriptNumberObject(self, 'Number', @NumberCall, 1, &Class := 'Number');
   Values.Add('Number', PropertyValue.NotEnum(Result));
   Result.Values.Add('MAX_VALUE', PropertyValue.NotAllFlags(Double.MaxValue));
-  Result.Values.Add('MIN_VALUE', PropertyValue.NotAllFlags(Double.MinValue));
+  Result.Values.Add('MIN_VALUE', PropertyValue.NotAllFlags(Double.Epsilon));
   Result.Values.Add('NaN', PropertyValue.NotAllFlags(Double.NaN));
   Result.Values.Add('NEGATIVE_INFINITY', PropertyValue.NotAllFlags(Double.NegativeInfinity));
   Result.Values.Add('POSITIVE_INFINITY', PropertyValue.NotAllFlags(Double.PositiveInfinity));
@@ -75,7 +75,7 @@ end;
 
 method GlobalObject.NumberCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lVal := Utilities.GetArgAsDouble(args, 0, aCaller);
+  var lVal := if length(args) = 0 then 0.0 else Utilities.GetArgAsDouble(args, 0, aCaller);
   var lObj := new EcmaScriptObject(self, NumberPrototype, &Class := 'Number', Value := lVal);
   exit lObj;
 end;
@@ -84,6 +84,8 @@ end;
 method GlobalObject.NumberToString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   var lVal := EcmaScriptObject(aSelf);
+  if (lVal = nil) and ((aSelf is Double) or (aSelf is Integer)) then 
+    lVal := EcmaScriptObject(NumberCtor(aCaller, aSelf));
   if (lVal = nil) or (lVal.Class <> 'Number') then RaiseNativeError(NativeERrorType.TypeError, 'number.prototype.valueOf is not generic');
   var lRadix := 10;
   if Length(args) > 0 then lRadix := Utilities.GetArgAsInteger(args, 0, aCaller);

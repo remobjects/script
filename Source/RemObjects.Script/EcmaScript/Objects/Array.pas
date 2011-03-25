@@ -47,7 +47,7 @@ type
 
     method DefaultCompare(aCaller: ExecutionContext; aSelf: Object; params Args: Array of Object): Object;
   end;
-  EcmaScriptArrayObject = public class(EcmaScriptObject)
+  RemObjects.Script.EcmaScript.Internal.EcmaScriptArrayObject = public class(EcmaScriptObject)
   private
     fItems: List<Object> := new List<Object>;
   public
@@ -68,7 +68,7 @@ type
     method GetNames: IEnumerator<String>; override;
   end;
 
-  EcmaScriptArrayObjectObject = public class(EcmaScriptFunctionObject)
+  EcmaScriptArrayObjectObject = class(EcmaScriptFunctionObject)
   private
   public
     constructor (aOwner: GlobalObject);

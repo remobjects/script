@@ -240,7 +240,7 @@ begin
   if val = nil then exit nil;
   if aType = typeof(Object) then exit val;
   if val = Undefined.Instance then exit nil;
-  exit Convert.ChangeType(val, aType);
+  exit Convert.ChangeType(val, aType, System.Globalization.CultureInfo.InvariantCulture);
 end;
 
 method EcmaScriptObjectWrapper.Construct(context: ExecutionContext; params args: array of Object): Object;

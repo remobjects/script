@@ -76,7 +76,7 @@ type
     method DateToJSON(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
   end;
 
-  EcmaScriptDateObject = public class(EcmaScriptFunctionObject)
+  EcmaScriptDateObject = class(EcmaScriptFunctionObject)
   public
     method Call(context: ExecutionContext; params args: array of Object): Object; override;
     method Construct(context: ExecutionContext; params args: array of Object): Object; override;
@@ -90,7 +90,12 @@ end;
 
 class method GlobalObject.UnixToDateTime(dt: Int64): DateTime;
 begin
-  result := new DateTime((dt * 10000000) + Epoch);
+  dt := (dt * 10000000) + Epoch;
+  if dt > DateTime.MaxValue.Ticks then
+    dt := DateTime.MaxValue.Ticks
+  else if dt < DateTime.MinValue.Ticks then
+    dt := DateTime.MinValue.Ticks;
+  result := new DateTime(dt);
 end;
 
 method GlobalObject.CreateDate: EcmaScriptObject;
@@ -165,15 +170,15 @@ end;
 
 method GlobalObject.DateCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lValue: DateTime;
+  var lValue: Double;
   if args.Length = 0 then begin
-    lValue := DateTime.UtcNow;
+    lValue := DateTimeToUnix(DateTime.UtcNow);
   end else if args.Length = 1 then begin
     if args[0] is EcmaScriptObject then args[0] := EcmaScriptObject(args[0]).Value;
     if args[0] is String then begin
       exit DateParse(aCaller, args[0]);
     end else begin
-      lValue := UnixToDateTime(Utilities.GetArgAsInt64(args, 0, aCaller));
+      lValue := Utilities.GetArgAsDouble(args, 0, aCaller);
     end;
   end else begin
     var lYear := Utilities.GetArgAsInteger(args, 0, aCaller);
@@ -184,16 +189,17 @@ begin
     var lSec := Utilities.GetArgAsInteger(args, 5, aCaller);
     var lMSec := Utilities.GetArgAsInteger(args, 6, aCaller);
     if lDay = 0 then lDay := 1;
-    lValue := new DateTime(lYear, lMonth, lDay, lHour, lMinute, lSec, lMsec).ToUniversalTime;
+    lValue := DateTimeToUnix(new DateTime(lYear, lMonth, lDay, lHour, lMinute, lSec, lMsec).ToUniversalTime);
   end;
-  result := new EcmaScriptObject(self, DatePrototype, &Class := 'Date', Value := DateTimeToUnix(lValue));
+  if Double.IsInfinity(lValue) then lValue := Double.NaN;
+  result := new EcmaScriptObject(self, DatePrototype, &Class := 'Date', Value := lValue);
 end;
 
 method GlobalObject.DateParse(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   var lValue := DateTime.Parse(Utilities.GetArgAsString(args, 0, aCaller), System.Globalization.DateTimeFormatInfo.InvariantInfo,
     System.Globalization.DateTimeStyles.AdjustToUniversal);
-  result := new EcmaScriptObject(self, DatePrototype, &Class := 'Date', Value := DateTimeToUnix(lValue));
+  result := new EcmaScriptObject(self, DatePrototype, &Class := 'Date', Value := lValue);
 end;
 
 method GlobalObject.DateUTC(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
@@ -251,7 +257,9 @@ end;
 method GlobalObject.DateValueOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   aSelf := coalesce(EcmaScriptObject(aSelf):Value, aSelf);
-  exit Utilities.GetObjAsInt64(aSelf, aCaller);
+  if aSelf is not Double then
+    RaiseNativeError(NativeErrorType.TypeError, 'Date.valueOf is not generic');
+  exit aSelf;
 end;
 
 method GlobalObject.DateGetTime(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;

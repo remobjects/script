@@ -54,7 +54,7 @@ type
   end;
 
   
-  EcmaScriptFunctionObject = public class(EcmaScriptBaseFunctionObject)
+  RemObjects.Script.EcmaScript.Internal.EcmaScriptFunctionObject = public class(EcmaScriptBaseFunctionObject)
   private
     fDelegate: InternalDelegate;
   public
@@ -90,7 +90,7 @@ begin
   
   result.Values['prototype'] := PropertyValue.NotAllFlags(FunctionPrototype);
 
-  FunctionPrototype.Values['constructor'] := PropertyValue.NotEnum(FunctionPrototype);
+  FunctionPrototype.Values['constructor'] := PropertyValue.NotEnum(result);
   FunctionPrototype.Values.Add('toString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toString', @FunctionToString, 0)));
   FunctionPrototype.Values.Add('apply', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'apply', @FunctionApply, 2)));
   FunctionPrototype.Values.Add('call', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'call', @FunctionCall, 1)));

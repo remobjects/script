@@ -6,7 +6,8 @@ uses
   System,
   System.Collections.Generic,
   System.Linq,
-  System.Text;
+  System.Text,
+  RemObjects.Script.EcmaScript.Internal;
 
 type
   EcmaScriptArgumentObject = class(EcmaScriptObject)
@@ -25,8 +26,6 @@ type
     method GetOwnProperty(aName: String): PropertyValue; override;
     method DefineOwnProperty(aName: String; aValue: PropertyValue; aThrow: Boolean): Boolean; override;
     method Delete(aName: String; aThrow: Boolean): Boolean; override;
-
-
   end;
   
 implementation
@@ -86,8 +85,18 @@ begin
   exit inherited;
 end;
 
+
 method EcmaScriptArgumentObject.Delete(aName: String; aThrow: Boolean): Boolean;
 begin
+  var n: Integer;
+  if Int32.TryParse(aName, out n) then begin
+    if n < length(fArgs) then begin
+      fArgs[n] := Undefined.Instance;
+      exit true;
+    end;
+  end;
+
+  inherited Delete(aName, aThrow);
 end;
 
 end.

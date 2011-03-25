@@ -32,7 +32,7 @@ implementation
 class method Operators.InstanceOf(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
   var lLeft := EcmaScriptObject(aLeft);;
-  if aLeft = nil then exit false;
+  if lLeft = nil then exit false;
   var lRight := EcmaScriptObject(aRight);
   lRight := EcmaScriptObject(lRight.Get(ec, 0, 'prototype'));
   if lRight = nil then ec.Global.RaiseNativeError(NativeErrorType.TypeError, 'Not an object');

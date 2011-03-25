@@ -42,7 +42,7 @@ type
     method StringToLocaleUpperCase(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method StringTrim(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
   end;
-  EcmaScriptStringObject = public class(EcmaScriptFunctionObject)
+  EcmaScriptStringObject = class(EcmaScriptFunctionObject)
   public
     method Call(context: ExecutionContext; params args: array of Object): Object; override;
     method Construct(context: ExecutionContext; params args: array of Object): Object; override;
@@ -211,7 +211,19 @@ begin
   var lNeedle := Coalesce(Utilities.GetArgAsString(args, 0, aCaller), String.Empty);
   var lMax := Utilities.GetArgAsInteger(args, 1, aCaller);
   if lMax <= 0 then lMax := Int32.MaxValue;
+  {$IFDEF SILVERLIGHT} 
+  var lValues := lSelf.Split([lNeedle], StringSplitOptions.None);
+  if lValues.length > lMax then begin
+    result := new EcmaScriptArrayObject(self, 0);
+    for i: Integer := 0 to lMax -1 do begin
+      EcmaScriptArrayObject(Result).AddValue(lValues[i]);
+    end;
+    exit;
+  end else
+    exit new EcmaScriptArrayObject(self, 0).AddValues(lValues);
+  {$ELSE}
   exit new EcmaScriptArrayObject(self, 0).AddValues(lSelf.Split([lNeedle], lMax, StringSplitOptions.None));
+  {$ENDIF}
 end;
 
 method GlobalObject.StringSubString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
