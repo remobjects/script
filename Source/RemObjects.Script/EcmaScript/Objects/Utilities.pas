@@ -10,15 +10,20 @@ interface
 
 uses
   System.Collections.Generic,
+  System.Globalization,
   System.Text,
   RemObjects.Script,
   RemObjects.Script.EcmaScript.Internal;
+
 
 type
   PrimitiveType = public enum (None, String, Number);
   Utilities = public static class
   private
-    class method DoubleToString(ld: Double): string;
+    const EPSILON: Double = 0.00000000001;
+    const PRECISION: Int32 = 18;
+
+    class method DoubleToString(value: Double): String;
   public
     class method ParseDouble(s: String): Double;
     class method UrlEncode(s: String): String;
@@ -451,18 +456,181 @@ begin
 end;
 
 
+class method Utilities.DoubleToString(value: Double): String;
 
-class method Utilities.DoubleToString(ld: Double): string;
+  method SplitNumberToCharArray(value: Int64): array of Char;
+  begin
+    if  (value = 0)  then
+      exit  ([ '0' ]);
+
+    var buffer: StringBuilder := new StringBuilder(32);
+    while  (value > 0)  do  begin
+      buffer.Append(Byte(value mod 10));
+      value := value div 10;
+    end;
+
+    var lReversedResult: array of Char := buffer.ToString().ToCharArray();
+    var lBufferLength: Int32 := length(lReversedResult);
+    var lResult: array of Char := new Char[lBufferLength];
+
+    for  I: Int32  :=  0  to  (lBufferLength-1)  do
+      lResult[I] := lReversedResult[lBufferLength-1-I];
+
+    exit  (lResult);
+  end;
+
 begin
-  if Double.IsNaN(ld) then exit 'NaN';
-  if (ld = -0) or (ld = 0) then exit '0';
-  if Double.IsNegativeInfinity(ld) then exit '-Infinity';
-  if Double.IsPositiveInfinity(ld) then exit 'Infinity';
-  // K = digits in ld; k >= 1
-  // 
+  // Border cases
+  if  (Double.IsNaN(value))  then
+    exit  ('NaN');
 
-    result := ld.ToString(System.Globalization.NumberFormatInfo.InvariantInfo);
+  if  ((value >= -EPSILON)  and  (value <= EPSILON))  then
+    exit  ('0');
 
+  if  (Double.IsNegativeInfinity(value))  then
+    exit  ('-Infinity');
+
+  if  (Double.IsPositiveInfinity(value))  then
+    exit  ('Infinity');
+
+  var lResult: StringBuilder := new StringBuilder(128);
+  if  (value < 0)  then  begin
+    value := -value;
+    lResult.Append('-');
+  end;
+
+  // At this point we know that value > EPSILON
+  // Specification step 5. Determine n, k and s
+  var lRoundedValueLog10: Int32 := Convert.ToInt32(Math.Floor(Math.Log10(value)))+1;
+  var n_k: Int32 := 0; // this is value of (n-k)
+
+  // Integer part
+  // First thing is to double-check for overflow
+  var s_temp: Double := value;
+  var lIntegertPartPower: Int32 := lRoundedValueLog10;
+  if  (lIntegertPartPower >= PRECISION)  then  begin
+    for  I: Int32  :=  1  to  lIntegertPartPower-PRECISION-1  do  begin
+      s_temp := s_temp / 10;
+      inc(n_k);
+    end;
+    s_temp := Math.Round(s_temp);
+  end;
+
+  // Let's check is s divisible by 10 or not
+  var s: Int64 := Convert.ToInt64(s_temp);
+  if  (lIntegertPartPower > 0)  then
+    while  (s mod 10 = 0)  do  begin
+      s := s div 10;
+      inc(n_k);
+    end;
+
+  // Now we know s
+  // Next step is to determine its length
+  var s_length: Int32 := Math.Max(0,lRoundedValueLog10 + n_k);
+
+  // Check if there is any place for floating point part
+  if  (s_length < 19)  then  begin
+    // Optimization
+    // Cut the border for really small numbers
+    if  (value < 1.0)  then  begin
+      n_k := 0;
+      var lFractionalPower: Int32 := Convert.ToInt32(Math.Floor(Math.Log10(value)))+1;
+      for  I: Int32  :=  -1  downto  lFractionalPower  do  begin
+        s_temp := s_temp * 10.0;
+        dec(n_k);
+      end;
+    end;
+
+    var s_double: Double := Math.Floor(value);
+    var n_k_fractional: Int32 := 0;
+    var lIsFractionalPartPresent: Boolean := false;
+
+    var multiplier: Int64 := 10;
+    while  ((Math.Abs(s_temp - s_double) > epsilon)  and  (s_length < 19-1))  do  begin
+      s_temp := value*multiplier;
+      multiplier := multiplier*10;
+      s_double := Math.Floor(s_temp+epsilon);
+      lIsFractionalPartPresent := true;
+      dec(n_k_fractional);
+      inc(s_length);
+    end;
+
+    if  (lIsFractionalPartPresent)  then  begin
+      n_k := n_k_fractional;
+      s := Convert.ToInt64(s_double);
+      if  (Math.Abs(s_temp - s_double) >= 0.5)  then
+        inc(s);
+    end;
+  end;
+
+  // so we know values for s and (n-k)
+  // let's think about k
+  // we split s into chars so we'll immediately know both k and string representation of this number
+
+  var s_char_array: array of Char := SplitNumberToCharArray(s);
+
+  var k: Int32 := length(s_char_array);
+  var n: Int32 := n_k + k;
+
+
+  // At this point s, n & k are known
+
+  // Specification step 6. Result
+  if  ((k <= n)  and  (n <= 21))  then  begin
+    for  I: Int32  :=  0  to  k-1  do
+      lResult.Append(s_char_array[I]);
+
+    for  I: Int32  :=  0  to  n_k-1  do
+      lResult.Append('0');
+
+    exit  (lResult.ToString());
+  end;
+
+
+  // Specification step 7. Result
+  if  ((0 < n)  and  (n <= 21))  then  begin
+    for  I: Int32  :=  0  to  n-1  do
+      lResult.Append(s_char_array[I]);
+    lResult.Append('.');
+    for  I: Int32  :=  n  to  k-1  do
+      lResult.Append(s_char_array[I]);
+
+    exit  (lResult.ToString());
+  end;
+
+  // Specification step 8. Result
+  if  ((-6 < n)  and  (n <= 0))  then  begin
+    lResult.Append('0');
+    lResult.Append('.');
+    for  I: Int32  :=  0  to  -n-1  do
+      lResult.Append('0');
+    for  I: Int32  :=  0  to  k-1  do
+      lResult.Append(s_char_array[I]);
+
+    exit  (lResult.ToString());
+  end;
+
+  // Specification step 9. Result
+  if  (k=1)  then  begin
+    lResult.Append(s_char_array[0]);
+    lResult.Append('e');
+    lResult.Append(iif(n-1>0,'+','-'));
+    lResult.Append(Math.Abs(n-1).ToString(CultureInfo.InvariantCulture));
+
+    exit  (lResult.ToString());
+  end;
+
+  // Specification step 10. Result
+  lResult.Append(s_char_array[0]);
+  lResult.Append('.');
+  for  I: Int32  :=  1  to  k-1  do
+    lResult.Append(s_char_array[I]);
+  lResult.Append('e');
+  lResult.Append(iif(n-1>0,'+','-'));
+  lResult.Append(Math.Abs(n-1).ToString(CultureInfo.InvariantCulture));
+
+  exit  (lResult.ToString());
 end;
+
 
 end.
