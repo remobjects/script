@@ -17,7 +17,7 @@
     <AllowGlobals>False</AllowGlobals>
     <AllowLegacyOutParams>False</AllowLegacyOutParams>
     <AllowLegacyCreate>False</AllowLegacyCreate>
-    <Name>RemObjects.Script</Name>
+    <Name>RemObjects.Script.Silverlight</Name>
     <Company>RemObjects Software, Inc.</Company>
     <InternalAssemblyName />
     <StartupClass />
