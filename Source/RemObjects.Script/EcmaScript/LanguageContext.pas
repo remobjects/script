@@ -254,11 +254,17 @@ begin
     var lOldLocals := fLocals;
     fLocals := new List<LocalBuilder>;
     var lMethod: DynamicMethod;
+    {$IFDEF SILVERLIGHT} 
+    if aFunction <> nil then
+      lMethod := new System.Reflection.Emit.DynamicMethod(aSCopeName, typeof(Object), [typeof(ExecutionContext), typeof(object), Typeof(array of Object), typeof(EcmaScriptInternalFunctionObject)])
+    else
+      lMethod := new System.Reflection.Emit.DynamicMethod(aSCopeName, typeof(Object), [typeof(ExecutionContext), typeof(object), Typeof(array of Object)]);
+    {$ELSE}
     if aFunction <> nil then
       lMethod := new System.Reflection.Emit.DynamicMethod(aSCopeName, typeof(Object), [typeof(ExecutionContext), typeof(object), Typeof(array of Object), typeof(EcmaScriptInternalFunctionObject)], typeof(DynamicMethods), true)
     else
       lMethod := new System.Reflection.Emit.DynamicMethod(aSCopeName, typeof(Object), [typeof(ExecutionContext), typeof(object), Typeof(array of Object)], typeof(DynamicMethods), true);
-    
+    {$ENDIF}
     var lOldBreak := fBreak;
     var lOldContinue := fContinue;
     fBreak := nil;
