@@ -5,9 +5,9 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{bc50d376-ac6b-460d-b485-0ce90c2a4565}</ProjectGuid>
     <ProjectTypeGuids>{A1591282-1198-4647-A2B1-27E5FF5F6F3B};{656346D9-4656-40DA-A068-22D5425D4639}</ProjectTypeGuids>
-    <OutputType>library</OutputType>
+    <OutputType>Library</OutputType>
     <RootNamespace>RemObjects.Script</RootNamespace>
-    <AssemblyName>RemObjects.Script</AssemblyName>
+    <AssemblyName>RemObjects.Script.Silverlight</AssemblyName>
     <TargetFrameworkIdentifier>Silverlight</TargetFrameworkIdentifier>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <SilverlightVersion>$(TargetFrameworkVersion)</SilverlightVersion>
@@ -19,6 +19,11 @@
     <AllowLegacyCreate>False</AllowLegacyCreate>
     <Name>RemObjects.Script</Name>
     <Company>RemObjects Software, Inc.</Company>
+    <InternalAssemblyName />
+    <StartupClass />
+    <DefaultUses />
+    <ApplicationIcon />
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <!-- This property group is only here to support building this project using the 
        MSBuild 3.5 toolset. In order to work correctly with this older toolset, it needs 
@@ -28,7 +33,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DefineConstants>DEBUG;TRACE;SILVERLIGHT</DefineConstants>
-    <OutputPath>..\..\Bin\SL</OutputPath>
+    <OutputPath>..\..\Bin\Silverlight\</OutputPath>
     <GeneratePDB>True</GeneratePDB>
     <Optimize>False</Optimize>
     <GenerateMDB>True</GenerateMDB>
@@ -39,7 +44,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DefineConstants>SILVERLIGHT</DefineConstants>
-    <OutputPath>..\..\Bin\SL</OutputPath>
+    <OutputPath>..\..\Bin\Silverlight\</OutputPath>
     <EnableAsserts>False</EnableAsserts>
     <SuppressWarnings />
     <CpuType>anycpu</CpuType>
