@@ -23,8 +23,17 @@ type
 implementation
 class method Operators.Multiply(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
-  if (aLeft is Int32) and (aRight is Int32) then
-    exit Integer(aLeft) * Integer(aRight);
+  if (aLeft is Int32) and (aRight is Int32) then begin
+    var lL := Integer(aLeft);
+    var lR := Integer(aRight);
+    var lRes := lL * lR;
+    if lR = 0 then exit lRes;
+    var lNegativeSign := (lL < 0) = (lR < 0);
+    if lNegativeSign then begin
+      if lRes < lL then exit lRes;
+    end else
+      if lRes > lL then exit lRes;
+  end;
   
   exit Utilities.GetObjAsDouble(aLeft, ec) * Utilities.GetObjAsDouble(aRight, ec);
 end;

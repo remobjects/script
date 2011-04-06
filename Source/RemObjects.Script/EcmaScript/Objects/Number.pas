@@ -89,7 +89,7 @@ begin
   if (lVal = nil) or (lVal.Class <> 'Number') then RaiseNativeError(NativeERrorType.TypeError, 'number.prototype.valueOf is not generic');
   var lRadix := 10;
   if Length(args) > 0 then lRadix := Utilities.GetArgAsInteger(args, 0, aCaller);
-  if (lRadix < 2) or (lRadix > 26) then RaiseNativeError(NativeErrorType.RangeError, 'Radix parameter should be between 2 and 36');
+  if (lRadix < 2) or (lRadix > 36) then RaiseNativeError(NativeErrorType.RangeError, 'Radix parameter should be between 2 and 36');
   if lRadix = 10 then exit Utilities.GetObjAsDouble(lVal.Value, aCaller).ToString(System.Globalization.NumberFormatInfo.InvariantInfo);
   if lRadix in [2, 16, 8] then
     exit Convert.ToString(Utilities.GetObjAsInt64(lVal.Value, aCaller), lRadix);

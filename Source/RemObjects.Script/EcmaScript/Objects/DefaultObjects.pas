@@ -223,11 +223,49 @@ begin
     else 
       lRadix := Convert.ToInt32(args[1]);
   end;
+  var lSign: Integer := 1;
+  if lVal.StartsWith('-') then begin
+    lSign := -1;
+    lVal := lVal.Substring(1);
+  end else if lVal.StartsWith('+') then
+    lVal := lVal.Substring(1);
 
   if lRadix = 16 then
-    result := Int64.Parse(lVal, System.Globalization.NumberStyles.HexNumber)
-  else
-    result := Int64.Parse(lVal, System.Globalization.NumberStyles.Integer);
+    if lVal.StartsWith('0x', StringComparison.InvariantCultureIgnoreCase) then lVal := lVal.Substring(2);
+  if lRadix = 0 then lRadix := 10;
+  if (lRadix < 2) or (lRadix > 36) then exit Double.NaN;
+  for i: Integer := 0 to lVal.Length -1 do begin
+    var n := BaseString.IndexOf(lVal[i], 0, lRadix, StringComparison.InvariantCultureIgnoreCase);
+    if (n < 0) then begin
+      lVal := lVal.Substring(0, i);
+      break;
+    end;
+  end;
+  if lVal = '' then Exit Double.NaN;
+
+  var lRes: Int64;
+  (*
+  if lRadix = 10 then begin
+    if Length(lVal) <= 20 then begin
+      if not Int64.TryParse(lVal, System.Globalization.NumberStyles.Integer, System.Globalization.NumberFormatInfo.InvariantInfo, out lRes) then 
+       exit Double.NaN;
+       exit lSign * lRes;
+     end;
+  end else if lRadix = 16 then begin
+    if Length(lVal) <= 16 then begin
+      if not Int64.TryParse(lVal, System.Globalization.NumberStyles.HexNumber, System.Globalization.NumberFormatInfo.InvariantInfo, out lRes) then 
+       exit Double.NaN;
+      exit lSign * lRes;
+    end;
+  end;*)
+  var lResD: Double := 0.0;
+
+  lResD := 0;
+  for i: Integer := 0 to lVal.Length -1 do begin
+    var n := BaseString.IndexOf(lVal[i], 0, lRadix, StringComparison.InvariantCultureIgnoreCase);
+    lResD := lResD * lRadix + n;
+  end;
+  exit lSign * lResD;
 end;
 
 method GlobalObject.parseFloat(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
