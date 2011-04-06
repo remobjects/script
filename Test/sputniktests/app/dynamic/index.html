@@ -1,0 +1,34 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <link rel="icon" type="image/ico" href="images/sputnik-16.ico">
+    <link type="text/css" rel="stylesheet" href="static/style.css">
+    <script type="text/javascript" src="static/sputnik.js"></script>
+    <script type="text/javascript" src="static/goog/base.js"></script>
+    <script>
+      goog.require('goog.dom');
+      goog.require('goog.ui.RoundedPanel');
+      var defaultTestSuite = {{default_suite_json}};
+      var activeTab = 'browse';
+    </script>
+    <title>Sputnik (BETA)</title>
+  </head>
+
+  <body onload="loaded()">
+  <div id="wrapper">
+    <div>
+      <h1 id="header">Sputnik</h1>
+      <h2 id="subheader">JavaScript Conformance</h2>
+    </div>
+    <div class="selector" id="browse"><div class="middle">Browse</div></div>
+    <div class="selector" id="run"><div class="middle">Run</div></div>
+    <div class="selector" id="compare"><div class="middle">Compare</div></div>
+    <div id="contents">
+      <div id="testlist">
+      </div>
+    </div>
+  </div>
+  <div id="scratch"></div>
+  </body>
+</html>

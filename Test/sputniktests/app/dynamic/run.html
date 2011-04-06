@@ -1,0 +1,38 @@
+<div style="width: 800px">
+  <div id="runcontrols">
+    <div class="progress-bar-thumb"></div>
+    <div id="progress" style="position:absolute;top:0;text-align:center;width:100%;font:statusbar;padding:2px"></div>
+  </div>
+  <div id="reset"><div id="resetbutton" class="goog-custom-button">Reset</div></div> 
+  <div id="startstop"><div id="button" class="goog-custom-button">Start</div></div> 
+  <div id="next">
+    <table id="stats">
+      <tr>
+        <td>Total:</td><td id="total" class="stat">0</td>
+      </tr><tr>
+        <td>Succeeded:</td><td id="succeeded" class="stat">0</td>
+      </tr><tr>
+        <td>Failed:</td><td id="failed" class="stat">0</td>
+      </tr>
+    </table>
+  </div>
+  <div>
+    <div id="testlist" class="low"></div>
+  </div>
+  <div class="description">
+    <div class="description-text">
+      <p>
+      Click <i>start</i> to run the full test suite in your browser.
+      Note that running the tests is a fairly strenuous exercise for a
+      browser and will cause some browsers, particularly older ones,
+      to crash or stall. If this happens you can close and reopen your
+      browser and continue running where you left off.
+      </p><p>
+      Failing tests will be added to the list above.  Tests that are
+      interrupted, for instance by crashing, are added to a blacklist
+      and won't be run again.  Clear the list of failures and the
+      blacklist by clicking <i>reset</i>.
+      </p>
+    </div>
+  </div>
+</div>

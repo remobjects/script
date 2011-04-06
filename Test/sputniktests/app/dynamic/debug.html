@@ -1,0 +1,36 @@
+<html>
+  <head></head>
+  <body>
+    <h3>Suites</h3>
+    <table>
+      <tr><th>name</th><th>count</th></tr>
+      {% for suite in suites %}
+        <tr>
+          <td>{{suite.name}}</td>
+          <td>{{suite.count}}</td>
+        </tr>
+      {% endfor %}
+    </table>
+    <h3>Cases</h3>
+    <table>
+      <tr>
+        <th>name</th>
+        <th>suite</th>
+        <th>serial</th>
+        <th>negative?</th>
+        <th>html</th>
+        <th>js</th>
+      </tr>
+      {% for case in cases %}
+        <tr>
+          <td>{{case.name}}</td>
+          <td>{{case.suite}}</td>
+          <td>{{case.serial}}</td>
+          <td>{{case.is_negative}}</td>
+          <td><a href="cases/{{case.suite}}/{{case.serial}}.html">html</a></td>
+          <td><a href="cases/{{case.suite}}/{{case.serial}}.js">js</a></td>
+        </tr>
+      {% endfor %}
+    </table>
+  </body>
+</html>

@@ -1,0 +1,305 @@
+html {
+  background: #e7ebf0;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+#about-text {
+  margin: 20px;
+  text-align: justify;
+}
+
+#wrapper {
+  width: 675px;
+  margin: 20px auto 0px;
+}
+
+#footer {
+  width: 643px;
+  margin: 20px auto 0px;
+  float: left;
+  display: block;
+  text-align: center;
+  font-size: 11px;
+  color: #858585;
+}
+
+#footer div#links {
+  float: left;
+}
+
+#footer div#credits {
+  float: right;
+}
+
+#footer div#credits img {
+  margin: 0 0 -7px 0;
+}
+
+#contents {
+  float: left;
+  height: 600px;
+  width: 640px;
+  display: block;
+  margin-top: 20px;
+}
+
+#header {
+  font-size: 58px;
+  margin-top: 0px;
+  margin-bottom: 13px;
+  font-weight: normal;
+}
+
+.left {
+  text-align: left;
+}
+
+.right {
+  text-align: right;
+}
+
+div.scoretip {
+  margin: 2px;
+}
+
+div.scoretip table {
+  font-size: 11px;
+  width: 100%;
+  color: #858585;
+}
+
+div.scoretipinner {
+  border-bottom: 1px solid #cccccc;
+}
+
+div.selector {
+  float: left;
+  display: block;
+  width: 200px;
+  height: 48px;
+  cursor: pointer;
+}
+
+.middle {
+  position: relative;
+  top: 50%;
+  margin-top: -0.55em;
+  text-align: center;
+}
+
+.leftMargin {
+  margin-left: 20px;
+}
+
+#stats {
+  margin-top: 10px;
+  margin-left: 20px;
+  margin-bottom: 10px;
+  width: 604px;
+}
+
+#next {
+  display: block;
+  float: left;
+}
+
+#subheader {
+  font-weight: normal;
+  font-size: 16px;
+  margin-bottom: 20px;
+}
+
+#runcontrols {
+  float: left;
+  margin: 20px 0px 0px 20px;
+  height: 20px;
+  width: 450px;
+}
+
+#startstop, #reset {
+  float: left;
+  margin-top: 20px;
+  margin-left: 10px;
+  height: 21px;
+  text-align: right;
+  font-size: 10pt;
+}
+
+.goog-custom-button-inner-box {
+  width: 55px;
+  text-align: center;
+}
+
+.goog-roundedpanel {
+   position: relative;
+   z-index: 0;
+}
+
+.goog-roundedpanel-background {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0px;
+  z-index: -1;
+}
+
+.progress-bar-horizontal {
+  position: relative;
+  border: 1px solid #949dad;
+  background: white;
+  padding: 1px;
+  overflow: hidden;
+  margin: 2px;
+}
+
+.progress-bar-horizontal {
+  height: 1.2em;
+}
+
+.selected {
+  font-weight: bold;
+  font-size: 120%;
+}
+ 
+.progress-bar-thumb {
+  position: relative;
+  background: #d4e4ff;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+#testlist-toplevel {
+  margin-top: 20px;
+}
+
+div.high {
+  height: 429px;
+}
+
+div.low {
+  display: block;
+  float: left;
+  height: 323px;
+}
+
+#testlist {
+  display: block;
+}
+
+div.test-panel {
+  display: block;
+  border: 1px solid #cccccc;
+  width: 600px;
+  margin-left: 20px;
+  overflow: auto;
+}
+
+div.list-label {
+  margin-left: 20px;
+  color: #cccccc;
+}
+
+div.test-panel-entry {
+  border: 1px solid #cccccc;
+  margin: 1px;
+  overflow: hidden;
+}
+
+div.test-panel-entry-header {
+  width: 100%;
+  cursor: pointer;
+  height: 1.2em;
+}
+
+div.test-panel-entry-header:hover {
+  background: #ffffee;
+}
+
+td.stat {
+  font-weight: bold;
+  text-align: right;
+}
+
+table.test-panel-details {
+  width: 100%;
+  border-top: 1px dashed #eeeeee;
+  margin: 0;
+  border-collapse: collapse;
+  font-family: courier;
+  font-size: 8pt;
+  overflow: hidden;
+}
+
+div.test-panel-entry-status {
+  float: left;
+  width: 10px;
+  height: 1.2em;
+  margin-right: 3px;
+}
+
+.test-panel-entry-status-none {
+  background: #ebeff9;
+}
+
+.test-panel-entry-status-failed {
+  background: #FFE3E3;
+}
+
+.test-panel-entry-status-blacklisted {
+  background: #999999;
+}
+
+.test-panel-entry-details-status {
+  height: 100%;
+}
+
+div.test-panel-entry-text {
+  font-size: 10pt;
+  overflow: hidden;
+  height: 1.2em;
+}
+
+td.test-panel-source {
+  overflow: hidden;
+}
+
+span.description {
+  color: #777777;
+}
+
+div.source {
+  margin-left: 3px;
+}
+
+.loading {
+  color: #dddddd;
+}
+
+#plotBox {
+  margin-top: 10px;
+  margin-left: 95px;
+}
+
+div.description {
+  width: 600px;
+  margin: 20px;
+  border-top: 1px dashed gray;
+  display: block;
+  float: left;
+}
+
+div.description-text {
+  text-align: justify;
+  margin-top: 15px;
+}
+
+div.popup {
+  position: absolute;
+  z-index: 1;
+  border: 1px solid #cccccc;
+  background: white;
+}

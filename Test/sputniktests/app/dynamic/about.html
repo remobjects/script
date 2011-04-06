@@ -1,0 +1,53 @@
+<div id="about-text">
+
+  <div style="display: block; float: right; margin-left: 20px; margin-top: 20px"><img src="images/sputnik-128.gif" alt="Sputnik"></img></div>
+
+  <h2>What is Sputnik?</h2>
+
+  Sputnik is a JavaScript conformance test suite containing over 5000
+  tests.  It tests how well a JavaScript implementation adheres to
+  the <a href="http://www.ecma-international.org/publications/standards/Ecma-262.htm">ECMA-262
+  </a> specification version 5, looking only at those features
+  that were also present in the previous version, version 3, and not the new
+  features added in version 5.
+
+  <h2>What is this site?</h2>
+  
+  This site allows you to run the sputnik tests and to compare the
+  most popular browsers' test results.
+  
+  <h3>Run</h3>
+  
+  On the <a href="run">run</a> page you can run the full test
+  suite in your browser and browse the failing tests.  Note that
+  running the tests is a fairly strenuous exercise for a browser
+  and will cause some browsers, particularly older ones, to
+  crash or stall.  If this happens you can close and reopen your
+  browser and continue running where you left off.
+  
+  <h3>Compare</h3>
+  
+  The <a href="compare">compare</a> page shows an experimental plot
+  illustrating how popular browsers perform compared to each
+  other. The distance to the center shows how close the browser is to
+  passing all tests; the further the browser is from the center the
+  more tests it fails.  The distance between browsers shows how
+  different they are; the more similar two browsers are &ndash; the
+  more test failures they have in common &ndash; the closer they will
+  be.
+
+  <h2>Version {{test_suite_version}}?</h2>
+
+  This is version {{test_suite_version}} of the Sputnik tests.  We
+  will be making revisions from time to time as we add more tests or
+  fix bugs.  Note that test results are not compatible unless both
+  results are run with the same revision of the test suite.
+
+  <p>
+
+  Version 2 fixes a bug that caused later versions of Internet
+  Explorer to emulate version 7.  
+
+  </p>
+
+</div>

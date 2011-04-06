@@ -1,0 +1,52 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/DTD/strict.dtd">
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <link rel="icon" type="image/ico" href="images/sputnik-16.ico">
+    <link type="text/css" rel="stylesheet" href="css/style_prettify_button.css">
+    <script type="text/javascript" src="js/closure_sputnik_prettify_svg.js" data-path="static/"></script>
+    <script>
+      var defaultTestSuite = {{default_suite_json}};
+      var pageName = {{page_name}};
+    </script>
+    <script type="text/javascript">
+      var _gaq = _gaq || [];
+      _gaq.push(['_setAccount', 'UA-2975124-2']);
+      _gaq.push(['_trackPageview']);
+      (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+      })();
+    </script>
+    <title>Sputnik</title>
+  </head>
+  <body onload="loaded()" onunload="movingOn()">
+    <div id="wrapper">
+      <div>
+        <h1 id="header">Sputnik</h1>
+        <h2 id="subheader">JavaScript Conformance - version {{test_suite_version}}</h2>
+      </div>
+      <div class="selector" id="about"><div class="middle">About</div></div>
+      <div class="selector leftMargin" id="run"><div class="middle">Run</div></div>
+      <div class="selector leftMargin" id="compare"><div class="middle">Compare</div></div>
+      <script>gebi(pageName).className += ' selected';</script>
+      <div id="contents">
+{{contents}}
+      </div>
+      <div id="footer">
+        <div id="links">
+          <a href="http://www.google.com">Home</a>
+          - <a href="http://sputniktests.googlecode.com">Source</a>
+          - <a href="http://www.google.com/privacy.html">Privacy</a>
+          - <a href="http://www.google.com/accounts/TOS">Terms</a>
+        </div>
+        <div id="credits">
+        Made by Google | <img src="images/logo-small.gif" alt="Google"></a>
+        </div>
+      </div>
+      <div id="scratch"></div>
+      <div id="workerRoot" style="visibility: hidden; position: absolute;"></div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   version="1.0"
+   width="70"
+   height="100"
+   id="svg4889">
+<!-- begin icon -->
+  <path
+     d="M 87.742812,56 C 71.103731,56 49.802945,61.940187 40.196412,69.259348 C 29.754529,77.214957 38.672612,86.4965 35.533395,95.778044 C 56.75857,86.4965 90.041052,77.214957 100.48293,69.259348 C 110.08947,61.940187 104.3819,55.999998 87.742812,56 z"
+     id="path6759"
+     style="opacity:0.5;fill:#848484;fill-opacity:1;fill-rule:nonzero;stroke:#848484;stroke-width:0.6663996;stroke-linecap:round;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate" />
+  <path
+     d="M 35.000014,5 C 18.440006,5 5,18.440006 5,35.000014 C 5,53.000023 26.00001,74.000033 35.000014,95.000043 C 44.000019,74.000033 65.000029,53.000023 65.000029,35.000014 C 65.000029,18.440006 51.560022,4.999997 35.000014,5 z"
+     id="path6169"
+     style="opacity:1;fill:#f9ef82;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:1;stroke-linecap:round;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate" />
+  <path
+     d="M 13,32.5 A 1.5,1.5 0 1 1 10,32.5 A 1.5,1.5 0 1 1 13,32.5 z"
+     transform="matrix(16.000008,0,0,16.000009,-149.00007,-485.00028)"
+     id="path6685"
+     style="opacity:1;fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:0.06249997;stroke-linecap:round;stroke-linejoin:miter;marker:none;marker-start:none;marker-mid:none;marker-end:none;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;visibility:visible;display:inline;overflow:visible;enable-background:accumulate" />
+<!-- end icon -->
+  <defs
+     id="defs4891" />
+</svg>

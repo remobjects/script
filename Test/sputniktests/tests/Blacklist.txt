@@ -1,0 +1,24 @@
+ Actual regex tests:
+Conformance\07_Lexical_Conventions\7.8_Literals\7.8.5_Regular_Expression_Literals\S7.8.5_A1.1_T2.js Skipping regex issues
+Conformance\07_Lexical_Conventions\7.8_Literals\7.8.5_Regular_Expression_Literals\S7.8.5_A1.3_T2.js Skipping regex issues
+Conformance\07_Lexical_Conventions\7.8_Literals\7.8.5_Regular_Expression_Literals\S7.8.5_A1.3_T4.js Skipping regex issues
+Conformance\07_Lexical_Conventions\7.8_Literals\7.8.5_Regular_Expression_Literals\S7.8.5_A1.3_T5.js Skipping regex issues
+Conformance\07_Lexical_Conventions\7.8_Literals\7.8.5_Regular_Expression_Literals\S7.8.5_A1.3_T6.js Skipping regex issues
+Conformance\07_Lexical_Conventions\7.8_Literals\7.8.5_Regular_Expression_Literals\S7.8.5_A1.4_T2.js Skipping regex issues
+Conformance\07_Lexical_Conventions\7.8_Literals\7.8.5_Regular_Expression_Literals\S7.8.5_A1.5_T2.js Skipping regex issues
+Conformance\07_Lexical_Conventions\7.8_Literals\7.8.5_Regular_Expression_Literals\S7.8.5_A1.5_T4.js Skipping regex issues
+Conformance\07_Lexical_Conventions\7.8_Literals\7.8.5_Regular_Expression_Literals\S7.8.5_A1.5_T5.js Skipping regex issues
+Conformance\07_Lexical_Conventions\7.8_Literals\7.8.5_Regular_Expression_Literals\S7.8.5_A1.5_T6.js Skipping regex issues
+Conformance\07_Lexical_Conventions\7.8_Literals\7.8.5_Regular_Expression_Literals\S7.8.5_A2.1_T2.js Skipping regex issues
+Conformance\07_Lexical_Conventions\7.8_Literals\7.8.5_Regular_Expression_Literals\S7.8.5_A2.3_T2.js Skipping regex issues
+Conformance\07_Lexical_Conventions\7.8_Literals\7.8.5_Regular_Expression_Literals\S7.8.5_A2.3_T4.js Skipping regex issues
+Conformance\07_Lexical_Conventions\7.8_Literals\7.8.5_Regular_Expression_Literals\S7.8.5_A2.3_T5.js Skipping regex issues
+Conformance\07_Lexical_Conventions\7.8_Literals\7.8.5_Regular_Expression_Literals\S7.8.5_A2.3_T6.js Skipping regex issues
+Conformance\07_Lexical_Conventions\7.8_Literals\7.8.5_Regular_Expression_Literals\S7.8.5_A2.4_T2.js Skipping regex issues
+Conformance\07_Lexical_Conventions\7.8_Literals\7.8.5_Regular_Expression_Literals\S7.8.5_A2.5_T2.js Skipping regex issues
+Conformance\07_Lexical_Conventions\7.8_Literals\7.8.5_Regular_Expression_Literals\S7.8.5_A2.5_T4.js Skipping regex issues
+Conformance\07_Lexical_Conventions\7.8_Literals\7.8.5_Regular_Expression_Literals\S7.8.5_A2.5_T5.js Skipping regex issues
+Conformance\07_Lexical_Conventions\7.8_Literals\7.8.5_Regular_Expression_Literals\S7.8.5_A2.5_T6.js Skipping regex issues
+
+Conformance\08_Types\8.3_The_Boolean_Type\S8.3_A1_T1.js Not a valid ec5 testcase
+Conformance\08_Types\8.7_The_Reference_Type\S8.7_A5_T2.js not a valid ec5 testcase
