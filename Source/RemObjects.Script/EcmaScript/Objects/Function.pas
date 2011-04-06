@@ -268,7 +268,8 @@ end;
 
 method EcmaScriptInternalFunctionObject.CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object;
 begin
-  exit fDelegate(new ExecutionContext(Scope, false), aSelf, args, self);
+  result := fDelegate(new ExecutionContext(Scope, false), aSelf, args, self);
+  exit;
 end;
 
 method EcmaScriptInternalFunctionObject.Construct(context: ExecutionContext; params args: array of Object): Object;

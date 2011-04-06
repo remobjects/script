@@ -179,6 +179,9 @@ begin
       exit DateParse(aCaller, args[0]);
     end else begin
       lValue := Utilities.GetArgAsDouble(args, 0, aCaller);
+      if Double.IsInfinity(lValue ) then lValue := Double.NaN;
+      if not Double.IsNaN(lValue) then
+        lValue := Math.Truncate(lValue);
     end;
   end else begin
     var lYear := Utilities.GetArgAsInteger(args, 0, aCaller);

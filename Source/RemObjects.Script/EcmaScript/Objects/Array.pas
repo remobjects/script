@@ -21,6 +21,7 @@ type
   public
     method CreateArray: EcmaScriptObject;
 
+    property DefaultCompareInstance: EcmaScriptFunctionObject;
     method ArrayIsArray(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method ArrayCtor(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method ArrayToString(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
@@ -91,6 +92,7 @@ begin
   result.values['prototype'] := PropertyValue.NotAllFlags(ArrayPrototype);
   result.Values.Add('isArray', PRopertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'isArray', @ArrayIsArray, 1)));
 
+  DefaultCompareInstance := new EcmaScriptFunctionObject(self, 'defaultCompare', @DefaultCompare, 2);
   ArrayPrototype.Values['constructor'] := PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'Array', @ArrayCtor, 1));
   ArrayPrototype.Values.Add('toString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toString', @ArrayToString, 0)));
   ArrayPrototype.Values.Add('toLocaleString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toLocaleString', @ArrayToLocaleString, 0)));
@@ -156,7 +158,7 @@ end;
 
 method GlobalObject.ArrayJoin(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  var lSep := Utilities.GetArgAsString(Args, 0, aCaller);
+  var lSep := if Args.Length = 0 then nil else Utilities.GetArgAsString(Args, 0, aCaller);
   if (lSep = nil) then lSep := ',';
   var lSelf := Utilities.ToObject(aCaller, aSelf);
   var lRes := new StringBuilder;
@@ -237,15 +239,14 @@ method GlobalObject.ArraySort(aCaller: ExecutionContext;aSelf: Object; params Ar
 begin
   var lSelf := EcmaScriptArrayObject(aSelf);
   if lSelf = nil then exit Undefined.Instance;
-  var lFunc := EcmaScriptFunctionObject(Utilities.GetArg(Args, 0));
-  var lDel := lFunc:&Delegate;
-  if lDel = nil then begin
-    lDel := @DefaultCompare;
+  var lFunc := EcmaScriptBaseFunctionObject(Utilities.GetArg(Args, 0));
+  if lFunc = nil then begin
+    lFunc := DefaultCompareInstance;
   end;
 
   lSelf.Items.Sort(
     method(x, y: Object): Integer begin
-      exit Utilities.GetObjAsInteger(lDel(aCaller, lSelf, x, y), aCaller);
+      exit Utilities.GetObjAsInteger(lFunc.CallEx(aCaller, lSelf, x, y), aCaller);
     end);
 end;
 

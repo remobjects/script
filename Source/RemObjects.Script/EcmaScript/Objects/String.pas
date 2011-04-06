@@ -97,7 +97,7 @@ end;
 
 method GlobalObject.StringCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lVal := Coalesce(Utilities.GetArgAsString(args, 0, aCaller), String.Empty);
+  var lVal := if length(args) = 0 then String.Empty else Coalesce(Utilities.GetArgAsString(args, 0, aCaller), String.Empty);
   var lObj := new EcmaScriptObject(self, StringPrototype, &Class := 'String', Value := lVal);
   lObj.Values.Add('length', PropertyValue.NotDeleteAndReadOnly(lVal.Length));
   exit lObj;

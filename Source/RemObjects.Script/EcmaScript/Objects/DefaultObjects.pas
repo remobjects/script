@@ -150,6 +150,8 @@ begin
   CreateNativeError;
   CreateJSON;
 
+  self.Prototype := ObjectPrototype;
+
   Thrower := new EcmaScriptFunctionObject(self, 'ThrowTypeError', method begin
     RaiseNativeError(NativeErrorType.TypeError, 'caller/arguments not available in strict mode')
   end, 0, false);
@@ -524,6 +526,11 @@ end;
 
 method GlobalObject.NotStrictGlobalEval(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
 begin
+  if (aSelf  = Undefined.Instance) or (aSelf = nil) then begin
+    aSelf := aCaller.LexicalScope.ImplicitThisValue();
+    if (aSelf  = Undefined.Instance) or (aSelf = nil) then
+      aSelf := self;
+  end;
   exit InnerEval(aCaller, false, aSelf, args);
 end;
 

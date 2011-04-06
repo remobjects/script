@@ -96,7 +96,7 @@ begin
     end;
   end;
 
-  inherited Delete(aName, aThrow);
+  exit inherited Delete(aName, aThrow);
 end;
 
 end.

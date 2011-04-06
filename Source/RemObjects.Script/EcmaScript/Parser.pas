@@ -176,8 +176,22 @@ begin
         var lPos := fTok.Position;
         var lExpr := ParseExpression(true);
         if lExpr = nil then exit;
-        if fTok.Token = TokenKind.Semicolon then fTok.Next;
-        result := new ExpressionStatement(new PositionPair(lPos, fTok.LastEndPosition), lExpr);
+        if fTok.Token = TokenKind.Comma then begin
+          var lItems := new List<SourceElement>;
+          lItems.Add(new ExpressionStatement(new PositionPair(lPos, fTok.LastEndPosition), lExpr));
+          while ftok.Token = TokenKind.Comma do begin
+            fTok.Next();
+            var lSp := FTok.Position;
+            lExpr := ParseExpression(true);
+            if lExpr = nil then exit;
+            lItems.Add(new ExpressionStatement(new PositionPair(lSp, fTok.LastEndPosition), lExpr));
+          end;
+          if fTok.Token = TokenKind.Semicolon then fTok.Next;
+          result := new BlockStatement(new PositionPair(lPos, fTok.LastEndPosition), lItems);
+        end else begin
+          if fTok.Token = TokenKind.Semicolon then fTok.Next;
+          result := new ExpressionStatement(new PositionPair(lPos, fTok.LastEndPosition), lExpr);
+        end;
       end;
     end; // case
   end;
@@ -203,7 +217,10 @@ begin
   while fTok.Token <> TokenKind.EOF do begin
     var lItem := ParseStatement(ParseStatementFlags.AllowFuction);
     if lItem = nil then break;
-    lItems.Add(lItem);
+    if lItem.Type = ElementType.BlockStatement then
+      lItems.AddRange(BlockStatement(lItem).Items)
+    else
+      lItems.Add(lItem);
   end;
 
   fTok.Error -= fTok_Error;
@@ -913,9 +930,9 @@ begin
       var lArgs: List<ExpressionElement> := new List<ExpressionElement>;
 
       if fTok.Token <> TokenKind.ClosingBracket then begin
-        if ftok.Token = TokenKind.Comma then begin
-          fTok.Next;
-        end;
+        //if ftok.Token = TokenKind.Comma then begin
+          //fTok.Next;
+        //end;
         loop begin
           var lSub: ExpressionElement;
           if fTok.Token in [TokenKind.Comma, TokenKind.ClosingBracket] then
@@ -924,8 +941,13 @@ begin
             lSub := ParseExpression(true);
             if lSub = nil then exit nil;
           end;
+          
           lArgs.Add(lSub);
-          if fTok.Token = TokenKind.Comma then fTok.Next else 
+          if fTok.Token = TokenKind.Comma then begin
+            fTok.Next ;
+            if fTok.Token = TokenKind.ClosingBracket then
+              lArgs.RemoveAt(lArgs.Count-1);
+          end else 
           if fTok.Token = TokenKind.ClosingBracket then break else
           begin
             Error(ParserErrorKind.ClosingBracketExpected, '');
@@ -1034,11 +1056,18 @@ begin
     TokenKind.Number:begin
       var lValue: Int64;
       if not Int64.TryParse(fTok.TokenStr, out lValue) then begin
-        Error(ParserErrorKind.SyntaxError, '');
-        exit nil;
+        var lDValue := RemObjects.Script.EcmaScript.Utilities.ParseDouble(ftok.TokenStr); 
+      
+        if Double.IsNaN(lValue) then begin
+          Error(ParserErrorKind.SyntaxError, '');
+          exit nil;
+        end;
+        lVal := new DecimalExpression(fTok.PositionPair, lDValue);
+        fTok.Next;
+      end else begin
+        lVal := new IntegerExpression(fTok.PositionPair, lValue);
+        fTok.Next;
       end;
-      lVal := new IntegerExpression(fTok.PositionPair, lValue);
-      fTok.Next;
     end;
     TokenKind.HexNumber:begin
       var lValue: Int64;

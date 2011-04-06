@@ -24,6 +24,7 @@ type
     const PRECISION: Int32 = 18;
 
     class method DoubleToString(value: Double): String;
+    class method AllZeroesAhead(arr: array of Char; i: Int32): Boolean;
   public
     class method ParseDouble(s: String): Double;
     class method UrlEncode(s: String): String;
@@ -592,8 +593,10 @@ begin
     for  I: Int32  :=  0  to  n-1  do
       lResult.Append(s_char_array[I]);
     lResult.Append('.');
-    for  I: Int32  :=  n  to  k-1  do
+    for  I: Int32  :=  n  to  k-1  do begin
+      if AllZeroesAhead(s_char_array, i) then break;
       lResult.Append(s_char_array[I]);
+    end;
 
     exit  (lResult.ToString());
   end;
@@ -604,8 +607,10 @@ begin
     lResult.Append('.');
     for  I: Int32  :=  0  to  -n-1  do
       lResult.Append('0');
-    for  I: Int32  :=  0  to  k-1  do
+    for  I: Int32  :=  0  to  k-1  do begin
+      if AllZeroesAhead(s_char_array, i) then break;
       lResult.Append(s_char_array[I]);
+    end;
 
     exit  (lResult.ToString());
   end;
@@ -623,8 +628,10 @@ begin
   // Specification step 10. Result
   lResult.Append(s_char_array[0]);
   lResult.Append('.');
-  for  I: Int32  :=  1  to  k-1  do
+  for  I: Int32  :=  1  to  k-1  do begin
+    if AllZeroesAhead(s_char_array, i) then break;
     lResult.Append(s_char_array[I]);
+  end;
   lResult.Append('e');
   lResult.Append(iif(n-1>0,'+','-'));
   lResult.Append(Math.Abs(n-1).ToString(CultureInfo.InvariantCulture));
@@ -632,5 +639,12 @@ begin
   exit  (lResult.ToString());
 end;
 
+
+class method Utilities.AllZeroesAhead(arr: array of Char; i: Int32): Boolean;
+begin
+  for n: Integer := i to length(arr) -1 do
+    if arr[n] <> '0' then exit false;
+  exit true;
+end;
 
 end.

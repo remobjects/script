@@ -655,7 +655,7 @@ begin
         end;
         UnaryOperator.TypeOf: begin
           WriteExpression(UnaryExpression(aExpressioN).Value);
-          CallGetValue(UnaryExpression(aExpressioN).Value.Type);
+          //CallGetValue(UnaryExpression(aExpressioN).Value.Type);
           filg.Emit(Opcodes.Ldloc, fExecutionContext);
           filg.Emit(Opcodes.Call, Operators.Method_TypeOf);
         end;
@@ -1114,7 +1114,7 @@ begin
 
     ElementType.CallExpression: begin
       WriteExpression(CallExpression(aExpression).Member);
-      
+      filg.Emit(Opcodes.Ldarg_1); // self
       
       filg.Emit(Opcodes.Ldc_I4, CallExpression(aExpression).Parameters.Count);
       filg.Emit(Opcodes.Newarr, typeof(Object));
@@ -1201,6 +1201,7 @@ method EcmaScriptCompiler.WriteIfStatement(el: IfStatement);
 begin
   if el.False = nil then begin
     WriteExpression(el.ExpressionElement);
+    CallGetValue(el.ExpressionElement.Type);
     filg.Emit(Opcodes.Ldloc, fExecutionContext);
     filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
     var lFalse := filg.DefineLabel;
@@ -1209,6 +1210,7 @@ begin
     filg.MarkLabel(lFalse);
   end else if el.True = nil then begin
     WriteExpression(el.ExpressionElement);
+    CallGetValue(el.ExpressionElement.Type);
     filg.Emit(Opcodes.Ldloc, fExecutionContext);
     filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
     var lTrue := filg.DefineLabel;
@@ -1217,6 +1219,7 @@ begin
     filg.MarkLabel(lTrue);
   end else begin
     WriteExpression(el.ExpressionElement);
+    CallGetValue(el.ExpressionElement.Type);
     filg.Emit(Opcodes.Ldloc, fExecutionContext);
     filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
     var lFalse := filg.DefineLabel;
@@ -1428,6 +1431,7 @@ begin
   WriteStatement(el.Body);
 
   WriteExpression(el.ExpressionElement);
+  CallGetValue(el.ExpressionElement.Type);
   filg.Emit(Opcodes.Ldloc, fExecutionContext);
   filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
   filg.Emit(Opcodes.Brtrue, Label(fContinue));
@@ -1446,6 +1450,7 @@ begin
   MarkLabelled(fBreak, fContinue);
   filg.MarkLabel(Label(fContinue));
   WriteExpression(el.ExpressionElement);
+  CallGetValue(el.ExpressionElement.Type);
   filg.Emit(Opcodes.Ldloc, fExecutionContext);
   filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
   filg.Emit(Opcodes.Brfalse, Label(fBreak));
@@ -1530,6 +1535,7 @@ begin
   filg.MarkLabel(lLoopStart);
   if el.Comparison <> nil then begin
     WriteExpression(el.Comparison);
+    CallGetValue(el.Comparison.Type);
     filg.Emit(Opcodes.Ldloc, fExecutionContext);
     filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
     filg.Emit(Opcodes.Brfalse, Label(fBreak));

@@ -30,6 +30,7 @@ type
 
   ExecutionContext = public class
   private
+    method get_Global: GlobalObject;
   public
     constructor; empty;
     constructor(aScope: EnvironmentRecord; aStrict: Boolean);
@@ -41,7 +42,7 @@ type
     property LexicalScope: EnvironmentRecord;
     property VariableScope: EnvironmentRecord;
     
-    property Global: GlobalObject read LexicalScope.Global;
+    property Global: GlobalObject read get_Global;
 
     method StoreParameter(Args: array of Object; index: Integer; name: string; aStrict: Boolean);
     method GetDebugSink: IDebugSink;
@@ -407,6 +408,11 @@ begin
   result := new ExecutionContext(new DeclarativeEnvironmentRecord(ex.LexicalScope, ex.Global), ex.Strict);
   result.LexicalScope.CreateMutableBinding(aName, false);
   result.LexicalScope.SetMutableBinding(aName, aVal, false);
+end;
+
+method ExecutionContext.get_Global: GlobalObject;
+begin
+  exit LexicalScope.Global;
 end;
 
 end.

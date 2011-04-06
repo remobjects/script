@@ -208,6 +208,9 @@ end;
 
 class method Operators._TypeOf(aValue: Object; ec: ExecutionContext): String;
 begin
+  var lRef := Reference(aValue);
+  if assigned(lRef) and (lRef.Base = Undefined.Instance) then exit 'undefined';
+  aValue := Reference.GetValue(aValue, ec);
   if aValue = nil then exit 'object';
   if aValue = Undefined.Instance then exit 'undefined';
   var lObj := EcmaScriptObject(aValue);
