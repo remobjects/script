@@ -235,13 +235,24 @@ begin
   exit false;
 end;
 
-class method EcmaScriptObjectWrapper.ConvertTo(val: Object; aType: &Type): Object;
+
+class method EcmaScriptObjectWrapper.ConvertTo(val: Object;  aType: &Type): Object;
 begin
-  if val = nil then exit nil;
-  if aType = typeof(Object) then exit val;
-  if val = Undefined.Instance then exit nil;
-  exit Convert.ChangeType(val, aType, System.Globalization.CultureInfo.InvariantCulture);
+  if  (not assigned(val))  then
+    exit  (nil);
+
+  if  (aType = typeOf(Object))  then
+    exit  (val);
+
+  if  (val = Undefined.Instance)  then
+    exit  (nil);
+
+  if  (aType.IsAssignableFrom(typeOf(val)))  then
+    exit  (val);
+
+  exit  (Convert.ChangeType(val, aType, System.Globalization.CultureInfo.InvariantCulture));
 end;
+
 
 method EcmaScriptObjectWrapper.Construct(context: ExecutionContext; params args: array of Object): Object;
 begin

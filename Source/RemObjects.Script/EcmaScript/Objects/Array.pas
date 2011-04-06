@@ -48,7 +48,7 @@ type
 
     method DefaultCompare(aCaller: ExecutionContext; aSelf: Object; params Args: Array of Object): Object;
   end;
-  RemObjects.Script.EcmaScript.Internal.EcmaScriptArrayObject = public class(EcmaScriptObject)
+  RemObjects.Script.EcmaScript.EcmaScriptArrayObject = public class(EcmaScriptObject)
   private
     fItems: List<Object> := new List<Object>;
   public
