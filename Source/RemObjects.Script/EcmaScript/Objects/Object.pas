@@ -396,6 +396,8 @@ begin
     var lEr := EnvironmentRecord(lRef.Base);
     if lEr <> nil then begin
       lThis := lEr.ImplicitThisValue;
+      if (lThis = nil) or (lThis = Undefined.Instance)  then
+        lThis := aSelf;
     end else
       lThis := lRef.Base;
   end else
@@ -406,8 +408,6 @@ begin
     ec.Global.RaiseNativeError(NativeErrorType.TypeError, 'Object '+lRef.Base:ToString()+' has no method '''+lRef.Name+'''');
   end;
   var lFunc := EcmaScriptBaseFunctionObject(lVal);
-  if (lThis = nil) or (lThis = Undefined.Instance) and (ec.Global.NotStrictGlobalEvalFunc = lFunc) then
-    lThis := aSelf;
   if lFunc = nil then begin
     if lRef = nil then ec.Global.RaiseNativeError(NativeErrorType.TypeError, 'Cannot call non-object value');
     ec.Global.RaiseNativeError(NativeErrorType.TypeError, 'Property '''+lRef.Name+''' of object '+lRef.Base:ToString()+' is not callable');

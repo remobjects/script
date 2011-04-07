@@ -34,8 +34,9 @@ begin
     end else
       if lRes > lL then exit lRes;
   end;
-  
-  exit Utilities.GetObjAsDouble(aLeft, ec) * Utilities.GetObjAsDouble(aRight, ec);
+  var lL := Utilities.GetObjAsDouble(aLeft, ec);
+  var lR :=Utilities.GetObjAsDouble(aRight, ec);
+  exit lL * lR;
 end;
 
 class method Operators.Divide(aLeft, aRight: Object; ec: ExecutionContext): Object;

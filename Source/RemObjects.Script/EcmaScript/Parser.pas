@@ -27,7 +27,7 @@ type
     property IsError: Boolean read true; override;
   end;
 
-  ParseStatementFlags nested in Parser = assembly flags (None = 0, AllowFuction = 1, AllowGetSet = 2);
+  ParseStatementFlags nested in Parser = assembly flags (None = 0, AllowFunction = 1, AllowGetSet = 2);
   Parser = public class
   private
     fTok: ITokenizer;
@@ -78,7 +78,7 @@ implementation
 
 method Parser.ParseStatement(aFlags: ParseStatementFlags): SourceElement;
 begin
-  if ((ParseStatementFlags.AllowFuction in aFlags) and (fTok.Token = TokenKind.K_function)) or
+  if ((ParseStatementFlags.AllowFunction in aFlags) and (fTok.Token = TokenKind.K_function)) or
   ((ParseStatementFlags.AllowGetSet in aFlags) and (fTok.Token in [TokenKind.K_set, Tokenkind.K_get])) then begin
     var lPos := fTok.Position;
     var lMode := FunctionDeclarationType.None;
@@ -135,7 +135,7 @@ begin
         Error(ParserErrorKind.ClosingBraceExpected, '');
         exit nil;
       end;
-      var lState := ParseStatement(ParseStatementFlags.AllowFuction);
+      var lState := ParseStatement(ParseStatementFlags.AllowFunction);
       if lState = nil then exit nil;
       lItems.Add(lState);
     end;
@@ -215,7 +215,7 @@ begin
   var lItems := new List<SourceElement>();
 
   while fTok.Token <> TokenKind.EOF do begin
-    var lItem := ParseStatement(ParseStatementFlags.AllowFuction);
+    var lItem := ParseStatement(ParseStatementFlags.AllowFunction);
     if lItem = nil then break;
     if lItem.Type = ElementType.BlockStatement then
       lItems.AddRange(BlockStatement(lItem).Items)
@@ -242,7 +242,7 @@ begin
       Error(ParserErrorKind.ClosingBraceExpected, '');
       exit nil;
     end;
-    var lState := ParseStatement(ParseStatementFlags.AllowFuction);
+    var lState := ParseStatement(ParseStatementFlags.AllowFunction);
     if lState = nil then break;
     lItems.Add(lState);
   end;
@@ -299,7 +299,7 @@ begin
     exit nil;
   end;
   fTok.Next;
-  var lExpr := ParseExpression(true);
+  var lExpr := ParseCommaExpression(true);
   if lExpr = nil then exit;
   if fTok.Token <> TokenKind.ClosingParenthesis then begin
     Error(ParserErrorKind.ClosingParenthesisExpected, '');
@@ -336,7 +336,7 @@ begin
     exit nil;
   end;
   fTok.Next;
-  var lExpr := ParseExpression(true);
+  var lExpr := ParseCommaExpression(true);
   if lExpr = nil then exit;
   if fTok.Token <> TokenKind.ClosingParenthesis then begin
     Error(ParserErrorKind.ClosingParenthesisExpected, '');
@@ -356,7 +356,7 @@ begin
     exit nil;
   end;
   fTok.Next;
-  var lExpr := ParseExpression(true);
+  var lExpr := ParseCommaExpression(true);
   if lExpr = nil then exit;
   if fTok.Token <> TokenKind.ClosingParenthesis then begin
     Error(ParserErrorKind.ClosingParenthesisExpected, '');
@@ -405,7 +405,7 @@ begin
   fTok.Next;
   var lExpr: ExpressionElement := nil;
   if not fTok.LastWasEnter and (fTok.Token not in [TokenKind.Semicolon, TokenKind.K_else, Tokenkind.K_default, TokenKind.CurlyClose]) then begin
-    lExpr := ParseExpression(true);
+    lExpr := ParseCommaExpression(true);
     if lExpr = nil then exit nil;
   end;
 
@@ -422,7 +422,7 @@ begin
     exit nil;
   end;
   fTok.Next;
-  var lExpr := ParseExpression(true);
+  var lExpr := ParseCommaExpression(true);
   if lExpr = nil then exit;
   if fTok.Token <> TokenKind.ClosingParenthesis then begin
     Error(ParserErrorKind.ClosingParenthesisExpected, '');
@@ -442,7 +442,7 @@ begin
   var lPos := fTok.Position;
   fTok.Next;
   var lExpr: ExpressionElement := nil;
-  lExpr := ParseExpression(true);
+  lExpr := ParseCommaExpression(true);
   if lExpr = nil then exit nil;
   
 
@@ -483,7 +483,7 @@ begin
 
   if fTok.Token = TokenKind.K_in then begin
     fTok.Next;
-    var lIn := ParseExpression(true);
+    var lIn := ParseCommaExpression(true);
     if fTok.Token <> TokenKind.ClosingParenthesis then begin
       Error(ParserErrorKind.ClosingParenthesisExpected, '');
       exit nil;
@@ -503,7 +503,7 @@ begin
     fTok.Next;
     var lCondition: ExpressionElement := nil;
     if fTok.Token <> TokenKind.Semicolon then begin
-      lCondition := ParseExpression(true);
+      lCondition := ParseCommaExpression(true);
       if lCondition = nil then exit;
     end;
     if fTok.Token <> TokenKind.Semicolon then begin
@@ -513,7 +513,7 @@ begin
     fTok.Next;
     var lIncrement: ExpressionElement := nil;
     if fTok.Token <> TokenKind.ClosingParenthesis then begin
-      lIncrement := ParseExpression(true);
+      lIncrement := ParseCommaExpression(true);
       if lIncrement = nil then exit;
     end;
     if fTok.Token <> TokenKind.ClosingParenthesis then begin
@@ -540,7 +540,7 @@ begin
     exit nil;
   end;
   fTok.Next;
-  var lExpr := ParseExpression(true);
+  var lExpr := ParseCommaExpression(true);
   if lExpr = nil then exit;
   if fTok.Token <> TokenKind.ClosingParenthesis then begin
     Error(ParserErrorKind.ClosingParenthesisExpected, '');
@@ -561,7 +561,7 @@ begin
     var lItemPos := fTok.Position;
     if fTok.Token = TokenKind.K_case then begin
       fTok.Next;
-      lCaseExpr := ParseExpression(true);
+      lCaseExpr := ParseCommaExpression(true);
       if lCaseExpr = nil then exit;
     end else if fTok.Token = TokenKind.K_default then begin
       fTok.Next;
@@ -910,7 +910,7 @@ begin
   case fTok.Token of
     TokenKind.K_function:
       begin
-        var lFunc := ParseStatement(ParseStatementFlags.AllowFuction);
+        var lFunc := ParseStatement(ParseStatementFlags.AllowFunction);
         if lFunc = nil then exit;
         lVAl := new FunctionExpression(lFunc.PositionPair, lFunc as FunctionDeclarationElement);
       end;
@@ -1082,7 +1082,7 @@ begin
 
     TokenKind.OpeningParenthesis: begin
       fTok.Next;
-      lVal := ParseExpression(true);
+      lVal := ParseCommaExpression(true);
       if fTok.Token <> TokenKind.ClosingParenthesis then begin
         Error(ParserErrorKind.ClosingParenthesisExpected, '');
         exit nil;
@@ -1111,8 +1111,8 @@ begin
             end;
           end;
         end;
+        fTok.Next;
       end;
-      fTok.Next;
       lVal := new NewExpression(new PositionPair(lPos, fTok.LastEndPosition), lVal, lArgs);
     end;
   else

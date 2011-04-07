@@ -34,10 +34,13 @@ begin
     aLeft := Reference.GetValue(lRef, aExec);
   end;
   var lOldValue := aLeft;
-  if aLeft is Integer then 
+  if aLeft is Integer then begin
+    lOldValue := Integer(aLeft);
     aLeft := Integer(aLeft) -1
-  else
+  end else begin
+    lOldValue := Utilities.GetObjAsDouble(aLeft, aExec);
     aLeft := Utilities.GetObjAsDouble(aLeft, aExec) -1.0;
+  end;
   Reference.SetValue(lRef, aLeft, aExec);
   exit lOldValue;
 end;
@@ -52,10 +55,13 @@ begin
     aLeft := Reference.GetValue(lRef, aExec);
   end;
   var lOldValue := aLeft;
-  if aLeft is Integer then 
+  if aLeft is Integer then begin
+    lOldValue := Integer(aLeft);
     aLeft := Integer(aLeft) +1
-  else
+  end else begin
+    lOldValue := Utilities.GetObjAsDouble(aLeft, aExec);
     aLeft := Utilities.GetObjAsDouble(aLeft, aExec) +1.0;
+  end;
   Reference.SetValue(lRef, aLeft, aExec);
   exit lOldValue;
 end;

@@ -62,7 +62,10 @@ begin
 
   if (aLeft is String) and (aRight is String) then
    exit String(aLeft) < String(aRight);
-  exit Utilities.GetObjAsDouble(aLeft, ec) < Utilities.GetObjAsDouble(aRight, ec); 
+  var l := Utilities.GetObjAsDouble(aLeft, ec);
+  var r := Utilities.GetObjAsDouble(aRight, ec);
+  if Double.IsNaN(l) or Double.IsNaN(R) then exit false;
+  exit l < r;  
 end;
 
 class method Operators.GreaterThan(aLeft, aRight: Object; ec: ExecutionContext): Object;
@@ -71,7 +74,10 @@ begin
   if aRight is EcmaScriptObject then aLeft := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aRight), PrimitiveType.Number);
   if (aLeft is String) and (aRight is String) then
    exit String(aLeft) < String(aRight);
-  exit Utilities.GetObjAsDouble(aLeft, ec) > Utilities.GetObjAsDouble(aRight, ec); 
+  var l := Utilities.GetObjAsDouble(aLeft, ec);
+  var r := Utilities.GetObjAsDouble(aRight, ec);
+  if Double.IsNaN(l) or Double.IsNaN(R) then exit false;
+  exit l > r;  
 end;
 
 class method Operators.LessThanOrEqual(aLeft, aRight: Object; ec: ExecutionContext): Object;
@@ -80,7 +86,10 @@ begin
   if aRight is EcmaScriptObject then aLeft := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aRight), PrimitiveType.Number);
   if (aLeft is String) and (aRight is String) then
    exit String(aLeft) < String(aRight);
-  exit Utilities.GetObjAsDouble(aLeft, ec) <= Utilities.GetObjAsDouble(aRight, ec); 
+  var l := Utilities.GetObjAsDouble(aLeft, ec);
+  var r := Utilities.GetObjAsDouble(aRight, ec);
+  if Double.IsNaN(l) or Double.IsNaN(R) then exit false;
+  exit l <=r;  
 end;
 
 class method Operators.GreaterThanOrEqual(aLeft, aRight: Object; ec: ExecutionContext): Object;
@@ -89,7 +98,10 @@ begin
   if aRight is EcmaScriptObject then aLeft := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aRight), PrimitiveType.Number);
   if (aLeft is String) and (aRight is String) then
    exit String(aLeft) < String(aRight);
-  exit Utilities.GetObjAsDouble(aLeft, ec) >= Utilities.GetObjAsDouble(aRight, ec); 
+  var l := Utilities.GetObjAsDouble(aLeft, ec);
+  var r := Utilities.GetObjAsDouble(aRight, ec);
+  if Double.IsNaN(l) or Double.IsNaN(R) then exit false;
+  exit l >=r;  
 end;
 
 end.

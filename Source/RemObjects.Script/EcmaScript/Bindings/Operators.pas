@@ -196,6 +196,7 @@ begin
   if Double.IsPositiveInfinity(aLeft) and Double.IsNegativeInfinity(aRight) then exit false;
   if Double.IsNaN(aLeft) then exit false;
   if Double.IsNaN(aRight) then exit false;
+  if Double.IsInfinity(aLeft) or Double.IsInfinity(aRight) then exit false; 
   var bits := BitConverter.DoubleToInt64Bits(aLeft);
     // Note that the shift is sign-extended, hence the test against -1 not 1
   exit 		Math.Abs(aLeft - aRight ) <= Math.Abs(aLeft * 0.0000000000001);
