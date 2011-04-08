@@ -489,6 +489,7 @@ begin
     end;
     ElementType.ExpressionStatement: begin
       WriteExpression(ExpressionStatement(el).ExpressionElement);
+      CallGetValue(ExpressionStatement(el).ExpressionElement.Type);
       filg.Emit(Opcodes.Pop);
     end;
     ElementType.DebuggerStatement: begin
@@ -1133,6 +1134,7 @@ begin
       for i: Integer := 0 to CommaSeparatedExpression(aExpression).Parameters.Count -1 do begin
         if i <> 0 then filg.Emit(Opcodes.Pop);
         WriteExpression(CommaSeparatedExpression(aExpression).Parameters[i]);
+        CallGetValue(CommaSeparatedExpression(aExpression).Parameters[i].Type);
       end;
     end;
 

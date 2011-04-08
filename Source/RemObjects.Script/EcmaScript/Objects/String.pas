@@ -65,7 +65,7 @@ begin
   result.Values['prototype'] := PropertyValue.NotAllFlags(StringPrototype);
   
   result.Values.Add('fromCharCode', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'fromCharCode', @StringFromCharCode, 1)));
-  
+  StringPrototype.Values.Add('length', PropertyValue.NotAllFlags(0));
   StringPrototype.Values.Add('toString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toString', @StringToString, 0)));
   StringPrototype.Values.Add('valueOf', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'valueOf', @StringValueOf, 0)));
   StringPrototype.Values.Add('charAt', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'charAt', @StringCharAt, 1)));

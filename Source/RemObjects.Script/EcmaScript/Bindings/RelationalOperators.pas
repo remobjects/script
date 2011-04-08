@@ -58,7 +58,7 @@ end;
 class method Operators.LessThan(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
   if aLeft is EcmaScriptObject then aLeft := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aLeft), PrimitiveType.Number);
-  if aRight is EcmaScriptObject then aLeft := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aRight), PrimitiveType.Number);
+  if aRight is EcmaScriptObject then aRight := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aRight), PrimitiveType.Number);
 
   if (aLeft is String) and (aRight is String) then
    exit String(aLeft) < String(aRight);
@@ -71,7 +71,7 @@ end;
 class method Operators.GreaterThan(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
   if aLeft is EcmaScriptObject then aLeft := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aLeft), PrimitiveType.Number);
-  if aRight is EcmaScriptObject then aLeft := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aRight), PrimitiveType.Number);
+  if aRight is EcmaScriptObject then aright := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aRight), PrimitiveType.Number);
   if (aLeft is String) and (aRight is String) then
    exit String(aLeft) < String(aRight);
   var l := Utilities.GetObjAsDouble(aLeft, ec);
@@ -83,7 +83,7 @@ end;
 class method Operators.LessThanOrEqual(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
   if aLeft is EcmaScriptObject then aLeft := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aLeft), PrimitiveType.Number);
-  if aRight is EcmaScriptObject then aLeft := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aRight), PrimitiveType.Number);
+  if aRight is EcmaScriptObject then aright := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aRight), PrimitiveType.Number);
   if (aLeft is String) and (aRight is String) then
    exit String(aLeft) < String(aRight);
   var l := Utilities.GetObjAsDouble(aLeft, ec);
@@ -95,7 +95,7 @@ end;
 class method Operators.GreaterThanOrEqual(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
   if aLeft is EcmaScriptObject then aLeft := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aLeft), PrimitiveType.Number);
-  if aRight is EcmaScriptObject then aLeft := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aRight), PrimitiveType.Number);
+  if aRight is EcmaScriptObject then aright := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aRight), PrimitiveType.Number);
   if (aLeft is String) and (aRight is String) then
    exit String(aLeft) < String(aRight);
   var l := Utilities.GetObjAsDouble(aLeft, ec);

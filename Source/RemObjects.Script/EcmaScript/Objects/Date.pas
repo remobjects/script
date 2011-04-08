@@ -165,7 +165,7 @@ end;
 
 method GlobalObject.DateCall(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  Result := DateCtor(nil, []);
+  Result := DateCtor(nil, []):ToString();
 end;
 
 method GlobalObject.DateCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;

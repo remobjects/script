@@ -147,7 +147,10 @@ begin
   case e of
     NativeErrorType.EvalError: raise new ScriptRuntimeException(NativeErrorCtor(EvalError, msg));
     NativeErrorType.RangeError: raise new ScriptRuntimeException(NativeErrorCtor(RangeError, msg));
-    NativeErrorType.ReferenceError: raise new ScriptRuntimeException(NativeErrorCtor(ReferenceError, msg));
+    NativeErrorType.ReferenceError: 
+      begin
+        raise new ScriptRuntimeException(NativeErrorCtor(ReferenceError, msg));
+      end;
     NativeErrorType.SyntaxError: raise new ScriptRuntimeException(NativeErrorCtor(SyntaxError, msg));
     NativeErrorType.TypeError: raise new ScriptRuntimeException(NativeErrorCtor(TypeError, msg));
     NativeErrorType.URIError: raise new ScriptRuntimeException(NativeErrorCtor(URIError, msg));

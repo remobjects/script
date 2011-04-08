@@ -70,7 +70,7 @@ end;
 
 method GlobalObject.NumberCall(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  exit Utilities.GetArgAsDouble(args, 0, aCaller);
+  exit if Length(args) = 0 then 0.0 else Utilities.GetArgAsDouble(args, 0, aCaller);
 end;
 
 method GlobalObject.NumberCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
@@ -85,7 +85,7 @@ method GlobalObject.NumberToString(aCaller: ExecutionContext;aSelf: Object; para
 begin
   var lVal := EcmaScriptObject(aSelf);
   if (lVal = nil) and ((aSelf is Double) or (aSelf is Integer)) then 
-    lVal := EcmaScriptObject(NumberCtor(aCaller, aSelf));
+    lVal := EcmaScriptObject(NumberCtor(aCaller, NumberPrototype, aSelf));
   if (lVal = nil) or (lVal.Class <> 'Number') then RaiseNativeError(NativeERrorType.TypeError, 'number.prototype.valueOf is not generic');
   var lRadix := 10;
   if Length(args) > 0 then lRadix := Utilities.GetArgAsInteger(args, 0, aCaller);

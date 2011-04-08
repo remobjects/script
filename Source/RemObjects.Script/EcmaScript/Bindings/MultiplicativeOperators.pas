@@ -41,7 +41,7 @@ end;
 
 class method Operators.Divide(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
-  if (aLeft is Int32) and (aRight is Int32) and (Integer(aRight) <> 0) then begin
+  if (aLeft is Int32) and (aRight is Int32) and (Integer(aRight) <> 0) and (Integer(aLeft) <> 0) then begin
     exit Integer(aLeft) div Integer(aRight);
   end;
   
@@ -50,10 +50,20 @@ end;
 
 class method Operators.Modulus(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
-  if (aLeft is Int32) and (aRight is Int32) and (Integer(aRight) <> 0) then
+  if (aLeft is Int32) and (aRight is Int32) and (Integer(aRight) <> 0) and (Integer(aLeft) > 0) then 
     exit Integer(aLeft) mod Integer(aRight);
   
-   exit Math.IEEERemainder(Utilities.GetObjAsDouble(aLeft, ec), Utilities.GetObjAsDouble(aRight, ec));
+  var lLeft := Utilities.GetObjAsDouble(aLeft, ec);
+  var lRight := Utilities.GetObjAsDouble(aRight, ec);
+  var lWork := lLeft / lRight;
+  if lWork < 0 then 
+    lWork := Math.Ceiling(lWork)
+  else 
+    lWork := Math.Floor(lWork);
+  lWork := lLeft - (lRight * lWork);
+  if (lWork = 0.0) and (lLeft < 0) then
+    lWork := - lWork;
+  result := lWork;
 end;
 
 end.

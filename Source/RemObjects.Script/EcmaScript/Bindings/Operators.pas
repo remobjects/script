@@ -30,133 +30,57 @@ type
     class var Method_StrictEqual: System.Reflection.MethodInfo := typeof(Operators).GetMethod('StrictEqual');
     class var Method_StrictNotEqual: System.Reflection.MethodInfo := typeof(Operators).GetMethod('StrictNotEqual');
     class var Method_TypeOf: System.Reflection.MethodInfo := typeof(Operators).GetMethod('_TypeOf');
+
+    class method &Type(o: Object): SimpleType;
   end;
+
+  SimpleType = public enum (Undefined, Null, Boolean, String, Number, Object);
 
 implementation
 
 class method Operators.Equal(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
-  var lLeft: TypeCode := iif(aLeft = nil, TypeCode.Empty, &Type.GetTypeCode(aLeft.GetType));
-  var lRight: TypeCode := iif(aRight = nil, TypeCode.Empty, &Type.GetTypeCode(aRight.GetType));
-  if lLeft = TypeCode.Empty then begin
-    case lRight of 
-      TypeCode.Empty: exit true;
-      TypeCode.Boolean: exit not Boolean(aRight);
-      TypeCode.SByte, 
-      TypeCode.Int16,
-      TypeCode.Int32, 
-      TypeCode.Int64: exit Convert.ToInt64(aRight) = 0;
-      TypeCode.Single: exit Single(aRight) = 0;
-      TypeCode.Double: exit  Double(aRight) = 0;
-      TypeCode.String: result := string(aRight) = '';
-      TypeCode.Byte,
-      TypeCode.UInt16,
-      TypeCode.UInt32,
-      TypeCode.UInt64: result := Convert.ToUInt64(aRight) = 0;
-    else exit false;
-    end; // case
-  end else if lRight = TypeCode.Empty then begin
+  var lLeft := &Type(aLeft);
+  var lRight := &Type(aRight);
+  if lLeft = lRight then begin
     case lLeft of 
-      TypeCode.Empty: exit true;
-      TypeCode.Boolean: exit not Boolean(aLeft);
-      TypeCode.SByte, 
-      TypeCode.Int16,
-      TypeCode.Int32, 
-      TypeCode.Int64: exit Convert.ToInt64(aLeft) = 0;
-      TypeCode.Single: exit Single(aLeft) = 0;
-      TypeCode.Double: exit  Double(aLeft) = 0;
-      TypeCode.String: result := string(aLeft) = '';
-      TypeCode.Byte,
-      TypeCode.UInt16,
-      TypeCode.UInt32,
-      TypeCode.UInt64: result := Convert.ToUInt64(aLeft) = 0;
-    else exit false;
+      SimpleType.Boolean: exit Utilities.GetObjAsBoolean(aLeft, ec) = Utilities.GetObjAsBoolean(aRight, ec);
+      SimpleType.Undefined, SimpleType.Null: exit true;
+      SimpleType.Number: exit DoubleCompare(Utilities.GetObjAsDouble(aLeft, ec), Utilities.GetObjAsDouble(aRight, ec));
+      SimpleType.String: exit Utilities.GetObjAsString(aLeft, ec) = Utilities.GetObjAsString(aRight, ec);
+    else // object
+      exit EcmaScriptObject(aLeft) = EcmaScriptObject(aRight);
     end; // case
   end;
+  if ((lLeft = SimpleType.Undefined) and (lRight = SimpleType.Null)) or
+    ((lRight = SimpleType.Undefined) and (lLeft = SimpleType.Null)) then
+    exit true;
+  if (lLeft = SimpleType.Number) and (lRight = SimpleType.String) then 
+   exit Equal(aLeft, Utilities.GetObjAsDouble(lRight, ec), ec);
+  if (lRight = SimpleType.Number) and (lLeft = SimpleType.String) then 
+   exit Equal(Utilities.GetObjAsDouble(aLeft, ec), aRight, ec);
 
-  if ((lLeft in [TypeCode.SByte, 
-      TypeCode.Int16,
-      TypeCode.Int32, 
-      TypeCode.Int64,
-      TypeCode.Byte,
-      TypeCode.UInt16,
-      TypeCode.UInt32,
-      TypeCode.UInt64]) and (lRight = typeCode.String)) or ((lRight in [TypeCode.SByte, 
-      TypeCode.Int16,
-      TypeCode.Int32, 
-      TypeCode.Int64,
-      TypeCode.Byte,
-      TypeCode.UInt16,
-      TypeCode.UInt32,
-      TypeCode.UInt64]) and (lLeft = typeCode.String) ) then
-    exit Utilities.GetObjAsInteger(aLeft, ec) = Utilities.GetObjAsInteger(aRight, ec);
+  if (lLeft = SimpleType.Boolean) then
+    exit Equal(Utilities.GetObjAsDouble(aLeft, ec), aRight, ec);
+  if (lRight = SimpleType.Boolean) then
+    exit Equal(aLeft, Utilities.GetObjAsDouble(aRight, ec), ec);
+
+  if (lLeft in [SimpleType.String, SimpleType.Number]) and  
+    (lRight = SimpleType.Object) then 
+    exit Equal(aLeft, Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aRight), PrimitiveType.None), ec);
+  if (lRight in [SimpleType.String, SimpleType.Number]) and  
+    (lLeft = SimpleType.Object) then 
+    exit Equal(Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aLeft), PrimitiveType.None), aRight, ec);
     
-  if ((lLeft in [TypeCode.Single,
-      TypeCode.Double]) and (lRight = typeCode.String)) or ((lRight in [TypeCode.Single,
-      TypeCode.Double]) and (lLeft = typeCode.String) ) then
-    exit Utilities.GetObjAsDouble(aLeft, ec) = Utilities.GetObjAsDouble(aRight, ec);
-   
-  if (lLeft = TypeCode.Boolean) or (lRight = TypeCode.Boolean) then
-    exit Utilities.GetObjAsInteger(aLeft, ec) = Utilities.GetObjAsInteger(aRight, ec);
-
-  if (lLeft = TypeCode.String) or (lRight = TypeCode.String) then begin
-    aRight := Utilities.GetObjAsString(aRight, ec);
-    if lLeft = TypeCode.Single then
-      aLeft := Single(aLeft).ToString(System.Globalization.NumberFormatInfo.InvariantInfo)
-    else if lLeft = TypeCode.Double then
-      aLeft := Double(aLeft).ToString(System.Globalization.NumberFormatInfo.InvariantInfo)
-    else aLeft := Utilities.GetObjAsString(aLeft, ec);
-
-    exit string.Equals(string(aLeft), string(aRight));
-  end;
-  if (lLeft in [TypeCode.Double, TypeCode.Single]) and (lRight in [TypeCode.SByte, 
-      TypeCode.Int16,
-      TypeCode.Int32, 
-      TypeCode.Int64,
-      TypeCode.Single,
-      TypeCode.Double,
-      TypeCode.Byte,
-      TypeCode.UInt16,
-      TypeCode.UInt32,
-      TypeCode.UInt64]) then
-    exit Convert.ToDouble(aLeft) = Convert.ToDouble(aRight);
-  if (lRight in [TypeCode.Double, TypeCode.Single]) and (lLeft in [TypeCode.SByte, 
-      TypeCode.Int16,
-      TypeCode.Int32, 
-      TypeCode.Int64,
-      TypeCode.Single,
-      TypeCode.Double,
-      TypeCode.Byte,
-      TypeCode.UInt16,
-      TypeCode.UInt32,
-      TypeCode.UInt64]) then
-    exit Convert.ToDouble(aLeft) = Convert.ToDouble(aRight);
-
-  if (lLeft in [TypeCode.SByte, 
-      TypeCode.Int16,
-      TypeCode.Int32, 
-      TypeCode.Int64,
-      TypeCode.Byte,
-      TypeCode.UInt16,
-      TypeCode.UInt32,
-      TypeCode.UInt64]) and (lRight in [TypeCode.SByte, 
-      TypeCode.Int16,
-      TypeCode.Int32, 
-      TypeCode.Int64,
-      TypeCode.Byte,
-      TypeCode.UInt16,
-      TypeCode.UInt32,
-      TypeCode.UInt64]) then
-    exit Convert.ToInt64(aLeft) = Convert.ToInt64(aRight);
-
-  result := aLeft.Equals(aRight);
+    
+  exit false;
 end;
 
 class method Operators.StrictEqual(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
   if (aLeft = nil) and (aRight = nil) then exit true;
   if (aLeft = nil) or (aRight = nil) then exit false;
-  if (&Type.GetTypeCode(aLeft.GetType()) in [TypeCode.SByte, 
+  if (System.Type.GetTypeCode(aLeft.GetType()) in [TypeCode.SByte, 
       TypeCode.Int16,
       TypeCode.Int32, 
       TypeCode.Int64,
@@ -165,7 +89,7 @@ begin
       TypeCode.UInt32,
       TypeCode.UInt64,
       TypeCode.Single, 
-      TypeCode.Double]) and (&Type.GetTypeCode(aRight.GetType()) in [TypeCode.SByte, 
+      TypeCode.Double]) and (System.Type.GetTypeCode(aRight.GetType()) in [TypeCode.SByte, 
       TypeCode.Int16,
       TypeCode.Int32, 
       TypeCode.Int64,
@@ -222,7 +146,7 @@ begin
     exit 'object';
   end;
 
-  case &Type.GetTypeCode(aValue.GetType) of
+  case System.Type.GetTypeCode(aValue.GetType) of
     TypeCode.Boolean: exit 'boolean';
     TypeCode.Char: exit 'string';
     TypeCode.Decimal,
@@ -244,6 +168,20 @@ end;
 class method Operators.NotEqual(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
   exit Not Boolean(Equal(aLeft, aRight, ec));
+end;
+
+class method Operators.Type(o: Object): SimpleType;
+begin
+  if o= nil then exit SimpleType.Null;
+  if o = Undefined.Instance  then exit  SimpleType.Undefined;
+  case System.Type.GetTypeCode(o.GetType()) of
+    TypeCode.Boolean: exit SimpleType.Boolean;
+    TypeCode.Int32,
+    TypeCode.Double: exit SimpleType.Number;
+    TypeCode.String: exit SimpleType.String;
+  else
+    exit SimpleType.Object;
+  end; // case
 end;
 
 end.

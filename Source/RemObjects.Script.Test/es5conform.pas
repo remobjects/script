@@ -115,7 +115,7 @@ begin
   if fFramework = nil then
     fFramework := new Es5ConformanceFramework(nil);
   var lScriptFilename := Path.Combine(fTestRoot, aName);
-  var lScript := fLibrary + File.ReadAllText(lScriptFilename);
+  var lScript := fLibrary + File.ReadAllText(lScriptFilename, Encoding.UTF8).Replace(#65533, ' ');
   using se := new RemObjects.Script.EcmaScriptComponent() do begin
     se.RunInThread := false;
     se.Debug := false;
