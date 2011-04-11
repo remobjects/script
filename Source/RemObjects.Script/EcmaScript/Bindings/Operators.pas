@@ -56,7 +56,7 @@ begin
     ((lRight = SimpleType.Undefined) and (lLeft = SimpleType.Null)) then
     exit true;
   if (lLeft = SimpleType.Number) and (lRight = SimpleType.String) then 
-   exit Equal(aLeft, Utilities.GetObjAsDouble(lRight, ec), ec);
+   exit Equal(aLeft, Utilities.GetObjAsDouble(aRight, ec), ec);
   if (lRight = SimpleType.Number) and (lLeft = SimpleType.String) then 
    exit Equal(Utilities.GetObjAsDouble(aLeft, ec), aRight, ec);
 

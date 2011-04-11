@@ -32,10 +32,10 @@ implementation
 class method Operators.InstanceOf(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
   var lLeft := EcmaScriptObject(aLeft);;
-  if lLeft = nil then exit false;
   var lRight := EcmaScriptObject(aRight);
-  lRight := EcmaScriptObject(lRight.Get(ec, 0, 'prototype'));
+  lRight := EcmaScriptObject(lRight:Get(ec, 0, 'prototype'));
   if lRight = nil then ec.Global.RaiseNativeError(NativeErrorType.TypeError, 'Not an object');
+  if lLeft = nil then exit false;
 
   repeat
     if lLeft = lRight then exit true;
@@ -48,7 +48,7 @@ end;
 class method Operators.In(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
   var lObj := EcmaScriptObject(aRight);
-  if lObj = nil then exit false;
+  if lObj = nil then ec.Global.RaiseNativeError(NativeErrorType.TypeError, 'Not an object');
 
   exit lObj.HasProperty(Utilities.GetObjAsString(aLeft, ec));
 end;
@@ -61,7 +61,7 @@ begin
   if aRight is EcmaScriptObject then aRight := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aRight), PrimitiveType.Number);
 
   if (aLeft is String) and (aRight is String) then
-   exit String(aLeft) < String(aRight);
+   exit String.CompareOrdinal(String(aLeft), String(aRight)) < 0;
   var l := Utilities.GetObjAsDouble(aLeft, ec);
   var r := Utilities.GetObjAsDouble(aRight, ec);
   if Double.IsNaN(l) or Double.IsNaN(R) then exit false;
@@ -70,10 +70,10 @@ end;
 
 class method Operators.GreaterThan(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
-  if aLeft is EcmaScriptObject then aLeft := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aLeft), PrimitiveType.Number);
   if aRight is EcmaScriptObject then aright := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aRight), PrimitiveType.Number);
+  if aLeft is EcmaScriptObject then aLeft := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aLeft), PrimitiveType.Number);
   if (aLeft is String) and (aRight is String) then
-   exit String(aLeft) < String(aRight);
+   exit String.CompareOrdinal(String(aLeft), String(aRight)) > 0;
   var l := Utilities.GetObjAsDouble(aLeft, ec);
   var r := Utilities.GetObjAsDouble(aRight, ec);
   if Double.IsNaN(l) or Double.IsNaN(R) then exit false;
@@ -82,10 +82,10 @@ end;
 
 class method Operators.LessThanOrEqual(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
-  if aLeft is EcmaScriptObject then aLeft := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aLeft), PrimitiveType.Number);
   if aRight is EcmaScriptObject then aright := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aRight), PrimitiveType.Number);
+  if aLeft is EcmaScriptObject then aLeft := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aLeft), PrimitiveType.Number);
   if (aLeft is String) and (aRight is String) then
-   exit String(aLeft) < String(aRight);
+   exit String.CompareOrdinal(String(aLeft), String(aRight)) <= 0;
   var l := Utilities.GetObjAsDouble(aLeft, ec);
   var r := Utilities.GetObjAsDouble(aRight, ec);
   if Double.IsNaN(l) or Double.IsNaN(R) then exit false;
@@ -97,7 +97,7 @@ begin
   if aLeft is EcmaScriptObject then aLeft := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aLeft), PrimitiveType.Number);
   if aRight is EcmaScriptObject then aright := Utilities.GetObjectAsPrimitive(ec, EcmaScriptObject(aRight), PrimitiveType.Number);
   if (aLeft is String) and (aRight is String) then
-   exit String(aLeft) < String(aRight);
+   exit String.CompareOrdinal(String(aLeft), String(aRight)) >= 0;
   var l := Utilities.GetObjAsDouble(aLeft, ec);
   var r := Utilities.GetObjAsDouble(aRight, ec);
   if Double.IsNaN(l) or Double.IsNaN(R) then exit false;

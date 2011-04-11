@@ -234,12 +234,6 @@ begin
   fStatementStack := new List<Statement>;
   try
     if aElements.Count <> 0 then begin
-      if aElements[aElements.Count-1].Type <> ElementType.ExpressionStatement then
-        aElements.Add(new ReturnStatement(new PositionPair(), new IdentifierExpression(new PositionPair, 'undefined')))
-      else if aElements[aElements.Count-1].Type <> ElementType.ReturnStatement then  begin
-        var lEl := ExpressionStatement(aElements[aElements.Count-1]).ExpressionElement;
-        aElements[aElements.Count-1] := new ReturnStatement(lEl.PositionPair, lEl);
-      end;
       if aElements.Count > 1 then begin
         if (aElements[0].Type = ElementType.ExpressionStatement) and (ExpressionStatement(aElements[0]).ExpressionElement.Type = ElementType.StringExpression) then begin
           if StringExpression(ExpressionStatement(aElements[0]).ExpressionElement).Value = 'use strict' then begin
@@ -490,7 +484,7 @@ begin
     ElementType.ExpressionStatement: begin
       WriteExpression(ExpressionStatement(el).ExpressionElement);
       CallGetValue(ExpressionStatement(el).ExpressionElement.Type);
-      filg.Emit(Opcodes.Pop);
+      filg.Emit(Opcodes.Stloc, fResultVar);
     end;
     ElementType.DebuggerStatement: begin
       WriteDebugStack;
@@ -1187,13 +1181,21 @@ begin
               yield RecursiveFindFuncAndVars(els.Body.Cast<SourceElement>);
           end;
         end;
+      ElementType.ForStatement: 
+        begin
+          if ForStatement(el).Initializers <> nil then
+            yield RecursiveFindFuncAndVars(ForStatement(el).Initializers.Cast<SourceElement>);
+          yield RecursiveFindFuncAndVars([ForStatement(el).Initializer, ForStatement(el).Increment, ForStatement(el).Comparison, ForStatement(el).Body]);
+        end;
+      ElementType.ForInStatement:
+        begin
+          yield RecursiveFindFuncAndVars([ForInStatement(el).Initializer, ForInStatement(el).LeftExpression, ForInStatement(el).ExpressionElement, ForInStatement(el).Body]);
+        end;
       ElementType.TryStatement: yield RecursiveFindFuncAndVars([TryStatement(el).Body, TryStatement(el).Finally, TryStatement(el).Catch:Body]);
       ElementType.VariableStatement: yield el;
       ElementType.VariableDeclaration: yield new VariableStatement(el.PositionPair, VariableDeclaration(el));
       ElementType.WithStatement: yield RecursiveFindFuncAndVars([WithStatement(el).Body]);
       ElementType.DoStatement: yield RecursiveFindFuncAndVars([DoStatement(el).Body]);
-      ElementType.ForInStatement: yield RecursiveFindFuncAndVars([ForInStatement(el).Initializer, ForInStatement(el).ExpressionElement, ForInStatement(el).Body]);
-      ElementType.ForStatement: yield RecursiveFindFuncAndVars([ForStatement(el).Initializer, ForStatement(el).Increment, ForStatement(el).Comparison, ForStatement(el).Body]);
       ElementType.WhileStatement: yield RecursiveFindFuncAndVars([WhileStatement(el).Body]);
     end; // case
   end;
@@ -1428,15 +1430,19 @@ begin
   fContinue := fILG.DefineLabel;
   fBreak := filg.DefineLabel;
   MarkLabelled(fBreak, fContinue);
-  filg.MarkLabel(Label(fContinue));
+  var fRestart := filg.DefineLabel;
+
+  filg.MarkLabel(fRestart);
 
   WriteStatement(el.Body);
+
+  filg.MarkLabel(Label(fContinue));
 
   WriteExpression(el.ExpressionElement);
   CallGetValue(el.ExpressionElement.Type);
   filg.Emit(Opcodes.Ldloc, fExecutionContext);
   filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
-  filg.Emit(Opcodes.Brtrue, Label(fContinue));
+  filg.Emit(Opcodes.Brtrue, Label(fRestart));
   filg.MarkLabel(Label(fBreak));
 
   fBreak := lOldBreak;
@@ -1562,23 +1568,19 @@ end;
 
 method EcmaScriptCompiler.WriteWithStatement(el: WithStatement);
 begin
-  var lOld := AllocateLocal(typeof(ExecutionContext));
-  filg.Emit(Opcodes.Ldloc, fExecutionContext);
-  filg.Emit(Opcodes.Stloc, lOld);
-  filg.BeginExceptionBlock;
+  var lNew := AllocateLocal(typeof(ExecutionContext));
+  var lOld := fExecutionContext;
 
   filg.Emit(Opcodes.Ldloc, fExecutionContext);
   WriteExpression(el.ExpressionElement);
   CallGetValue(el.ExpressionElement.Type);
   filg.Emit(Opcodes.Call, ExecutionContext.Method_With);
-  filg.Emit(Opcodes.Stloc, fExecutionContext);
+  filg.Emit(Opcodes.Stloc, lNew);
+  fExecutionContext := lNew;
 
   WriteStatement(el.Body);
 
-  filg.BeginFinallyBlock();
-  filg.Emit(Opcodes.Ldloc, lOld);
-  filg.Emit(Opcodes.Stloc, fExecutionContext);
-  filg.EndExceptionBlock();
+  fExecutionContext := lOld;
 
   ReleaseLocal(lOld);
 end;
@@ -1648,12 +1650,19 @@ begin
     if el.Clauses[i].ExpressionElement = nil then lGotDefault := true else begin
       filg.Emit(opcodes.Ldloc, lWork);
       WriteExpression(el.Clauses[i].ExpressionElement);
-      CallGetValue(el.ExpressionElement.Type);
+      CallGetValue(el.Clauses[i].ExpressionElement.Type);
       filg.Emit(Opcodes.Ldloc, fExecutionContext);
       filg.Emit(Opcodes.Call, Operators.Method_StrictEqual);
+      filg.Emit(Opcodes.Ldloc, fExecutionContext);
+      filg.Emit(Opcodes.Call, Utilities.method_GetObjAsBoolean);
       filg.Emit(Opcodes.Brtrue, lLabels[i]);
     end;
   end;
+  ReleaseLocal(lWork);
+
+  var lOldContinue := fContinue;
+  var lOldBreak := fBreak;
+  fBreak := filg.DefineLabel;
   if lGotDefault then begin
     for I: integer := 0 to el.Clauses.Count -1 do begin
       if el.Clauses[i].ExpressionElement = nil then begin
@@ -1661,13 +1670,9 @@ begin
         break;
       end;
     end;
-  end;
+  end else
+    filg.Emit(Opcodes.Br, Label(fBreak));
 
-  ReleaseLocal(lWork);
-
-  var lOldContinue := fContinue;
-  var lOldBreak := fBreak;
-  fBreak := filg.DefineLabel;
   MarkLabelled(fBreak, nil);
   if not lGotDefault then filg.Emit(Opcodes.Br, Label(fBreak));
   

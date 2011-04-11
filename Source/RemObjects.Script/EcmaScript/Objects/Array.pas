@@ -93,7 +93,7 @@ begin
   result.Values.Add('isArray', PRopertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'isArray', @ArrayIsArray, 1)));
 
   DefaultCompareInstance := new EcmaScriptFunctionObject(self, 'defaultCompare', @DefaultCompare, 2);
-  ArrayPrototype.Values['constructor'] := PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'Array', @ArrayCtor, 1));
+  ArrayPrototype.Values['constructor'] := PropertyValue.NotEnum(result);
   ArrayPrototype.Values.Add('toString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toString', @ArrayToString, 0)));
   ArrayPrototype.Values.Add('toLocaleString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toLocaleString', @ArrayToLocaleString, 0)));
   ArrayPrototype.Values.Add('concat', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'concat', @ArrayConcat, 1)));
@@ -632,7 +632,7 @@ end;
 
 constructor EcmaScriptArrayObjectObject(aOwner: GlobalObject);
 begin
-  inherited constructor(aOwner, 'Array', @aOwner.ArrayCtor, 0, false);
+  inherited constructor(aOwner, 'Array', @aOwner.ArrayCtor, 1, false);
 end;
 
 method EcmaScriptArrayObjectObject.Construct(context: ExecutionContext; params args: array of Object): Object;

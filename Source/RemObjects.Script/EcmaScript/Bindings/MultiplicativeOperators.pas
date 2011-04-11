@@ -10,6 +10,7 @@ uses
 type
   Operators = public partial class
   private
+    class method IsNegativeZero(aValue: Double): Boolean;
   protected
   public
     class method Multiply(aLeft, aRight: Object; ec: ExecutionContext): Object;
@@ -61,9 +62,16 @@ begin
   else 
     lWork := Math.Floor(lWork);
   lWork := lLeft - (lRight * lWork);
-  if (lWork = 0.0) and (lLeft < 0) then
+  if Double.IsInfinity(lRight) then
+    lWork := lLeft;
+  if (lWork = 0.0) and (lLeft < 0) or IsNegativeZero(lLeft) then
     lWork := - lWork;
   result := lWork;
+end;
+
+class method Operators.IsNegativeZero(aValue: Double): Boolean;
+begin
+  exit (aValue = 0.0) and Double.IsNegativeInfinity(1.0 / aValue) 
 end;
 
 end.

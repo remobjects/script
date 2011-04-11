@@ -263,10 +263,7 @@ begin
   result := Exception(arg);
   if assigned(result) then exit;
 
-  if arg <> nil then exit new ScriptRuntimeException(arg);
-  
-  if arg = nil then arg := 'empty exception';
-  exit new Exception(arg.ToString);
+  exit new ScriptRuntimeException(arg);
 end;
 
 class method ScriptRuntimeException.Unwrap(arg: Object): Object;

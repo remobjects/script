@@ -37,6 +37,13 @@ type
     method RaiseNativeError(e: NativeErrorType; msg: string);
     class var Method_RaiseNativeError: System.Reflection.MethodInfo := typeof(GlobalObject).GetMethod('RaiseNativeError'); readonly;
   end;  
+
+  EcmaScriptExceptionFunctionObject = class(EcmaScriptFunctionObject)
+  private
+  public
+    method Call(context: ExecutionContext; params args: array of Object): Object; override;
+    method CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object; override;
+  end;
 implementation
 
 method GlobalObject.CreateError: EcmaScriptObject;
@@ -44,11 +51,11 @@ begin
   result := EcmaScriptObject(Get(nil, 0, 'Error'));
   if result <> nil then exit;
 
-  result := new EcmaScriptFunctionObject(self, 'Error', @ErrorCtor, 1, &Class := 'Error');
+  result := new EcmaScriptExceptionFunctionObject(self, 'Error', @ErrorCtor, 1, &Class := 'Error');
   Values.Add('Error', PropertyValue.NotEnum(Result));
 
   ErrorPrototype := new EcmaScriptObject(self, &Class := 'Error'); 
-  ErrorPrototype.values.Add('constructor', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'Error', @ErrorCtor, 1)));
+  ErrorPrototype.values.Add('constructor', PropertyValue.NotEnum(result));
   ErrorPrototype.Prototype := ObjectPrototype;
   result.Values['prototype'] := PropertyValue.NotAllFlags(ErrorPrototype);
   ErrorPrototype.Values.Add('toString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toString', @ErrorToString, 0)));
@@ -60,8 +67,9 @@ end;
 method GlobalObject.ErrorCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   var lMessage := if 0 = Length(args) then nil else Utilities.GetArgAsString(args, 0, aCaller);
-  result := new EcmaScriptObject(self, ErrorPrototype, &Class := 'Error');
-  EcmaScriptObject(result).AddValue('message', lMessage);
+  var lObj := EcmaScriptObject(aSelf);
+  lObj.AddValue('message', lMessage);
+  exit lObj;
 end;
 
 method GlobalObject.ErrorToString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
@@ -78,63 +86,63 @@ end;
 
 method GlobalObject.CreateNativeError: EcmaScriptObject;
 begin
-  EvalError := new EcmaScriptFunctionObject(self, 'EvalError', @ErrorCtor, 1, Prototype := ErrorPrototype);
-  EvalError.Values['name'] := PropertyValue.NotDeleteAndReadOnly('EvalError');
+  EvalError := new EcmaScriptExceptionFunctionObject(self, 'EvalError', @ErrorCtor, 1, Prototype := ErrorPrototype);
   Values.Add('EvalError', PropertyValue.NotEnum(EvalError));
 
   var lPrototype := new EcmaScriptObject(self, &Class := 'EvalError');
   lPrototype.Values.Add('constructor', PropertyValue.NotEnum(result));
   lPrototype.Prototype := ErrorPrototype;
+  lPrototype.Values['name'] := PropertyValue.NotDeleteAndReadOnly('EvalError');
   EvalError.Values['prototype'] := PropertyValue.NotAllFlags(lPrototype);
   EvalError.Prototype := lPrototype;
 
   
-  RangeError := new EcmaScriptFunctionObject(self, 'RangeError', @ErrorCtor, 1, Prototype := ErrorPrototype);
-  RangeError.Values['name'] := PropertyValue.NotDeleteAndReadOnly('RangeError');
+  RangeError := new EcmaScriptExceptionFunctionObject(self, 'RangeError', @ErrorCtor, 1, Prototype := ErrorPrototype);
   Values.Add('RangeError', PropertyValue.NotEnum(RangeError));
   
 
   lPrototype := new EcmaScriptObject(self, &Class := 'RangeError');
   lPrototype.Values.Add('constructor', PropertyValue.NotEnum(result));
+  lPrototype.Values['name'] := PropertyValue.NotDeleteAndReadOnly('RangeError');
   lPrototype.Prototype := ErrorPrototype;
   RangeError.Values['prototype'] := PropertyValue.NotAllFlags(lPrototype);
   RangeError.Prototype := lPrototype;
 
-  ReferenceError := new EcmaScriptFunctionObject(self, 'ReferenceError', @ErrorCtor, 1, Prototype := ErrorPrototype);
-  ReferenceError.Values['name'] := PropertyValue.NotDeleteAndReadOnly('ReferenceError');
+  ReferenceError := new EcmaScriptExceptionFunctionObject(self, 'ReferenceError', @ErrorCtor, 1, Prototype := ErrorPrototype);
   Values.Add('ReferenceError', PropertyValue.NotEnum(ReferenceError));
     
   lPrototype := new EcmaScriptObject(self, &Class := 'ReferenceError');
+  lPrototype.Values['name'] := PropertyValue.NotDeleteAndReadOnly('ReferenceError');
   lPrototype.Values.Add('constructor', PropertyValue.NotEnum(result));
   lPrototype.Prototype := ErrorPrototype;
   ReferenceError.Values['prototype'] := PropertyValue.NotAllFlags(lPrototype);
   ReferenceError.Prototype := lPrototype;
 
-  SyntaxError := new EcmaScriptFunctionObject(self, 'SyntaxError', @ErrorCtor, 1, Prototype := ErrorPrototype);
-  SyntaxError.Values['name'] := PropertyValue.NotDeleteAndReadOnly('SyntaxError');
+  SyntaxError := new EcmaScriptExceptionFunctionObject(self, 'SyntaxError', @ErrorCtor, 1, Prototype := ErrorPrototype);
   Values.Add('SyntaxError', PropertyValue.NotEnum(SyntaxError));
   
   lPrototype := new EcmaScriptObject(self, &Class := 'SyntaxError');
+  lPrototype.Values['name'] := PropertyValue.NotDeleteAndReadOnly('SyntaxError');
   lPrototype.Values.Add('constructor', PropertyValue.NotEnum(result));
   lPrototype.Prototype := ErrorPrototype;
   SyntaxError.Values['prototype'] := PropertyValue.NotAllFlags(lPrototype);
   SyntaxError.Prototype := lPrototype;
 
-  TypeError := new EcmaScriptFunctionObject(self, 'TypeError', @ErrorCtor, 1, Prototype := ErrorPrototype);
-  TypeError.Values['name'] := PropertyValue.NotDeleteAndReadOnly('TypeError');
+  TypeError := new EcmaScriptExceptionFunctionObject(self, 'TypeError', @ErrorCtor, 1, Prototype := ErrorPrototype);
   Values.Add('TypeError', PropertyValue.NotEnum(TypeError));
   
   lPrototype := new EcmaScriptObject(self, &Class := 'TypeError');
+  lPrototype.Values['name'] := PropertyValue.NotDeleteAndReadOnly('TypeError');
   lPrototype.Values.Add('constructor', PropertyValue.NotEnum(result));
   lPrototype.Prototype := ErrorPrototype;
   TypeError.Values['prototype'] := PropertyValue.NotAllFlags(lPrototype);
   TypeError := lPrototype;
   
-  URIError := new EcmaScriptFunctionObject(self, 'URIError', @ErrorCtor, 1, Prototype := ErrorPrototype);
-  URIError.Values['name'] := PropertyValue.NotDeleteAndReadOnly('URIError');  
+  URIError := new EcmaScriptExceptionFunctionObject(self, 'URIError', @ErrorCtor, 1, Prototype := ErrorPrototype);
   Values.Add('URIError', PropertyValue.NotEnum(URIError));
   
   lPrototype := new EcmaScriptObject(self, &Class := 'URIError');
+  lPrototype.Values['name'] := PropertyValue.NotDeleteAndReadOnly('URIError');  
   lPrototype.Values.Add('constructor', PropertyValue.NotEnum(result));
   lPrototype.Prototype := ErrorPrototype;
   URIError.Values['prototype'] := PropertyValue.NotAllFlags(lPrototype);
@@ -166,6 +174,16 @@ begin
   var lMessage := arg;
   result := new EcmaScriptObject(self, proto, &Class := proto.Class);
   EcmaScriptObject(result).AddValue('message', lMessage);
+end;
+
+method EcmaScriptExceptionFunctionObject.Call(context: ExecutionContext; params args: array of Object): Object;
+begin
+  exit Construct(context, args);
+end;
+
+method EcmaScriptExceptionFunctionObject.CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object;
+begin
+  exit Construct(context, args);
 end;
 
 end.

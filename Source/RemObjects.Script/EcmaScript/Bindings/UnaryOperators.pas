@@ -38,8 +38,11 @@ end;
 class method Operators.Minus(aData: Object; ec: ExecutionContext): OBject;
 begin
   if aData is Integer then begin
-    if Integer(aData) = 0 then
-      exit - 0.0;
+    if Integer(aData) = 0 then begin
+      var d: Double := 0;
+      d := -d;
+      exit d;
+    end;
     exit - Integer(aData);
   end;
   exit -Utilities.GetObjAsDouble(aData, ec);
