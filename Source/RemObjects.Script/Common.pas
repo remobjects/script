@@ -282,7 +282,7 @@ end;
 method ScriptScope.GetItems: IEnumerable<KeyValuePair<String, Object>>;
 begin
   for each el in Bag do begin
-    yield new KeyValuePair<string, object>(el.Key, if el.Value.Value = nil then el.Value.Value else el.Value);
+    yield new KeyValuePair<string, object>(el.Key, if el.Value.Value <> nil then el.Value:Value else RemObjects.Script.EcmaScript.Undefined.Instance);
   end;
 end;
 
@@ -293,7 +293,8 @@ end;
 
 method ScriptScope.GetVariable(name: String): Object;
 begin
-  exit Bag[name];
+  var lWork := Bag[name];
+  if lWork = nil then exit RemObjects.Script.EcmaScript.Undefined.Instance else lWork.Value;
 end;
 
 method ScriptScope.GetVariableNames: IEnumerable<String>;

@@ -223,9 +223,9 @@ begin
   else begin
     lVal := Utilities.GetArgAsString(Args, 0, aCaller);
     if Length(Args) < 2 then
-      lRadix := 10
+      lRadix := 0
     else if (args[1] = nil) or (args[1] = Undefined.Instance) then 
-      lRadix := 10
+      lRadix := 0
     else 
       lRadix := Utilities.GetArgAsInteger(args, 1, aCaller);
   end;
@@ -277,22 +277,21 @@ end;
 
 method GlobalObject.parseFloat(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
 begin
-  var lVal: String;
-  if (Length(args) < 1) or (args[1] = nil) or (args[1] = Undefined.Instance) then 
-    lVal := '0'
-  else lVal := Utilities.GetArgAsString(args, 0, aCaller);
+  var lVal := Utilities.GetArgAsString(args, 0, aCaller);
+  if assigned(lVal) then lVal := lVal.Trim;
+  if lVal = '' then exit Double.NaN; 
 
-  result := Double.Parse(lVal, System.Globalization.NumberFormatInfo.InvariantInfo);
+  result := Utilities.GetObjAsDouble(lVal, aCaller);
 end;
 
 method GlobalObject.isNaN(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
 begin
-  exit Double.IsNaN(Utilities.GetObjAsDouble(args[0], aCaller));
+  exit Double.IsNaN(Utilities.GetArgAsDouble(args, 0, aCaller));
 end;
 
 method GlobalObject.isFinite(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
 begin
-  var lVal := Convert.ToDouble(args[0]);
+  var lVal := Utilities.GetArgAsDouble(args, 0, aCaller);
   exit not Double.IsInfinity(lVal) and not Double.IsNaN(lVal);
 end;
 
@@ -387,7 +386,8 @@ end;
 
 method GlobalObject.decodeURI(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
 begin
-  exit Utilities.UrlDecode(Utilities.GetArgAsString(args, 0, aCaller));
+  result := Utilities.UrlDecode(Utilities.GetArgAsString(args, 0, aCaller));
+  if result = nil then RaiseNativeError(NativeErrorType.URIError, 'Invalid input');
 end;
 
 method GlobalObject.encodeURIComponent(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
@@ -397,7 +397,8 @@ end;
 
 method GlobalObject.decodeURIComponent(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
 begin
-  exit Utilities.UrlDecode(Utilities.GetArgAsString(args, 0, aCaller));
+  result := Utilities.UrlDecode(Utilities.GetArgAsString(args, 0, aCaller));
+  if result = nil then RaiseNativeError(NativeErrorType.URIError, 'Invalid input');
 end;
 
 method GlobalObject.ObjectgetPrototypeOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
@@ -643,11 +644,11 @@ begin
           inc(i);
 
           
-          if Int32.TryParse(lWork.Substring(i, 4), System.Globalization.NumberStyles.HexNumber, System.Globalization.NumberFormatInfo.InvariantInfo, out lTmp) then
+          if Int32.TryParse(lWork.Substring(i, 4), System.Globalization.NumberStyles.AllowHexSpecifier, System.Globalization.NumberFormatInfo.InvariantInfo, out lTmp) then
             sb.Append(char(lTmp));
           inc(i, 4);
         end else begin
-          if Int32.TryParse(lWork.Substring(i, 2), System.Globalization.NumberStyles.HexNumber, System.Globalization.NumberFormatInfo.InvariantInfo, out lTmp) then
+          if Int32.TryParse(lWork.Substring(i, 2), System.Globalization.NumberStyles.AllowHexSpecifier, System.Globalization.NumberFormatInfo.InvariantInfo, out lTmp) then
             sb.Append(char(lTmp));
           inc(i, 2);
         end;

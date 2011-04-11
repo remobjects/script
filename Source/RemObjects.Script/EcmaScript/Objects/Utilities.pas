@@ -136,7 +136,7 @@ begin
     TypeCode.String: begin
        arg := String(arg).Trim();
        if not (if string(arg).StartsWith('0x', StringComparison.InvariantCultureIgnoreCase) then
-         Int32.TryParse(string(arg).Substring(2), System.Globalization.NumberStyles.HexNumber, System.Globalization.NumberFormatInfo.InvariantInfo, out result)
+         Int32.TryParse(string(arg).Substring(2), System.Globalization.NumberStyles.AllowHexSpecifier, System.Globalization.NumberFormatInfo.InvariantInfo, out result)
        else
           Int32.TryParse(string(arg), out result)) then begin
         var lWork: Double := Utilities.ParseDouble(string(arg));
@@ -171,7 +171,7 @@ begin
     TypeCode.String: begin
        arg := String(arg).Trim();
        if not (if string(arg).StartsWith('0x', StringComparison.InvariantCultureIgnoreCase) then
-         Int64.TryParse(string(arg).Substring(2), System.Globalization.NumberStyles.HexNumber, System.Globalization.NumberFormatInfo.InvariantInfo, out result)
+         Int64.TryParse(string(arg).Substring(2), System.Globalization.NumberStyles.AllowHexSpecifier, System.Globalization.NumberFormatInfo.InvariantInfo, out result)
        else
           Int64.TryParse(string(arg), out result)) then
         Result := 0;
@@ -306,10 +306,13 @@ begin
       ms.WriteByte(32);
       inc(i);
     end else
-    if (s[i] = '%') and (i +2 < s.Length) then begin
+    if (s[i] = '%') then begin
+        if not (i +2 < s.Length)  then exit nil;
        var b: Byte;
-       if byte.TryParse(s[i+1]+s[i+2], System.Globalization.NumberStyles.HexNumber, System.Globalization.NumberFormatInfo.InvariantInfo, out b) then
-         ms.Writebyte(b);
+       if byte.TryParse(s[i+1]+s[i+2], System.Globalization.NumberStyles.AllowHexSpecifier, System.Globalization.NumberFormatInfo.InvariantInfo, out b) then
+         ms.Writebyte(b)
+        else
+          exit nil;
        inc(i, 3);
     end else begin
       ms.WriteByte(byte(s[i]));
@@ -423,10 +426,17 @@ begin
   end;
   if s.StartsWith('0x', StringComparison.InvariantCultureIgnoreCase) then begin
     var v: Int64;
-    if Int64.TryParse(s.Substring(2), System.Globalization.NumberStyles.HexNumber, System.Globalization.NumberFormatInfo.InvariantInfo, out v) then
+    if Int64.TryParse(s.Substring(2), System.Globalization.NumberStyles.AllowHexSpecifier, System.Globalization.NumberFormatInfo.InvariantInfo, out v) then
       exit v;
   end;
 
+  for j: Integer := s.Length -1 downto 0 do begin
+    if s[j] in ['0'..'9','.', 'e', 'E', '+', '-'] then begin
+      if j <> s.Length -1 then 
+        s := s.Substring(0, j+1);
+      break;
+    end;
+  end;
   var lExp := s.IndexOfAny(['e','E']);
   if lExp <> -1 then begin
     var lTmp := s.Substring(lExp+1);

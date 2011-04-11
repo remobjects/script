@@ -42,7 +42,7 @@ end;
 
 class method Operators.Divide(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
-  if (aLeft is Int32) and (aRight is Int32) and (Integer(aRight) <> 0) and (Integer(aLeft) <> 0) then begin
+  if (aLeft is Int32) and (aRight is Int32) and (Integer(aRight) <> 0) and (Integer(aLeft) <> 0) and (Integer(aLeft) mod Integer(aright) = 0) then begin
     exit Integer(aLeft) div Integer(aRight);
   end;
   
