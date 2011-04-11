@@ -184,7 +184,7 @@ end;
 
 method GlobalObject.InnerEval(aCaller: ExecutionContext; aStrict: Boolean; aSelf: Object; params args: Array of object): Object;
 begin
-  if (args.Length < 0) or (args[0] is not String) then exit Undefined.Instance;
+  if (args.Length < 0) or (args[0] is not String) then exit if args.Length= 0 then Undefined.Instance else args[0];
   var lScript := string(args[0]);
 
   var lEx := aCaller;
@@ -198,14 +198,20 @@ begin
   lTokenizer.SetData(lScript, '<eval>');
   lTokenizer.Error -= lParser.fTok_Error;
   
-  var lElement := lParser.Parse(lTokenizer);
-  for each el in lParser.Messages do begin
-    if el.IsError then 
-      RaiseNativeError(NativeErrorType.SyntaxError, el.IntToString());
+  try
+    var lElement := lParser.Parse(lTokenizer);
+    for each el in lParser.Messages do begin
+      if el.IsError then 
+        RaiseNativeError(NativeErrorType.SyntaxError, el.IntToString());
+    end;
+    var lEval: InternalDelegate := InternalDelegate(fParser.EvalParse(aCaller.Strict, lScript));
+    exit lEval(lEx, aSelf, []);
+  except
+    on e: ScriptParsingException do begin
+      RaiseNativeError(NativeErrorType.SyntaxError, e.Message);
+    end;
   end;
   
-  var lEval: InternalDelegate := InternalDelegate(fParser.EvalParse(aCaller.Strict, lScript));
-  exit lEval(lEx, aSelf, []);
 end;
 
 method GlobalObject.parseInt(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
@@ -215,23 +221,24 @@ begin
   if Length(args) < 1 then 
     lVal := '0'
   else begin
-    lVal := Args[0].ToString;
+    lVal := Utilities.GetArgAsString(Args, 0, aCaller);
     if Length(Args) < 2 then
       lRadix := 10
     else if (args[1] = nil) or (args[1] = Undefined.Instance) then 
       lRadix := 10
     else 
-      lRadix := Convert.ToInt32(args[1]);
+      lRadix := Utilities.GetArgAsInteger(args, 1, aCaller);
   end;
   var lSign: Integer := 1;
+  lVal := lVal.Trim();
   if lVal.StartsWith('-') then begin
     lSign := -1;
     lVal := lVal.Substring(1);
   end else if lVal.StartsWith('+') then
     lVal := lVal.Substring(1);
 
-  if lRadix = 16 then
-    if lVal.StartsWith('0x', StringComparison.InvariantCultureIgnoreCase) then lVal := lVal.Substring(2);
+  if (lRadix = 0) or (lRadix = 16) then
+    if lVal.StartsWith('0x', StringComparison.InvariantCultureIgnoreCase) then begin lRadix := 16; lVal := lVal.Substring(2); end;
   if lRadix = 0 then lRadix := 10;
   if (lRadix < 2) or (lRadix > 36) then exit Double.NaN;
   for i: Integer := 0 to lVal.Length -1 do begin
@@ -273,7 +280,7 @@ begin
   var lVal: String;
   if (Length(args) < 1) or (args[1] = nil) or (args[1] = Undefined.Instance) then 
     lVal := '0'
-  else lVal := args[0].ToString;
+  else lVal := Utilities.GetArgAsString(args, 0, aCaller);
 
   result := Double.Parse(lVal, System.Globalization.NumberFormatInfo.InvariantInfo);
 end;

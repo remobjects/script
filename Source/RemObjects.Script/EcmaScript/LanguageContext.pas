@@ -95,6 +95,7 @@ type
     fExecutionContext: LocalBuilder;
     fILG: ILGenerator;
     fLocals: List<LocalBuilder>;
+    fDisableResult: Boolean;
     fStatementStack: List<Statement>;
     fBreak,
     fContinue: nullable Label;
@@ -232,6 +233,8 @@ begin
   var lUseStrict := fUseStrict;
   var lLoops := fStatementStack;
   fStatementStack := new List<Statement>;
+  var lOldDisableResults := fDisableResult;
+  fDisableResult := aFunction <> nil;
   try
     if aElements.Count <> 0 then begin
       if aElements.Count > 1 then begin
@@ -242,8 +245,7 @@ begin
           end;
         end;
       end;
-    end else
-      aElements.Add(new ReturnStatement(new PositionPair(), new IdentifierExpression(new PositionPair, 'undefined')));
+    end; 
 
     var lOldLocals := fLocals;
     fLocals := new List<LocalBuilder>;
@@ -430,6 +432,7 @@ begin
     exit lMethod.CreateDelegate(typeof(InternalFunctionDelegate));
     exit lMethod.CreateDelegate(typeof(InternalDelegate));
   finally
+    fDisableResult := lOldDisableResults;
     fUseStrict := lUseStrict;
     fStatementStack := lLoops;
   end;
@@ -461,6 +464,7 @@ begin
     end;
 
     ElementType.ReturnStatement: begin
+      if not fDisableResult then raise new ScriptParsingException(el.PositionPair.File, el.PositionPair, EcmaScriptErrorKind.CannotReturnHere);
       if ReturnStatement(el).ExpressionElement = nil then 
         filg.Emit(Opcodes.Call, Undefined.Method_Instance)
       else begin
@@ -484,7 +488,10 @@ begin
     ElementType.ExpressionStatement: begin
       WriteExpression(ExpressionStatement(el).ExpressionElement);
       CallGetValue(ExpressionStatement(el).ExpressionElement.Type);
-      filg.Emit(Opcodes.Stloc, fResultVar);
+      if fDisableResult then
+        filg.Emit(Opcodes.Pop)
+      else
+        filg.Emit(Opcodes.Stloc, fResultVar);
     end;
     ElementType.DebuggerStatement: begin
       WriteDebugStack;
@@ -1622,6 +1629,8 @@ begin
     filg.Emit(Opcodes.Ldc_I4_M1);
     filg.Emit(Opcodes.Stloc, lData.FinallyState);
     filg.MarkLabel(lData.FinallyLabel);
+    var lOldDisableResult := fDisableResult;
+    fDisableResult := true;
     WriteStatement(el.Finally);
     filg.Emit(Opcodes.Ldloc, lData.FinallyState);
     filg.Emit(Opcodes.Switch, lData.JumpTable.ToArray);
@@ -1630,6 +1639,7 @@ begin
     WriteStatement(el.Finally);
     filg.Emit(Opcodes.Rethrow);
     filg.EndExceptionBlock();
+    fDisableResult := lOldDisableResult;
   end;
 end;
 

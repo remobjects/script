@@ -62,8 +62,9 @@ begin
   else 
     lWork := Math.Floor(lWork);
   lWork := lLeft - (lRight * lWork);
-  if Double.IsInfinity(lRight) then
+  if Double.IsInfinity(lRight) and not Double.IsInfinity(lLeft) then begin
     lWork := lLeft;
+  end else
   if (lWork = 0.0) and (lLeft < 0) or IsNegativeZero(lLeft) then
     lWork := - lWork;
   result := lWork;

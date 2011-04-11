@@ -19,6 +19,43 @@ Conformance\07_Lexical_Conventions\7.8_Literals\7.8.5_Regular_Expression_Literal
 Conformance\07_Lexical_Conventions\7.8_Literals\7.8.5_Regular_Expression_Literals\S7.8.5_A2.5_T4.js Skipping regex issues
 Conformance\07_Lexical_Conventions\7.8_Literals\7.8.5_Regular_Expression_Literals\S7.8.5_A2.5_T5.js Skipping regex issues
 Conformance\07_Lexical_Conventions\7.8_Literals\7.8.5_Regular_Expression_Literals\S7.8.5_A2.5_T6.js Skipping regex issues
+ Ecmascript 5 Invalid tests:
 
 Conformance\08_Types\8.3_The_Boolean_Type\S8.3_A1_T1.js Not a valid ec5 testcase
 Conformance\08_Types\8.7_The_Reference_Type\S8.7_A5_T2.js not a valid ec5 testcase
+Conformance\15_Native_ECMA_Script_Objects\15.1_The_Global_Object\15.1.1_Value_Properties_of_the_Global_Object\15.1.1.1_NaN\15.1.1.1_A2_T1.js not a valid ec5 testcase
+Conformance\15_Native_ECMA_Script_Objects\15.1_The_Global_Object\15.1.1_Value_Properties_of_the_Global_Object\15.1.1.1_NaN\15.1.1.1_A2_T2.js not a valid ec5 testcase
+Conformance\15_Native_ECMA_Script_Objects\15.1_The_Global_Object\15.1.1_Value_Properties_of_the_Global_Object\15.1.1.2_Infinity\15.1.1.2_A2_T1.js not a valid ec5 testcase
+Conformance\15_Native_ECMA_Script_Objects\15.1_The_Global_Object\15.1.1_Value_Properties_of_the_Global_Object\15.1.1.3_undefined\15.1.1.3_A2_T1.js not a valid ec5 testcase
+Conformance\15_Native_ECMA_Script_Objects\15.1_The_Global_Object\15.1.1_Value_Properties_of_the_Global_Object\15.1.1.3_undefined\15.1.1.3_A2_T2.js not a valid ec5 testcase
+Conformance\15_Native_ECMA_Script_Objects\15.3_Function_Objects\15.3.4_Properties_of_the_Function_Prototype_Object\15.3.4.3_Function.prototype.apply\15.3.4.3_A6_T4.js not a valid ec5 testcase
+Conformance\15_Native_ECMA_Script_Objects\15.4_Array_Objects\15.4.4_Properties_of_the_Array_Prototype_Object\15.4.4.2_Array_prototype_toString\15.4.4.2_A2_T1.js not a valid ec5 testcase
+Conformance\15_Native_ECMA_Script_Objects\15.4_Array_Objects\15.4.4_Properties_of_the_Array_Prototype_Object\15.4.4.3_Array_prototype_toLocaleString\15.4.4.3_A2_T1.js not a valid ec5 testcase
+Conformance\15_Native_ECMA_Script_Objects\15.10_RegExp_Objects\15.10.6_Properties_of_the_RegExp_Prototype_Object\15.10.6_A2.js not a valid ec5 testcase
+Conformance\15_Native_ECMA_Script_Objects\15.11_Error_Objects\15.11.1_The_Error_Constructor_Called_as_a_Function\15.11.1.1_A1_T1.js not a valid ec5 testcase
+Conformance\11_Expressions\11.1_Primary_Expressions\11.1.5_Object_Initializer\11.1.5_A4.1.js not a valid ec5 testcase
+Conformance\11_Expressions\11.1_Primary_Expressions\11.1.5_Object_Initializer\11.1.5_A4.2.js not a valid ec5 testcase
+Conformance\11_Expressions\11.8_Relational_Operators\11.8.2_The_Greater_than_Operator\11.8.2_A2.3_T1.js not a valid ec5 testcase
+Conformance\11_Expressions\11.8_Relational_Operators\11.8.3_The_Less_than_or_equal_Operator\11.8.3_A2.3_T1.js not a valid ec5 testcase
+Conformance\12_Statement\12.6_Iteration_Statements\12.6.4_The_for_in_Statement\12.6.4_A14_T1.js not a valid ec5 testcase
+
+
+; Allow built-in functions with a prototype
+Conformance\15_Native_ECMA_Script_Objects\15.1_The_Global_Object\15.1.2_Function_Properties_of_the_Global_Object\15.1.2.1_eval\S15.1.2.1_A4.6.js Allow built-in functions with a prototype
+Conformance\15_Native_ECMA_Script_Objects\15.1_The_Global_Object\15.1.2_Function_Properties_of_the_Global_Object\15.1.2.1_eval\S15.1.2.1_A4.7.js Allow built-in functions with a prototype
+Conformance\15_Native_ECMA_Script_Objects\15.1_The_Global_Object\15.1.2_Function_Properties_of_the_Global_Object\15.1.2.2_parseInt\S15.1.2.2_A9.6.js Allow built-in functions with a prototype
+Conformance\15_Native_ECMA_Script_Objects\15.1_The_Global_Object\15.1.2_Function_Properties_of_the_Global_Object\15.1.2.2_parseInt\S15.1.2.2_A9.7.js Allow built-in functions with a prototype
+Conformance\15_Native_ECMA_Script_Objects\15.1_The_Global_Object\15.1.2_Function_Properties_of_the_Global_Object\15.1.2.3_parseFloat\S15.1.2.3_A7.6.js Allow built-in functions with a prototype
+Conformance\15_Native_ECMA_Script_Objects\15.1_The_Global_Object\15.1.2_Function_Properties_of_the_Global_Object\15.1.2.3_parseFloat\S15.1.2.3_A7.7.js Allow built-in functions with a prototype
+onformance\15_Native_ECMA_Script_Objects\15.1_The_Global_Object\15.1.2_Function_Properties_of_the_Global_Object\15.1.2.4_isNaN\S15.1.2.4_A2.6.js Allow built-in functions with a prototype
+onformance\15_Native_ECMA_Script_Objects\15.1_The_Global_Object\15.1.2_Function_Properties_of_the_Global_Object\15.1.2.4_isNaN\S15.1.2.4_A2.7.js Allow built-in functions with a prototype
+Conformance\15_Native_ECMA_Script_Objects\15.1_The_Global_Object\15.1.2_Function_Properties_of_the_Global_Object\15.1.2.5_isFinite\S15.1.2.5_A2.6.js Allow built-in functions with a prototype
+Conformance\15_Native_ECMA_Script_Objects\15.1_The_Global_Object\15.1.2_Function_Properties_of_the_Global_Object\15.1.2.5_isFinite\S15.1.2.5_A2.7.js Allow built-in functions with a prototype
+Conformance\15_Native_ECMA_Script_Objects\15.1_The_Global_Object\15.1.3_URI_Handling_Function_Properties\15.1.3.1_decodeURI\S15.1.3.1_A5.6.js Allow built-in functions with a prototype
+Conformance\15_Native_ECMA_Script_Objects\15.1_The_Global_Object\15.1.3_URI_Handling_Function_Properties\15.1.3.1_decodeURI\S15.1.3.1_A5.7.js Allow built-in functions with a prototype
+onformance\15_Native_ECMA_Script_Objects\15.1_The_Global_Object\15.1.3_URI_Handling_Function_Properties\15.1.3.2_decodeURIComponent\S15.1.3.2_A5.6.js Allow built-in functions with a prototype
+onformance\15_Native_ECMA_Script_Objects\15.1_The_Global_Object\15.1.3_URI_Handling_Function_Properties\15.1.3.2_decodeURIComponent\S15.1.3.2_A5.7.js Allow built-in functions with a prototype
+Conformance\15_Native_ECMA_Script_Objects\15.1_The_Global_Object\15.1.3_URI_Handling_Function_Properties\15.1.3.3_encodeURI\S15.1.3.3_A5.6.js Allow built-in functions with a prototype
+Conformance\15_Native_ECMA_Script_Objects\15.1_The_Global_Object\15.1.3_URI_Handling_Function_Properties\15.1.3.3_encodeURI\S15.1.3.3_A5.7.js Allow built-in functions with a prototype
+Conformance\15_Native_ECMA_Script_Objects\15.1_The_Global_Object\15.1.3_URI_Handling_Function_Properties\15.1.3.4_encodeURIComponent\S15.1.3.4_A5.6.js Allow built-in functions with a prototype
+Conformance\15_Native_ECMA_Script_Objects\15.1_The_Global_Object\15.1.3_URI_Handling_Function_Properties\15.1.3.4_encodeURIComponent\S15.1.3.4_A5.7.js Allow built-in functions with a prototype
