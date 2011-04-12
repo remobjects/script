@@ -295,7 +295,8 @@ end;
 method ScriptScope.GetVariable(name: String): Object;
 begin
   var lWork := Bag[name];
-  if lWork = nil then exit RemObjects.Script.EcmaScript.Undefined.Instance else lWork.Value;
+
+  exit  (iif(assigned(lWork), lWork.Value, RemObjects.Script.EcmaScript.Undefined.Instance));
 end;
 
 method ScriptScope.GetVariableNames: IEnumerable<String>;
