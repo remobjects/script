@@ -241,6 +241,7 @@ end;
 class method ScriptRuntimeException.SafeEcmaScriptToObject(o: Object): string;
 begin
   try
+    if o = nil then exit 'Error';
     exit o.ToString;
   except
     exit 'Error';

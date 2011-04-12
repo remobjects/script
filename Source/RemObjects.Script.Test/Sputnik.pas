@@ -211,7 +211,11 @@ end;
 
 method SputnikTest.Run(Data: SputnikTest);
 begin
+  try
   Owner.RunTest(Name);
+  except
+    raise;
+  end;
 end;
 
 

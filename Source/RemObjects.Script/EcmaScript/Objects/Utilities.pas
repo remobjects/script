@@ -26,7 +26,8 @@ type
     class method DoubleToString(value: Double): String;
     class method AllZeroesAhead(arr: array of Char; i: Int32): Boolean;
   public
-    class method ParseDouble(s: String): Double;
+    class var fEncoding : Encoding := new UTF8Encoding(false, true); readonly;
+    class method ParseDouble(s: String;  allowHex: Boolean := true): Double;
     class method UrlEncode(s: String): String;
     class method UrlEncodeComponent(s: String): String;
     class method UrlDecode(s: String): String;
@@ -278,7 +279,7 @@ end;
 class method Utilities.UrlEncode(s: String): String;
 begin
   if String.IsNullOrEmpty(s) then exit String.Empty;
-  var bytes := Encoding.UTF8.GetBytes(s);
+  var bytes := fEncoding.GetBytes(s);
   var res := new StringBuilder;
   for i: Integer := 0 to bytes.Length -1 do begin
     case bytes[i] of
@@ -319,14 +320,15 @@ begin
       inc(i);
     end;
   end;
-  exit Encoding.UTF8.GetString(ms.GetBuffer, 0, ms.Length);
+
+  exit fEncoding.GetString(ms.GetBuffer, 0, ms.Length);
 end;
 
 
 class method Utilities.UrlEncodeComponent(s: String): String;
 begin
 if String.IsNullOrEmpty(s) then exit String.Empty;
-  var bytes := Encoding.UTF8.GetBytes(s);
+  var bytes := fEncoding.GetBytes(s);
   var res := new StringBuilder;
   for i: Integer := 0 to bytes.Length -1 do begin
     case bytes[i] of
@@ -408,7 +410,7 @@ begin
   exit false;
 end;
 
-class method Utilities.ParseDouble(s: String): Double;
+class method Utilities.ParseDouble(s: String; allowHex: Boolean := true): Double;
 var 
   lNegative: Boolean := false;
 begin
@@ -418,34 +420,43 @@ begin
     s := s.Substring(1);
     lNegative := true;
   end;
-  if String.Compare(s, 'Infinity', StringComparison.InvariantCultureIgnoreCase) =0 then begin
+  if  s.StartsWith('Infinity', StringComparison.InvariantCulture) then begin
     if lNegative then 
       exit Double.NegativeInfinity
     else
       exit Double.PositiveInfinity;
   end;
-  if s.StartsWith('0x', StringComparison.InvariantCultureIgnoreCase) then begin
+  if allowHex and s.StartsWith('0x', StringComparison.InvariantCultureIgnoreCase) then begin
     var v: Int64;
     if Int64.TryParse(s.Substring(2), System.Globalization.NumberStyles.AllowHexSpecifier, System.Globalization.NumberFormatInfo.InvariantInfo, out v) then
       exit v;
   end;
 
+  var lp := s.Length;
+  if not allowHex then
   for j: Integer := s.Length -1 downto 0 do begin
-    if s[j] in ['0'..'9','.', 'e', 'E', '+', '-'] then begin
-      if j <> s.Length -1 then 
-        s := s.Substring(0, j+1);
-      break;
+    if s[j] not in ['0'..'9','.', 'e', 'E', '+', '-'] then begin
+      lp := j;
     end;
+  end;
+  if (s.IndexOf('.') <> s.LastIndexOf('.')) and (s.LastIndexOf('.') < lp) then
+    lp := s.LastIndexOf('.');
+  var lcleaned := false;
+  if lp <> s.Length then begin
+    s := s.Substring(0, lp);
+    lcleaned := true;
   end;
   var lExp := s.IndexOfAny(['e','E']);
   if lExp <> -1 then begin
     var lTmp := s.Substring(lExp+1);
     s:= s.Substring(0, lExp);
+    if (lTmp = '') or (lTmp = '+') or (ltmp = '-') then lExp := 0 else 
     if not Int32.TryParse(lTmp, out lExp) then
       exit Double.NaN;
   end else
     lExp := 0;
   if s = '' then  begin
+    if lcleaned then exit Double.NaN;
     if lNegative then exit - 0 else exit 0;
   end;
 

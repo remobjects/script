@@ -279,9 +279,7 @@ method GlobalObject.parseFloat(aCaller: ExecutionContext;aSelf: Object; params a
 begin
   var lVal := Utilities.GetArgAsString(args, 0, aCaller);
   if assigned(lVal) then lVal := lVal.Trim;
-  if lVal = '' then exit Double.NaN; 
-
-  result := Utilities.GetObjAsDouble(lVal, aCaller);
+  result := Utilities.ParseDouble(lVal, false);
 end;
 
 method GlobalObject.isNaN(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
@@ -381,23 +379,42 @@ end;
 
 method GlobalObject.encodeURI(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
 begin
+  try
   exit Utilities.UrlEncode(Utilities.GetArgAsString(Args, 0, aCaller));
+  except
+    RaiseNativeError(NativeErrorType.URIError, 'Invalid input');
+  end;
 end;
 
 method GlobalObject.decodeURI(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
 begin
-  result := Utilities.UrlDecode(Utilities.GetArgAsString(args, 0, aCaller));
+  try
+    result := Utilities.UrlDecode(Utilities.GetArgAsString(args, 0, aCaller));
+  except
+    RaiseNativeError(NativeErrorType.URIError, 'Invalid input');
+  end;
+
   if result = nil then RaiseNativeError(NativeErrorType.URIError, 'Invalid input');
 end;
 
 method GlobalObject.encodeURIComponent(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
 begin
-  exit Utilities.UrlEncodeComponent(Utilities.GetArgAsString(Args, 0, aCaller));  
+  try
+    exit Utilities.UrlEncodeComponent(Utilities.GetArgAsString(Args, 0, aCaller));  
+  except
+    RaiseNativeError(NativeErrorType.URIError, 'Invalid input');
+  end;
+
 end;
 
 method GlobalObject.decodeURIComponent(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
 begin
-  result := Utilities.UrlDecode(Utilities.GetArgAsString(args, 0, aCaller));
+  try
+    result := Utilities.UrlDecode(Utilities.GetArgAsString(args, 0, aCaller));
+  except
+    RaiseNativeError(NativeErrorType.URIError, 'Invalid input');
+  end;
+
   if result = nil then RaiseNativeError(NativeErrorType.URIError, 'Invalid input');
 end;
 
