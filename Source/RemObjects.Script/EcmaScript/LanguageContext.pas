@@ -37,6 +37,7 @@ type
     CommentError,
     EOFInRegex,
     EOFInString,
+    EnterInRegex,
     InvalidEscapeSequence,
     UnknownCharacter,
     OnlyOneVariableAllowed,

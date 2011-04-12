@@ -22,7 +22,8 @@ type
     InvalidEscapeSequence,
     /// <summary>invalid string</summary>
     EOFInString,
-    EOFInRegex);  
+    EOFInRegex,
+    EnterInRegex);  
 
   /// <summary>contains all tokens the tokenizersupports</summary>
   TokenKind = public enum(    
@@ -1097,14 +1098,28 @@ begin
   FPos := FPos + FLen; // should be 1 at this point, the / 
   var curroffset := FPos;
   while FInput[curroffset] <> '/' do begin
+    if FInput[curroffset] in [#13, #10, #$2028,  #$2029] then begin
+      if Error <> nil then Error(self, TokenizerErrorKind.EnterInRegex, '');
+      FLen := curroffset - FPos + 1;
+      FToken := TokenKind.Error;
+      exit;
+    end;
+
     if (FInput[curroffset] = #0) and (curroffset >= FInput.Length - 4) then begin
       if Error <> nil then Error(self, TokenizerErrorKind.EOFInRegex, '');
       FLen := curroffset - FPos + 1;
       FToken := TokenKind.Error;
       exit;
     end;
-    if FInput[curroffset] = '\' then
+    if FInput[curroffset] = '\' then begin
       inc(curroffset);
+      if FInput[curroffset] in [#13, #10, #$2028,  #$2029] then begin
+        if Error <> nil then Error(self, TokenizerErrorKind.EnterInRegex, '');
+        FLen := curroffset - FPos + 1;
+        FToken := TokenKind.Error;
+        exit;
+      end;
+    end;
     inc(curroffset);
   end;
   aString := new String(FInput, FPos, curroffset - FPos);

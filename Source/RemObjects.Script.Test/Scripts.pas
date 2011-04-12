@@ -129,7 +129,7 @@ begin
   var lScript := "
   eval('var x = 1');
   y = 2;
-  return x + y;";
+  x + y;";
   assert.Equal(Object(3), ExecuteJS(lScript));
 end;
 

@@ -30,7 +30,7 @@ type
     class method ParseDouble(s: String;  allowHex: Boolean := true): Double;
     class method UrlEncode(s: String): String;
     class method UrlEncodeComponent(s: String): String;
-    class method UrlDecode(s: String): String;
+    class method UrlDecode(s: String; aComponent: Boolean): String;
     class method GetArg(arg: Array of object; &index: Integer): Object;
     class method GetArgAsEcmaScriptObject(arg: Array of object; &index: Integer; ec: ExecutionContext): EcmaScriptObject;
     class method GetArgAsInteger(arg: Array of object; &index: Integer; ec: ExecutionContext): Integer;
@@ -297,31 +297,102 @@ begin
   exit res.ToString;
 end;
 
-class method Utilities.UrlDecode(s: String): String;
+class method Utilities.UrlDecode(s: String; aComponent: Boolean): String;
 begin
   if String.IsNullOrEmpty(s) then exit String.Empty;
-  var ms := new System.IO.MemoryStream(s.Length);
+  var ms := new StringBuilder;
   var i:= 0;
   while i < s.Length do begin
-    if s[i] = '+' then begin
-      ms.WriteByte(32);
+    if not aComponent and (s[i] = '+') then begin
+      ms.Append(#32);
       inc(i);
     end else
     if (s[i] = '%') then begin
-        if not (i +2 < s.Length)  then exit nil;
+       if not (i +2 < s.Length)  then exit nil;
        var b: Byte;
-       if byte.TryParse(s[i+1]+s[i+2], System.Globalization.NumberStyles.AllowHexSpecifier, System.Globalization.NumberFormatInfo.InvariantInfo, out b) then
-         ms.Writebyte(b)
-        else
+       if 
+       (s[i+1] <> #0) and (s[i+2] <> #0) and 
+       byte.TryParse(s[i+1]+s[i+2], System.Globalization.NumberStyles.AllowHexSpecifier, System.Globalization.NumberFormatInfo.InvariantInfo, out b) then begin
+         if not aComponent and(b in [$3b, $2f, $3f, $3a, $40, $26, $3d, $2b, $24, $2c, $23]) then begin
+          ms.append(char('%'));
+          ms.append(s[i+1]);
+          ms.append(s[i+2]);
+         end else begin
+           inc(i, 3);
+           if 0 = (b and $80) then 
+             ms.append(char(b))
+           else begin
+             // 4.d.vii.1
+             var n: Integer := 0;
+             if 0 = (b and $40) then exit nil else
+             if 0 = (b and $20) then n := 2 else
+             if 0 = (b and $10) then n := 3 else
+             if 0 = (b and $8) then n := 4 else
+             exit nil;
+             if i + (3 * (n -1)) > s.Length then exit nil;
+             var Octets := new Byte[n];
+             Octets[0] := b;
+             for j: Integer := 1 to n -1 do begin
+              if s[i] <> '%' then exit nil;
+              if (s[i+1] not in ['0'..'9', 'A'..'F', 'a'..'f']) or
+                (s[i+2] not in ['0'..'9', 'A'..'F', 'a'..'f']) then exit nil;
+              if not byte.TryParse(s[i+1]+s[i+2], System.Globalization.NumberStyles.AllowHexSpecifier, System.Globalization.NumberFormatInfo.InvariantInfo, out b)  then exit nil;
+              if $80 <> (b and $c0) then exit nil;
+              Octets[j] := b;
+              inc(i, 3);
+             end;
+            var w: Integer := 
+            case n of 
+              2: Int32((octets[0] and %00011111) shl 6) or (octets[1] and %00111111);
+              3: Int32((octets[0] and %00001111) shl 12) or ((octets[1] and %00111111) shl 6) or (octets[2] and %00111111);
+              4: Int32((octets[0] and %00000111) shl 18) or ((octets[1] and %00111111) shl 12) or ((octets[2] and %00111111) shl 6) or (octets[3] and %00111111);
+            else
+              0
+            end; // case
+            if (w = 0) or (w < $80) 
+            or ((w < $800) and (n <> 2)) or
+              ((w >= $800) and (w < $10000) and (n <> 3)) or
+              ((w >= $10000) and (w < $110000) and (N <> 4))
+            then exit nil;
+            if w in [$D800 .. $DFFF] then exit nil;
+            if w <= $FFFF then
+              ms.Append(char(w))
+            else begin
+              w := w - $10000; // reencode to utf16
+              ms.Append(char($D800 + (w shr 10)));
+              ms.Append(char($DC00 + (w and $3ff)));
+            end;
+            (*
+              From RFC 3629
+              Char. number range  |        UTF-8 octet sequence
+                  (hexadecimal)    |              (binary)
+               --------------------+---------------------------------------------
+               0000 0000-0000 007F | 0xxxxxxx
+               0000 0080-0000 07FF | 110xxxxx 10xxxxxx
+               0000 0800-0000 FFFF | 1110xxxx 10xxxxxx 10xxxxxx
+               0001 0000-0010 FFFF | 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+
+
+               Implementations of the decoding algorithm above MUST protect against
+               decoding invalid sequences.  For instance, a naive implementation may
+               decode the overlong UTF-8 sequence C0 80 into the character U+0000,
+               or the surrogate pair ED A1 8C ED BE B4 into U+233B4.  Decoding
+               invalid sequences may have security consequences or cause other
+               problems.  See Security Considerations (Section 10) below.
+
+            *)
+
+           end;
+          end;
+        end else
           exit nil;
-       inc(i, 3);
     end else begin
-      ms.WriteByte(byte(s[i]));
+      ms.Append(s[i]);
       inc(i);
     end;
   end;
 
-  exit fEncoding.GetString(ms.GetBuffer, 0, ms.Length);
+  exit ms.ToString;
 end;
 
 
@@ -432,16 +503,24 @@ begin
       exit v;
   end;
 
+  var lcleaned := false;
   var lp := s.Length;
+  s := s.Trim();
+  if s.Length <> lp then begin
+    lcleaned := true;
+    lp := s.Length;
+  end;
   if not allowHex then
   for j: Integer := s.Length -1 downto 0 do begin
     if s[j] not in ['0'..'9','.', 'e', 'E', '+', '-'] then begin
       lp := j;
-    end;
+    end else if (s[j] in ['+', '-']) and (j > 0) and (s[j-1] not in ['e', 'E']) then
+      lp := j
+    else if (s[j] in ['e', 'E']) and (s.IndexOfAny(['e', 'E']) <> j) then
+      lp := j;
   end;
   if (s.IndexOf('.') <> s.LastIndexOf('.')) and (s.LastIndexOf('.') < lp) then
     lp := s.LastIndexOf('.');
-  var lcleaned := false;
   if lp <> s.Length then begin
     s := s.Substring(0, lp);
     lcleaned := true;
@@ -456,7 +535,7 @@ begin
   end else
     lExp := 0;
   if s = '' then  begin
-    if lcleaned then exit Double.NaN;
+    if lcleaned or not allowHex then exit Double.NaN;
     if lNegative then exit - 0 else exit 0;
   end;
 

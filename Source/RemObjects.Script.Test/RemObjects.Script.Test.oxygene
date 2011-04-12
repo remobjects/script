@@ -111,8 +111,13 @@
       <HintPath>$(ProgramFiles)\Reference Assemblies\Microsoft\Framework\v3.5\System.Xml.Linq.dll</HintPath>
     </Reference>
     <Reference Include="xunit">
+      <HintPath>D:\Data\Tools\xunit\xunit.dll</HintPath>
     </Reference>
     <Reference Include="xunit.extensions">
+      <HintPath>D:\Data\Tools\xunit\xunit.extensions.dll</HintPath>
+    </Reference>
+    <Reference Include="xunit.runner.utility">
+      <HintPath>D:\Data\Tools\xunit\xunit.runner.utility.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -126,8 +131,7 @@
       <Generator>SettingsSingleFileGenerator</Generator>
     </None>
     <Compile Include="Properties\Settings.Designer.pas" />
-    <Compile Include="Scripts.pas">
-    </Compile>
+    <Compile Include="Scripts.pas" />
     <Compile Include="Sputnik.pas" />
     <Compile Include="Tokenizer.pas" />
     <Compile Include="Tokenizer_DecodeString.pas" />

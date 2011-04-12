@@ -1189,6 +1189,7 @@ begin
     TokenizerErrorKind.EOFInString: Error(ParserErrorKind.EOFInString, '');
     TokenizerErrorKind.InvalidEscapeSequence: Error(ParserErrorKind.InvalidEscapeSequence, '');
     TokenizerErrorKind.UnknownCharacter: Error(ParserErrorKind.UnknownCharacter, '');
+    TokenizerErrorKind.EnterInRegex: Error(ParserErrorKind.EnterInRegex, '');
   else
     Error(ParserErrorKind(Int32.MaxValue), '');
   end; // case

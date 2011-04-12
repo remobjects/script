@@ -275,8 +275,13 @@ begin
     lObj := new EcmaScriptRegexpObject(self, Utilities.GetArgAsString(args,0, aCaller), '');
   end else lObj := EcmaScriptRegexpObject(args[0]);
 
-  var lMatch := lObj.RegEx.Match(lSelf);
+  try
+  var lMatch := new System.Text.RegularExpressions.Regex(lObj.fPattern, lObj.fOptions).Match(lSelf);
   exit iif((lMatch = nil) or not lMatch.Success, -1, lMatch.Index);
+  except
+    on e: Exception do 
+    RaiseNativeError(NativeErrorType.SyntaxError, e.Message);
+  end;
 end;
 
 method GlobalObject.StringMatch(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
@@ -287,12 +292,29 @@ begin
     lObj := new EcmaScriptRegexpObject(self, Utilities.GetArgAsString(args,0, aCaller), '');
   end else lObj := EcmaScriptRegexpObject(args[0]);
   if not lObj.GlobalVal then exit RegExpExec(aCaller, lObj, lSelf);
-  var lRes := lObj.RegEx.Matches(lSelf);
+  
+  var lRealResult := new EcmaScriptArrayObject(self, 0);
 
-  var lRealResult := new EcmaScriptArrayObject(self, ValueOrDefault(lRes:Count));
-  for i: Integer := 0 to lRealResult.Items.Count -1 do begin
-    lRealResult.Items[i] := MatchToArray(lRes[i]);
+  lObj.LastIndex := 0;
+  var lLastMatch := true;
+  var lPrevLastIndex := 0;
+  while lLastMatch do begin
+    var lRes := EcmaScriptArrayObject(RegExpExec(aCaller, lObj, lSelf));
+    if lRes = nil then 
+      lLastMatch := false
+    else begin
+      var lThisIndex := Utilities.GetObjAsInteger(lObj.Get(aCaller, 0, 'lastIndex'), aCaller);
+      if lThisIndex = lPrevLastIndex then begin
+        lPrevLastIndex := lThisIndex + 1;
+        lOBj.LastIndex := lPrevLastIndex;
+      end else
+        lPrevLastIndex := lThisIndex;
+      var lMatchStr := lRes.Get(aCaller, 2, '0');
+      lRealResult.AddValue(lMatchStr);
+    end;
   end;
+  if lRealResult.Items.Count = 0 then exit nil;
+
   exit lRealResult;
 end;
 

@@ -23,7 +23,7 @@ type
     method CreateRegExp: EcmaScriptObject;
     method RegExpCtor(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method RegExpExec(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
-    method MatchToArray(aMatch: Match): EcmaScriptArrayObject;
+    method MatchToArray(aSelf: EcmaScriptRegexpObject; aInput: String; aMatch: MatchCollection): EcmaScriptArrayObject;
     method RegExpTest(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method RegExpToString(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method RegExpCompile(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
@@ -33,10 +33,11 @@ type
     method set_LastIndex(value: Integer);
   public
     fGlobalVal: Boolean;
-    fRegEx: Regex;
+    fOptions: RegexOptions;
+    fPattern: string;
+    //fRegEx: Regex;
     constructor(aGlobal: GlobalObject; aPattern, aFlags: String);
     property &GlobalVal: Boolean read fGlobalVal;
-    property RegEx: Regex read fRegEx;
     property LastIndex: Integer read Utilities.GetObjAsInteger(Get(nil, 0, 'lastIndex'), Root.ExecutionContext) write set_LastIndex;
   end;
 implementation
@@ -74,13 +75,39 @@ method GlobalObject.RegExpExec(aCaller: ExecutionContext;aSelf: Object; params A
 begin
   var lSelf := aSelf as EcmaScriptRegexpObject;
   var lIndex := iif(lSelf.GlobalVal, lSelf.LastIndex, 0);
-  var lMatch := lSelf.RegEx.Match(coalesce(Utilities.GetArgAsString(args, 0, aCaller), string.Empty), lIndex);
-  if (lMAtch = nil) or (not lMatch.Success) then exit nil;
+  var lInput := coalesce(Utilities.GetArgAsString(args, 0, aCaller), string.Empty);
+  try
+    var lMatch := new Regex(lSelf.fPattern, lSelf.fOptions).Matches(lInput, lIndex);
 
-  if lSelf.GlobalVal then 
-    lSelf.LastIndex := lMatch.Index + lMatch.Length;
 
-  exit MatchToArray(lMatch);
+    exit MatchToArray(lSelf, lInput, lMatch);
+  except
+    on e: Exception do begin
+      RaiseNativeError(NativeErrorType.SyntaxError, e.Message);
+    end;
+  end;
+end;
+
+method GlobalObject.MatchToArray(aSelf: EcmaScriptRegexpObject; aInput: String; aMatch: MatchCollection): EcmaScriptArrayObject;
+begin
+  var lObj := new EcmaScriptArrayObject(self, 0);
+  lObj.AddValue('input', aInput);
+  if aMatch.Count > 0 then begin
+    lObj.AddValue('index', aMatch[0].Index);
+    if not aSelf.GlobalVal then begin
+      for i: Integer := 0 to aMatch[0].Groups.Count -1 do 
+        lObj.AddValue(aMatch[0].Groups[i].Value);
+    end else begin // global
+      for i: Integer := 0 to aMatch.Count -1 do
+        lObj.AddValue(aMatch[i].Value);
+      aSelf.LastIndex := aMatch[aMatch.Count -1].Index + aMatch[aMatch.Count -1].Length;
+    end;
+  end else begin
+    if aSelf.GlobalVal then 
+      aSelf.LastIndex := 0;
+    exit nil;
+  end;
+  exit lObj;
 end;
 
 method GlobalObject.RegExpTest(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
@@ -97,21 +124,11 @@ begin
 
   result := '/'+lSelf.Get('source').ToString+'/';
   if lSelf.GlobalVal then result := string(result) +'g';
-  if RegexOptions.IgnoreCase in lSelf.RegEx.Options then result := string(result) +'i';
-  if RegexOptions.Multiline in lSelf.RegEx.Options then result := string(result) +'m';
+  if RegexOptions.IgnoreCase in lSelf.fOptions then result := string(result) +'i';
+  if RegexOptions.Multiline in lSelf.fOptions then result := string(result) +'m';
 end;
 
-method GlobalObject.MatchToArray(aMatch: Match): EcmaScriptArrayObject;
-begin
-  var lObj := new EcmaScriptArrayObject(self, 0);
-  lObj.AddValue('index', aMatch.Index);
-  lObj.AddValue('length', aMatch.Captures.Count);
-  lObj.AddValue(aMAtch.Value);
-  for i: Integer := 1 to Math.Min(32, aMatch.Captures.Count)-1 do begin
-    lObj.AddValue(aMatch.Captures[i].Value);
-  end;
-  exit lObj;
-end;
+
 
 method GlobalObject.RegExpCompile(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
@@ -128,7 +145,8 @@ begin
   lObj.Values['ignoreCase'] := PropertyValue.NotAllFlags(RegExOptions.IgnoreCase in lOpt);
   lObj.Values['multiline'] := PropertyValue.NotAllFlags(RegExOptions.Multiline in lOpt);
   lObj.Values['lastIndex'] := new PropertyValue(PropertyAttributes.writable, undefined.Instance);
-  lObj.fRegEx := new Regex(aPattern, lOpt);
+  lObj.fOptions := lOpt;
+  lObj.fPattern := aPattern;
   exit lObj;
 end;
 
@@ -136,21 +154,28 @@ constructor EcmaScriptRegexpObject(aGlobal: GlobalObject; aPattern, aFlags: Stri
 begin
   inherited constructor(aGlobal, aGlobal.RegExpPrototype, &Class := 'RegExp');
   var lOpt := RegexOptions.ECMAScript;
-  if (aFlags <> nil) and (aFlags.contains('i')) then lOpt := lOpt or RegExOptions.IgnoreCase;
-  if (aFlags <> nil) and (aFlags.contains('m')) then lOpt := lOpt or RegExOptions.Multiline;
-  if (aFlags <> nil) and (aFlags.contains('g')) then fGlobalVal := true;
+  if aFlags <> nil then 
+    for each el in aFlags do begin
+      if (aFlags <> nil) and (aFlags.contains('i')) then begin
+        if RegExOptions.IgnoreCase in lOpt then aGlobal.RaiseNativeError(NativeErrorType.SyntaxError);
+        lOpt := lOpt or RegExOptions.IgnoreCase;
+      end;
+      if (aFlags <> nil) and (aFlags.contains('m')) then begin
+        if RegExOptions.Multiline in lOpt then aGlobal.RaiseNativeError(NativeErrorType.SyntaxError);
+        lOpt := lOpt or RegExOptions.Multiline;
+      end;
+      if (aFlags <> nil) and (aFlags.contains('g')) then begin
+        if aGlobal then aGlobal.RaiseNativeError(NativeErrorType.SyntaxError);
+        fGlobalVal := true;
+      end;
+    end;
   Values['source'] := PropertyValue.NotAllFlags(aPattern);
   Values['global'] := PropertyValue.NotAllFlags(fGlobalVal);
   Values['ignoreCase'] := PropertyValue.NotAllFlags(RegExOptions.IgnoreCase in lOpt);
   Values['multiline'] := PropertyValue.NotAllFlags(RegExOptions.Multiline in lOpt);
   Values['lastIndex'] := new PropertyValue(PropertyAttributes.writable, undefined.Instance);
-  try
-  fRegEx := new Regex(aPattern, lOpt);
-  except
-    on e: ArgumentException do begin
-      aGlobal.RaiseNativeError(NativeErrorType.SyntaxError, e.Message);
-    end;
-  end;
+  fPattern := aPattern;
+  fOptions := lOpt;
 end;
 
 method EcmaScriptRegexpObject.set_LastIndex(value: Integer);

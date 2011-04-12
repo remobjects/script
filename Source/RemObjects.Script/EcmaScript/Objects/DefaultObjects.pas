@@ -242,7 +242,7 @@ begin
   if lRadix = 0 then lRadix := 10;
   if (lRadix < 2) or (lRadix > 36) then exit Double.NaN;
   for i: Integer := 0 to lVal.Length -1 do begin
-    var n := BaseString.IndexOf(lVal[i], 0, lRadix, StringComparison.InvariantCultureIgnoreCase);
+    var n := BaseString.IndexOf(lVal[i], 0, lRadix, StringComparison.OrdinalIgnoreCase);
     if (n < 0) then begin
       lVal := lVal.Substring(0, i);
       break;
@@ -278,7 +278,6 @@ end;
 method GlobalObject.parseFloat(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
 begin
   var lVal := Utilities.GetArgAsString(args, 0, aCaller);
-  if assigned(lVal) then lVal := lVal.Trim;
   result := Utilities.ParseDouble(lVal, false);
 end;
 
@@ -379,8 +378,9 @@ end;
 
 method GlobalObject.encodeURI(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
 begin
+  var val := Utilities.GetArgAsString(Args, 0, aCaller);
   try
-  exit Utilities.UrlEncode(Utilities.GetArgAsString(Args, 0, aCaller));
+  exit Utilities.UrlEncode(val);
   except
     RaiseNativeError(NativeErrorType.URIError, 'Invalid input');
   end;
@@ -388,8 +388,9 @@ end;
 
 method GlobalObject.decodeURI(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
 begin
+  var val := Utilities.GetArgAsString(args, 0, aCaller);
   try
-    result := Utilities.UrlDecode(Utilities.GetArgAsString(args, 0, aCaller));
+    result := Utilities.UrlDecode(val, false);
   except
     RaiseNativeError(NativeErrorType.URIError, 'Invalid input');
   end;
@@ -399,8 +400,9 @@ end;
 
 method GlobalObject.encodeURIComponent(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
 begin
+  var val := Utilities.GetArgAsString(Args, 0, aCaller);
   try
-    exit Utilities.UrlEncodeComponent(Utilities.GetArgAsString(Args, 0, aCaller));  
+    exit Utilities.UrlEncodeComponent(val);  
   except
     RaiseNativeError(NativeErrorType.URIError, 'Invalid input');
   end;
@@ -409,8 +411,9 @@ end;
 
 method GlobalObject.decodeURIComponent(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
 begin
+  var val :=Utilities.GetArgAsString(args, 0, aCaller);
   try
-    result := Utilities.UrlDecode(Utilities.GetArgAsString(args, 0, aCaller));
+    result := Utilities.UrlDecode(val, true);
   except
     RaiseNativeError(NativeErrorType.URIError, 'Invalid input');
   end;
