@@ -156,18 +156,18 @@ begin
   var lOpt := RegexOptions.ECMAScript;
   if aFlags <> nil then 
     for each el in aFlags do begin
-      if (aFlags <> nil) and (aFlags.contains('i')) then begin
-        if RegExOptions.IgnoreCase in lOpt then aGlobal.RaiseNativeError(NativeErrorType.SyntaxError);
+      if el = 'i' then begin
+        if RegExOptions.IgnoreCase in lOpt then aGlobal.RaiseNativeError(NativeErrorType.SyntaxError, 'invalid flags');
         lOpt := lOpt or RegExOptions.IgnoreCase;
-      end;
-      if (aFlags <> nil) and (aFlags.contains('m')) then begin
-        if RegExOptions.Multiline in lOpt then aGlobal.RaiseNativeError(NativeErrorType.SyntaxError);
+      end else 
+      if el = 'm' then begin
+        if RegExOptions.Multiline in lOpt then aGlobal.RaiseNativeError(NativeErrorType.SyntaxError, 'invalid flags');
         lOpt := lOpt or RegExOptions.Multiline;
-      end;
-      if (aFlags <> nil) and (aFlags.contains('g')) then begin
-        if aGlobal then aGlobal.RaiseNativeError(NativeErrorType.SyntaxError);
+      end else 
+      if el = 'g' then begin
+        if fGlobalVal then aGlobal.RaiseNativeError(NativeErrorType.SyntaxError, 'invalid flags');
         fGlobalVal := true;
-      end;
+      end else aGlobal.RaiseNativeError(NativeErrorType.SyntaxError, 'invalid flags');
     end;
   Values['source'] := PropertyValue.NotAllFlags(aPattern);
   Values['global'] := PropertyValue.NotAllFlags(fGlobalVal);
