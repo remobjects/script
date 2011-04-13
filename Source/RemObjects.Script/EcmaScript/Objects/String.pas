@@ -276,7 +276,7 @@ begin
   end else lObj := EcmaScriptRegexpObject(args[0]);
 
   try
-  var lMatch := new System.Text.RegularExpressions.Regex(lObj.fPattern, lObj.fOptions).Match(lSelf);
+  var lMatch := lObj.Regex.Match(lSelf);
   exit iif((lMatch = nil) or not lMatch.Success, -1, lMatch.Index);
   except
     on e: Exception do 

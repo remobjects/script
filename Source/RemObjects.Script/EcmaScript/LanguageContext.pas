@@ -100,6 +100,7 @@ type
     fStatementStack: List<Statement>;
     fBreak,
     fContinue: nullable Label;
+    fLastData: string;
     method Parse(aFilename, aData: string; aEval: Boolean := false): List<SourceElement>; // eval throws different exception
     method MarkLabelled(aBreak, aContinue: nullable Label);
     method WriteDebugStack;
@@ -119,6 +120,7 @@ type
     method WriteBreak(el: BreakStatement);
     method WriteWithStatement(el: WithStatement);
     method WriteFunction(el: FunctionDeclarationElement; aRegister: Boolean);
+    method GetOriginalBody(el: SourceElement): string;
     method WriteTryStatement(el: TryStatement);
     method WriteSwitchstatement(el: SwitchStatement);
     method DefineInScope(aEval: Boolean; aElements: sequence of SourceElement);
@@ -197,6 +199,7 @@ begin
   lTokenizer.Error += lParser.fTok_Error;
   lTokenizer.SetData(aData, aFilename);
   lTokenizer.Error -= lParser.fTok_Error;
+  fLastData := aData;
   var lElement := lParser.Parse(lTokenizer);
   for each el in lParser.Messages do begin
     if el.IsError then
@@ -220,12 +223,22 @@ end;
 method EcmaScriptCompiler.EvalParse(aStrict: Boolean; aData: string): InternalDelegate;
 begin
   fUseStrict := aStrict;
-  exit InternalDelegate(Parse(nil, true, '<eval>', Parse('<eval>', aData, true)));
+  var lSave := fLastData;
+  try
+    exit InternalDelegate(Parse(nil, true, '<eval>', Parse('<eval>', aData, true)));
+  finally
+    fLastData := lSave;
+  end;
 end;
 
 method EcmaScriptCompiler.Parse(aFilename, aData: string): InternalDelegate;
 begin
-  exit InternalDelegate(Parse(nil, false, aFilename, Parse( aFilename, aData, false)));
+  var lSave := fLastData;
+  try
+    exit InternalDelegate(Parse(nil, false, aFilename, Parse( aFilename, aData, false)));
+  finally
+    fLastData := lSave;
+  end;
 end;
 
 method EcmaScriptCompiler.Parse(aFunction: FunctionDeclarationElement; aEval: Boolean; aScopeName: string; aElements: List<SourceElement>): Object;
@@ -525,7 +538,13 @@ begin
         filg.MarkLabel(ValueOrDefault(LabelledStatement(el).Break));
     end;
     ElementType.FunctionDeclaration: begin
-      // Do nothing here; this is done elsewhere
+      if FunctionDeclarationElement(el).Identifier = nil then begin
+        WriteFunction(FunctionDeclarationElement(el), false);
+        if fDisableResult then
+          filg.Emit(Opcodes.Pop)
+        else
+          filg.Emit(Opcodes.Stloc, fResultVar);
+      end;
     end;
     ElementType.ThrowStatement: begin
       WriteExpression(ThrowStatement(el).ExpressionElement);
@@ -1418,6 +1437,7 @@ begin
   filg.Emit(Opcodes.Call, GlobalObject.Method_GetFunction);
   
   filg.Emit(Opcodes.Ldc_I4, el.Parameters.Count);
+  filg.Emit(Opcodes.Ldstr, GetOriginalBody(el));
   filg.Emit(Opcodes.Ldc_I4, if fUseStrict then 1 else 0);
   filg.Emit(Opcodes.Newobj, EcmaScriptInternalFunctionObject.Constructor);
 
@@ -1704,7 +1724,7 @@ end;
 method EcmaScriptCompiler.DefineInScope(aEval: Boolean; aElements: sequence of SourceElement);
 begin
   for each el in RecursiveFindFuncAndVars(aElements) do begin
-    if el.Type = ElementType.FunctionDeclaration then begin
+    if (el.Type = ElementType.FunctionDeclaration) and (FunctionDeclarationElement(el).Identifier <> nil) then begin
       filg.Emit(Opcodes.Ldloc, fExecutionContext);
       filg.Emit(Opcodes.Call, ExecutionContext.Method_get_VariableScope);
       filg.Emit(Opcodes.Ldstr, FunctionDeclarationElement(el).Identifier);
@@ -1735,6 +1755,16 @@ begin
       end;
     end;
   end;
+end;
+
+method EcmaScriptCompiler.GetOriginalBody(el: SourceElement): string;
+begin
+  var lStart := el.PositionPair.StartPos;
+  var lEnd := el.PositionPair.EndPos - lStart;
+  if (lStart >= 0) and (lStart + lEnd  < fLastData.Length) then
+    result := fLastData.Substring(lStart, lEnd)
+  else
+    result := '{}';
 end;
 
 method FinallyInfo.AddUnique(aLabel: Label): Integer;

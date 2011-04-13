@@ -46,27 +46,31 @@ type
   public
     constructor; empty;
     constructor (aStart, aEnd: Position);
-    constructor (aStartRow, aStartCol, aEndRow, aEndCol: Integer; aFile: String);
+    constructor (aStartPos, aStartRow, aStartCol, aEndPos, aEndRow, aEndCol: Integer; aFile: String);
 
-    property Start: Position read new Position(StartRow, STartCol, File);
-    property &End: Position read new Position(EndRow, EndCol, File);
+    property Start: Position read new Position(StartPos, StartRow, STartCol, File);
+    property &End: Position read new Position(EndPos, EndRow, EndCol, File);
     property IsValid: Boolean read (StartRow > 0) and not  string.IsNullOrEmpty(File);
     property StartRow: Integer;
     property StartCol: Integer;
+    property StartPos: Integer;
     property EndRow: Integer;
     property EndCol: Integer;
+    property EndPos: Integer;
     property File: String;
   end;
   Position = public record
   private
     fRow: Integer;
     fCol: Integer;
+    fPos: Integer;
     fModule: String;
   public
-    constructor(aRow, aCol: Integer; aModule: String);
+    constructor(aPos, aRow, aCol: Integer; aModule: String);
     constructor; empty;
     property Row: Integer read fRow write fRow;
     property Col: Integer read fCol write fCol;
+    property Pos: Integer read fPos write fPos;
     property Column: Integer read Col;
     property Line: Integer read Row;
     property &Module: string read fModule write fModule;
@@ -95,23 +99,28 @@ constructor PositionPair(aStart, aEnd: Position);
 begin
   StartRow := aStart.Row;
   StartCol := aStart.Col;
+  StartPos := aStart.Pos;
   EndRow := aEnd.Row;
   EndCol := aEnd.Col;
+  EndPos := aEnd.Pos;
   File := aStart.Module;
 end;
 
-constructor PositionPair(aStartRow, aStartCol, aEndRow, aEndCol: Integer; aFile: String);
+constructor PositionPair(aStartPos, aStartRow, aStartCol, aEndPos, aEndRow, aEndCol: Integer; aFile: String);
 begin
   StartRow := aStartRow;
   StartCol := aStartCol;
+  StartPos := aSTartPos;
   EndRow := aEndRow;
   EndCol := aEndCol;
+  EndPos := aEndPos;
   File := aFile;
 end;
-constructor Position(aRow, aCol: Integer; aModule: String);
+constructor Position(aPos, aRow, aCol: Integer; aModule: String);
 begin
   fRow := aRow;
   fCol := aCol;
+  fPos := aPos;
   fModule := aModule;
 end;
 constructor ParserMessage(aPosition: Position);

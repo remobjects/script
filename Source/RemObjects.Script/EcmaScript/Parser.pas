@@ -995,7 +995,7 @@ begin
             end;
             lSub := new PropertyAssignment(
             iif(lName = nil, lValue.PositionPair, 
-            new PositionPair(lName.PositionPair.StartRow, lName.PositionPair.StartCol, fTok.LastEndPosition.Row, fTok.LastEndPosition.Col, lName.PositionPair.File)), lMode, PropertyBaseExpression(lName), lValue);
+            new PositionPair(lName.PositionPair.StartPos, lName.PositionPair.StartRow, lName.PositionPair.StartCol, fTok.LastEndPosition.Pos, fTok.LastEndPosition.Row, fTok.LastEndPosition.Col, lName.PositionPair.File)), lMode, PropertyBaseExpression(lName), lValue);
           end;
           lArgs.Add(lSub);
           if fTok.Token = TokenKind.Comma then begin
@@ -1129,7 +1129,7 @@ begin
         Error(ParserErrorKind.IdentifierExpected, '');
         exit nil;
       end;
-      lVal := new SubExpression(new PositionPair(lVal.PositionPair.StartRow, lVal.PositionPair.StartCol, fTok.LastEndPosition.Row, fTok.LastEndPosition.Col, lVal.PositionPair.File), lVal, fTok.TokenStr);
+      lVal := new SubExpression(new PositionPair(lVal.PositionPair.StartPos, lVal.PositionPair.StartRow, lVal.PositionPair.StartCol, fTok.LastEndPosition.Pos, fTok.LastEndPosition.Row, fTok.LastEndPosition.Col, lVal.PositionPair.File), lVal, fTok.TokenStr);
       fTok.Next;
     end else if fTok.Token = TokenKind.OpeningBracket then begin
       fTok.Next;
@@ -1140,7 +1140,7 @@ begin
         exit nil;
       end;
       fTok.Next;
-      lVal := new ArrayAccessExpression(new PositionPair(lVal.PositionPair.StartRow, lVal.PositionPair.StartCol, fTok.LastEndPosition.Row, fTok.LastEndPosition.Col, lVal.PositionPair.File), lVal, lSub);
+      lVal := new ArrayAccessExpression(new PositionPair(lval.PositionPair.StartPos, lVal.PositionPair.StartRow, lVal.PositionPair.StartCol, fTok.LastEndPosition.Row, fTok.LastEndPosition.Pos, fTok.LastEndPosition.Col, lVal.PositionPair.File), lVal, lSub);
     end else begin // opening parenthesis
       if not aParseParameters then break;
       fTok.Next;
@@ -1159,7 +1159,7 @@ begin
         end;
       end;
       fTok.Next;
-      lVal := new CallExpression(new PositionPair(lVal.PositionPair.StartRow, lVal.PositionPair.StartCol, fTok.LastEndPosition.Row, fTok.LastEndPosition.Col, lVal.PositionPair.File), lVal, lArgs);
+      lVal := new CallExpression(new PositionPair(lVal.PositionPair.StartPos, lVal.PositionPair.StartRow, lVal.PositionPair.StartCol, fTok.LastEndPosition.Pos, fTok.LastEndPosition.Row, fTok.LastEndPosition.Col, lVal.PositionPair.File), lVal, lArgs);
     end;
   end;
   result := lVal;
@@ -1171,10 +1171,10 @@ begin
   if lVal = nil then exit nil;
   if fTok.LastWasEnter then exit lVal;
   if fTok.Token = TokenKind.Decrement then begin
-    lVal := new UnaryExpression(new PositionPair(lVal.PositionPair.StartRow, lVal.PositionPair.StartCol, fTok.LastEndPosition.Row, fTok.LastEndPosition.Col, lVal.PositionPair.File), lVal, UnaryOperator.PostDecrement);
+    lVal := new UnaryExpression(new PositionPair(lVal.PositionPair.StartPos, lVal.PositionPair.StartRow, lVal.PositionPair.StartCol, fTok.LastEndPosition.Pos, fTok.LastEndPosition.Row, fTok.LastEndPosition.Col, lVal.PositionPair.File), lVal, UnaryOperator.PostDecrement);
     fTok.Next;
   end else if fTok.Token = TokenKind.Increment then begin
-    lVal := new UnaryExpression(new PositionPair(lVal.PositionPair.StartRow, lVal.PositionPair.StartCol, fTok.LastEndPosition.Row, fTok.LastEndPosition.Col, lVal.PositionPair.File), lVal, UnaryOperator.PostIncrement);
+    lVal := new UnaryExpression(new PositionPair(lVal.PositionPair.StartPos, lVal.PositionPair.StartRow, lVal.PositionPair.StartCol, fTok.LastEndPosition.Pos, fTok.LastEndPosition.Row, fTok.LastEndPosition.Col, lVal.PositionPair.File), lVal, UnaryOperator.PostIncrement);
     fTok.Next;
   end;
   exit lVal;

@@ -864,7 +864,7 @@ begin
           if fTok.Token = TokenKind.K_end then begin
             if lSt.Count = 0 then lElse := new EmptyStatement(fTok.PositionPair) else
             if lSt.Count = 1 then lElse := lSt[0] else
-            lElse := new BlockStatement(new PositionPair(new Position(lSt[0].PositionPair.StartRow, lSt[0].PositionPair.StartCol, lSt[0].PositionPair.File), fTok.LastEndPosition), lSt);
+            lElse := new BlockStatement(new PositionPair(new Position(lSt[0].PositionPair.StartPos,lSt[0].PositionPair.StartRow, lSt[0].PositionPair.StartCol, lSt[0].PositionPair.File), fTok.LastEndPosition), lSt);
             fTok.Next;
             break;
           end else begin
@@ -881,7 +881,7 @@ begin
       var lValue := ParseExpression;
       if fTok.Token = TokenKind.TwoDots then begin
         fTok.Next;
-        lValue := new RangeExpression(new PositionPair(lValue.PositionPair.StartRow,lValue.PositionPair.StartCol,ftok.LastEndPosition.Row, fTok.LastEndPosition.Col, fTok.LastEndPosition.Module), lValue, ParseExpression);
+        lValue := new RangeExpression(new PositionPair(lValue.PositionPair.StartPos, lValue.PositionPair.StartRow,lValue.PositionPair.StartCol, fTok.LastEndPosition.Pos, ftok.LastEndPosition.Row, fTok.LastEndPosition.Col, fTok.LastEndPosition.Module), lValue, ParseExpression);
       end;
       lValues.Add(lValue);
       if ftok.Token = tokenKind.Colon then begin
@@ -1284,7 +1284,7 @@ begin
         begin
           fTok.Next;
           if not ExpectToken(TokenKind.Identifier, ParserErrorKind.IdentifierExpected) then  exit;
-          var lPos := new Position( aSelf.PositionPair.StartRow, aself.PositionPair.StartCol, aSelf.PositionPair.File);
+          var lPos := new Position( aSelf.PositionPair.StartPos, aSelf.PositionPair.StartRow, aself.PositionPair.StartCol, aSelf.PositionPair.File);
           var lIdent := fTok.TokenStr;
           result := new MemberExpression(new PositionPair(lPos, fTok.LastEndPosition), aSelf, lIdent);
         end;
@@ -1292,19 +1292,19 @@ begin
         begin
           var lArgs := ParseParameters(false);
           if lArgs = nil then  exit nil;
-          var lPos := new Position( aSelf.PositionPair.StartRow, aself.PositionPair.StartCol, aSelf.PositionPair.File);
+          var lPos := new Position( aSelf.PositionPair.StartPos, aSelf.PositionPair.StartRow, aself.PositionPair.StartCol, aSelf.PositionPair.File);
           result := new ArrayElementExpression(new PositionPair(lPos, fTok.LastEndPosition), aSelf, lArgs);
         end;
       TokenKind.OpenRound:
         begin
           var lArgs := ParseParameters(true);
           if lArgs = nil then  exit nil;
-          var lPos := new Position( aSelf.PositionPair.StartRow, aself.PositionPair.StartCol, aSelf.PositionPair.File);
+          var lPos := new Position( aSelf.PositionPair.StartPos, aSelf.PositionPair.StartRow, aself.PositionPair.StartCol, aSelf.PositionPair.File);
           result := new CallExpression(new PositionPair(lPos, fTok.LastEndPosition), aSelf, lArgs);
         end;
       TokenKind.Dereference:
         begin
-          result := new UnaryExpression(new PositionPair(aSelf.PositionPair.StartRow, aSelf.PositionPair.StartCol, fTok.EndPosition.Row,fTok.EndPosition.Col, fTok.EndPosition.Module), 
+          result := new UnaryExpression(new PositionPair(aSelf.PositionPair.StartPos, aSelf.PositionPair.StartRow, aSelf.PositionPair.StartCol, fTok.EndPosition.Pos, fTok.EndPosition.Row,fTok.EndPosition.Col, fTok.EndPosition.Module), 
             aSelf, UnaryOperator.Dereference);
           fTok.Next;
         end;

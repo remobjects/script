@@ -283,8 +283,9 @@ begin
   var res := new StringBuilder;
   for i: Integer := 0 to bytes.Length -1 do begin
     case bytes[i] of
-      byte('A')..Byte('Z'), Byte('?'), Byte(':'), Byte('@'), Byte('&'), Byte('='), Byte('+'), Byte('$'), Byte(','),
-      byte('a')..Byte('z'),
+      byte('A')..Byte('Z'), Byte(';'), Byte('/'), Byte('?'), Byte(':'), Byte('@'), Byte('&'), Byte('='), Byte('+'), Byte('$'), Byte(','),
+      Byte('-'), Byte('_'), Byte('.'), Byte('!'), Byte('~'), Byte('*'), Byte(''''), Byte('('), Byte(')'), 
+      byte('a')..Byte('z'), Byte('#'),
       byte('0')..Byte('9'),
       byte('.'), byte('_'), byte('-'), byte('~'):
         res.Append(char(bytes[i]));
@@ -404,11 +405,10 @@ if String.IsNullOrEmpty(s) then exit String.Empty;
   var res := new StringBuilder;
   for i: Integer := 0 to bytes.Length -1 do begin
     case bytes[i] of
-
-      Byte(';'), Byte('/'), 
       byte('A')..Byte('Z'),
       byte('a')..Byte('z'),
       byte('0')..Byte('9'),
+      Byte('!'), Byte('~'), Byte('*'), Byte(''''), Byte('('), Byte(')'), 
       byte('.'), byte('_'), byte('-'), byte('~'):
         res.Append(char(bytes[i]));
     else

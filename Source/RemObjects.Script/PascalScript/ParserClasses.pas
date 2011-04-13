@@ -1070,7 +1070,7 @@ end;
 
 constructor BinaryExpression(aLeft, aRight: Expression; anOperator: BinaryOperator);
 begin
-  constructor(new PositionPair(aLeft.PositionPair.StartRow, aLeft.PositionPair.StartCol, aRight.PositionPair.EndRow, aright.PositionPair.EndCol, aLeft.PositionPair.File), aLeft, aRight, anOperator);
+  constructor(new PositionPair(aLeft.PositionPair.StartPos,aLeft.PositionPair.StartRow, aLeft.PositionPair.StartCol, aRight.PositionPair.EndPos,aRight.PositionPair.EndRow, aright.PositionPair.EndCol, aLeft.PositionPair.File), aLeft, aRight, anOperator);
 end;
 
 constructor ArrayExpression(aPosition: PositionPair; aArguments: Array of Expression);

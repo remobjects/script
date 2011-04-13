@@ -38,6 +38,7 @@ type
     method DateValueOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method DateGetTime(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method DateGetFullYear(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+    method DateGetYear(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method DateGetUTCFullYear(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method DateGetMonth(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method DateGetUTCMonth(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
@@ -126,7 +127,7 @@ begin
   DatePrototype.Values.Add('valueOf', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'valueOf', @DateValueOf, 1)));
   Dateprototype.Values.Add('getTime', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'getTime', @DateGetTime, 1)));
   Dateprototype.Values.Add('getFullYear', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'getFullYear', @DateGetFullYear, 1)));
-  Dateprototype.Values.Add('getYear', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'getYear', @DateGetFullYear, 1)));
+  Dateprototype.Values.Add('getYear', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'getYear', @DateGetYear, 1)));
   Dateprototype.Values.Add('getUTCFullYear', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'getUTCFullYear', @DateGetUTCFullYear, 1)));
   Dateprototype.Values.Add('getMonth', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'getMonth', @DateGetMonth, 1)));
   Dateprototype.Values.Add('getUTCMonth', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'getUTCMonth', @DateGetUTCMonth, 1)));
@@ -569,6 +570,13 @@ begin
   if (lItem.Value is Integer) or (lItem.Value is Int64) or (lItem.Value is Double) then
     exit DatetoISOString(aCaller, lItem);
   exit nil;
+end;
+
+method GlobalObject.DateGetYear(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+begin
+  if Double.IsNaN(Utilities.GetObjAsDouble(aSelf, aCaller)) then exit double.NaN;
+  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime;
+  exit lValue.Year mod 100;
 end;
 
 method EcmaScriptDateObject.Call(context: ExecutionContext; params args: array of Object): Object;

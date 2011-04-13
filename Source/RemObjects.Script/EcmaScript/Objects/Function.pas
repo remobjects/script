@@ -22,6 +22,7 @@ type
     method CreateFunction: EcmaScriptObject;
     method CreateFunctionPrototype;
 
+    method FunctionProtoCtor(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method FunctionCtor(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method FunctionToString(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method FunctionApply(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
@@ -58,7 +59,7 @@ type
   private
     fDelegate: InternalDelegate;
   public
-    constructor (aScope: GlobalObject; aOriginalName: String; aDelegate: InternalDelegate; aLength: Integer; aStrict: Boolean := false);
+    constructor (aScope: GlobalObject; aOriginalName: String; aDelegate: InternalDelegate; aLength: Integer; aStrict: Boolean := false; aNoProto: Boolean := false);
     property &Delegate: InternalDelegate read fDelegate;
     method Call(context: ExecutionContext; params args: array of Object): Object; override;
     method CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object; override;
@@ -66,12 +67,14 @@ type
   end;
   EcmaScriptInternalFunctionObject = public class(EcmaScriptBaseFunctionObject)
   private
+    fOriginalBody: string;
     fDelegate: InternalFunctionDelegate;
   public
-    constructor (aScope: GlobalObject; aScopeVar: EnvironmentRecord; aOriginalName: String; aDelegate: InternalFunctionDelegate; aLength: Integer; aStrict: Boolean := false);
+    constructor (aScope: GlobalObject; aScopeVar: EnvironmentRecord; aOriginalName: String; aDelegate: InternalFunctionDelegate; aLength: Integer; aOriginalBody: string; aStrict: Boolean := false);
     property &Delegate: InternalFunctionDelegate read fDelegate;
+    property OriginalBody: string read fOriginalBody;
     class var &Constructor: System.Reflection.ConstructorInfo := typeof(EcmaScriptInternalFunctionObject).GetConstructor([
-      typeof(GlobalObject), typeof(EnvironmentRecord), typeof(string), typeof(InternalFunctionDelegate), typeof(Integer),typeof(Boolean)]); readonly;
+      typeof(GlobalObject), typeof(EnvironmentRecord), typeof(string), typeof(InternalFunctionDelegate), typeof(Integer),typeof(string), typeof(Boolean)]); readonly;
     method Call(context: ExecutionContext; params args: array of Object): Object; override;
     method CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object; override;
     method Construct(context: ExecutionContext; params args: array of Object): Object; override;
@@ -104,11 +107,11 @@ begin
   var lNames: string := '';
   var lBody := '';
   if Length(Args) <> 0 then begin
-    lBody := Utilities.GetArgAsString(Args, Length(Args)-1, aCaller);
     for i: Integer := 0 to Length(Args) -2 do begin
       if i = 0 then lNames := Utilities.GetArgAsString(args, i, aCaller) else
         lNames := lNames+','+Utilities.GetArgAsString(args, i, aCaller);
     end;
+    lBody := Utilities.GetArgAsString(Args, Length(Args)-1, aCaller);
   end;
   var lTokenizer := new Tokenizer;
   var lParser := new Parser;
@@ -148,13 +151,16 @@ begin
   var lFunc := new FunctionDeclarationElement(lCode.PositionPair, FunctionDeclarationType.None, nil, lParams, lCode);
 
  
-  exit new EcmaScriptInternalFunctionObject(self, fParser.fRoot, nil, InternalFunctionDelegate(fParser.Parse(lFunc, false, nil, lCode.Items)), lFunc.Parameters.Count, aCaller.Strict);
+  exit new EcmaScriptInternalFunctionObject(self, fParser.fRoot, nil, InternalFunctionDelegate(fParser.Parse(lFunc, false, nil, lCode.Items)), lFunc.Parameters.Count, lBody, aCaller.Strict);
 end;
 
 method GlobalObject.FunctionToString(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  var lSelf := EcmaScriptFunctionObject(aSelf);
-  result := 'function '+lSelf:&Class+'()'
+  var lSelf := EcmaScriptBaseFunctionObject(aSelf);
+  if lself = nil then RaiseNativeError(NativeErrorType.TypeError, 'Function.prototype.toString() is not generic');
+  if lSelf is EcmaScriptInternalFunctionObject then
+    exit EcmaScriptInternalFunctionObject(lSelf).OriginalBody;
+  result := 'function '+lSelf:&Class+'() { }'
 end;
 
 method GlobalObject.FunctionApply(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
@@ -200,11 +206,16 @@ end;
 
 method GlobalObject.CreateFunctionPrototype;
 begin
-  FunctionPrototype := new EcmaScriptFunctionObject(self, 'Function', @FunctionCtor, 1, &Class := 'Function');
+  FunctionPrototype := new EcmaScriptFunctionObject(self, 'Function', @FunctionProtoCtor, 1, &Class := 'Function');
   FunctionPrototype.Prototype := ObjectPrototype;
 end;
 
-constructor EcmaScriptFunctionObject(aScope: GlobalObject; aOriginalName: String; aDelegate: InternalDelegate; aLength: Integer; aStrict: Boolean := false);
+method GlobalObject.FunctionProtoCtor(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+begin
+  exit Undefined.Instance;
+end;
+
+constructor EcmaScriptFunctionObject(aScope: GlobalObject; aOriginalName: String; aDelegate: InternalDelegate; aLength: Integer; aStrict: Boolean := false; aNoProto: Boolean := false);
 begin 
   inherited constructor(aScope, new EcmaScriptObject(aScope, aScope.Root.FunctionPrototype));
   &Class := 'Function';
@@ -213,7 +224,10 @@ begin
   fOriginalName := aOriginalName;
   fDelegate := aDelegate;
   Values.Add('length', PropertyValue.NotAllFlags(aLength));
-  DefineOwnProperty('prototype', new PropertyValue(PropertyAttributes.writable, lProto));
+  if aNoProto then 
+    DefineOwnProperty('prototype', new PropertyValue(PropertyAttributes.writable, Undefined.Instance))
+  else
+    DefineOwnProperty('prototype', new PropertyValue(PropertyAttributes.writable, lProto));
   if aStrict then begin
     DefineOwnProperty('caller', new PropertyValue(PropertyAttributes.None, aScope.Thrower, aScope.Thrower));
     DefineOwnProperty('arguments', new PropertyValue(PropertyAttributes.None, aScope.Thrower, aScope.Thrower));
@@ -244,7 +258,7 @@ begin
   exit fDelegate(context, self, args);
 end;
 
-constructor EcmaScriptInternalFunctionObject(aScope: GlobalObject; aScopeVar: EnvironmentRecord; aOriginalName: String; aDelegate: InternalFunctionDelegate; aLength: Integer; aStrict: Boolean := false);
+constructor EcmaScriptInternalFunctionObject(aScope: GlobalObject; aScopeVar: EnvironmentRecord; aOriginalName: String; aDelegate: InternalFunctionDelegate; aLength: Integer; aOriginalBody: string; aStrict: Boolean := false);
 begin
   inherited constructor(aScope, new EcmaScriptObject(aScope, aScope.Root.FunctionPrototype));
   &Class := 'Function';
@@ -259,6 +273,7 @@ begin
     DefineOwnProperty('caller', new PropertyValue(PropertyAttributes.None, aScope.Thrower, aScope.Thrower));
     DefineOwnProperty('arguments', new PropertyValue(PropertyAttributes.None, aScope.Thrower, aScope.Thrower));
   end;
+  fOriginalBody := aOriginalBody;
 end;
 
 method EcmaScriptInternalFunctionObject.Call(context: ExecutionContext; params args: array of Object): Object;

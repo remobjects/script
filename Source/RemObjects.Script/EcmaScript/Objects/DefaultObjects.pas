@@ -86,7 +86,6 @@ type
     method decodeURIComponent(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
     
     // Proto:
-    method ObjectCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method ObjectToString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method ObjectToLocaleString(aCaller: ExecutionContext; aSelf: Object; params args: Array of Object): Object;
     method ObjectValueOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
@@ -293,12 +292,6 @@ begin
 end;
 
 
-method GlobalObject.ObjectCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-begin
-  if Length(args) = 0 then result := new EcmaScriptObject(self, self.ObjectPrototype) else begin
-    result := new EcmaScriptObject(self, self.ObjectPrototype, Value := args[0]);
-  end;
-end;
 
 method GlobalObject.ObjectToString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
@@ -354,14 +347,14 @@ begin
 
   ObjectPrototype.Values['constructor'] := PropertyValue.NotEnum(result);
 
-  ObjectPrototype.Values.Add('toString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toString', @ObjectToString, 0)));
-  ObjectPrototype.Values.Add('toLocaleString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toLocaleString', @ObjectToLocaleString, 0)));
+  ObjectPrototype.Values.Add('toString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toString', @ObjectToString, 0, false, true)));
+  ObjectPrototype.Values.Add('toLocaleString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toLocaleString', @ObjectToLocaleString, 0, false, true)));
 
-  ObjectPrototype.Values.Add('valueOf', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'valueOf', @ObjectValueOf, 0)));
+  ObjectPrototype.Values.Add('valueOf', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'valueOf', @ObjectValueOf, 0, false, true)));
 
-  ObjectPrototype.Values.Add('isPrototypeOf', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'isPrototypeOf', @ObjectIsPrototypeOf, 0)));
-  ObjectPrototype.Values.Add('propertyIsEnumerable', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'propertyIsEnumerable', @ObjectpropertyIsEnumerable, 0)));
-  ObjectPrototype.Values.Add('hasOwnProperty', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'hasOwnProperty', @ObjectHasOwnProperty, 0)));
+  ObjectPrototype.Values.Add('isPrototypeOf', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'isPrototypeOf', @ObjectIsPrototypeOf, 1, false, true)));
+  ObjectPrototype.Values.Add('propertyIsEnumerable', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'propertyIsEnumerable', @ObjectpropertyIsEnumerable, 1, false, true)));
+  ObjectPrototype.Values.Add('hasOwnProperty', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'hasOwnProperty', @ObjectHasOwnProperty, 1, false, true)));
 end;
 
 
@@ -723,7 +716,7 @@ end;
 method EcmaScriptObjectObject.Call(context: ExecutionContext; params args: array of Object): Object;
 begin
   var lVal := Utilities.GetArg(args, 0);
-  if (lVal = nil) or (lVal = Undefined.Instance) then exit Construct(context, self, args);
+  if (lVal = nil) or (lVal = Undefined.Instance) then exit Construct(context, nil, args);
   exit Utilities.ToObject(context, lVAl);
 end;
 
@@ -739,7 +732,7 @@ end;
 method EcmaScriptObjectObject.CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object;
 begin
   var lVal := Utilities.GetArg(args, 0);
-  if (lVal = nil) or (lVal = Undefined.Instance) then exit Construct(context, self, args);
+  if (lVal = nil) or (lVal = Undefined.Instance) then exit Construct(context, nil, args);
   exit Utilities.ToObject(context, lVAl);
 end;
 

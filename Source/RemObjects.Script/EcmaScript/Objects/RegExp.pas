@@ -30,14 +30,17 @@ type
   end;
   RemObjects.Script.EcmaScript.Internal.EcmaScriptRegexpObject = public class(EcmaScriptObject)
   private
-    method set_LastIndex(value: Integer);
-  public
+    fRegex: Regex;
     fGlobalVal: Boolean;
-    fOptions: RegexOptions;
-    fPattern: string;
+    method set_LastIndex(value: Integer);
+  assembly
+    method Recreate(aPattern: string; aSettings: RegexOptions);
+  public
+    property GlobalVal: Boolean read fGlobalVal write fGlobalVal;
+    property Options: RegexOptions read fRegex.Options;
     //fRegEx: Regex;
+    property Regex: Regex read fRegex;
     constructor(aGlobal: GlobalObject; aPattern, aFlags: String);
-    property &GlobalVal: Boolean read fGlobalVal;
     property LastIndex: Integer read Utilities.GetObjAsInteger(Get(nil, 0, 'lastIndex'), Root.ExecutionContext) write set_LastIndex;
   end;
 implementation
@@ -68,7 +71,7 @@ end;
 
 method GlobalObject.RegExpCtor(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  result := new EcmaScriptRegexpObject(self, Utilities.GetArgAsString(args, 0, aCaller), if Length(args) < 2 then '' else Utilities.GetArgAsString(args, 1, aCaller));
+  result := new EcmaScriptRegexpObject(self, if (Length(args) = 0) or (args[0] = Undefined.Instance) then '' else Utilities.GetArgAsString(args, 0, aCaller), if (Length(args) < 2) or (args[1] = Undefined.Instance) then '' else Utilities.GetArgAsString(args, 1, aCaller));
 end;
 
 method GlobalObject.RegExpExec(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
@@ -77,7 +80,7 @@ begin
   var lIndex := iif(lSelf.GlobalVal, lSelf.LastIndex, 0);
   var lInput := coalesce(Utilities.GetArgAsString(args, 0, aCaller), string.Empty);
   try
-    var lMatch := new Regex(lSelf.fPattern, lSelf.fOptions).Matches(lInput, lIndex);
+    var lMatch := lSelf.Regex.Matches(lInput, lIndex);
 
 
     exit MatchToArray(lSelf, lInput, lMatch);
@@ -124,8 +127,8 @@ begin
 
   result := '/'+lSelf.Get('source').ToString+'/';
   if lSelf.GlobalVal then result := string(result) +'g';
-  if RegexOptions.IgnoreCase in lSelf.fOptions then result := string(result) +'i';
-  if RegexOptions.Multiline in lSelf.fOptions then result := string(result) +'m';
+  if RegexOptions.IgnoreCase in lSelf.Options then result := string(result) +'i';
+  if RegexOptions.Multiline in lSelf.Options then result := string(result) +'m';
 end;
 
 
@@ -139,14 +142,19 @@ begin
   var aPattern := Utilities.GetArgAsString(args, 0, aCaller);
   if (aFlags <> nil) and (aFlags.contains('i')) then lOpt := lOpt or RegExOptions.IgnoreCase;
   if (aFlags <> nil) and (aFlags.contains('m')) then lOpt := lOpt or RegExOptions.Multiline;
-  if (aFlags <> nil) and (aFlags.contains('g')) then lObj.fGlobalVal := true;
+  if (aFlags <> nil) and (aFlags.contains('g')) then lObj.GlobalVal := true;
   lObj.Values['source'] := PropertyValue.NotAllFlags(aPattern);
-  lObj.Values['global'] := PropertyValue.NotAllFlags(lObj.fGlobalVal);
+  lObj.Values['global'] := PropertyValue.NotAllFlags(lObj.GlobalVal);
   lObj.Values['ignoreCase'] := PropertyValue.NotAllFlags(RegExOptions.IgnoreCase in lOpt);
   lObj.Values['multiline'] := PropertyValue.NotAllFlags(RegExOptions.Multiline in lOpt);
   lObj.Values['lastIndex'] := new PropertyValue(PropertyAttributes.writable, undefined.Instance);
-  lObj.fOptions := lOpt;
-  lObj.fPattern := aPattern;
+  try
+  lObj.Recreate(aPattern, lOpt);
+  except
+    on e: Exception do
+      RaiseNativeError(NativeErrorType.SyntaxError, e.Message);
+  end;
+
   exit lObj;
 end;
 
@@ -174,13 +182,23 @@ begin
   Values['ignoreCase'] := PropertyValue.NotAllFlags(RegExOptions.IgnoreCase in lOpt);
   Values['multiline'] := PropertyValue.NotAllFlags(RegExOptions.Multiline in lOpt);
   Values['lastIndex'] := new PropertyValue(PropertyAttributes.writable, undefined.Instance);
-  fPattern := aPattern;
-  fOptions := lOpt;
+  try
+    fRegex := new Regex(aPattern, lOpt);
+  except
+    on e: Exception do
+      aGlobal.RaiseNativeError(NativeErrorType.SyntaxError, e.Message);
+  end;
 end;
 
 method EcmaScriptRegexpObject.set_LastIndex(value: Integer);
 begin
   self.Put('lastIndex', value, 0);
+end;
+
+
+method EcmaScriptRegexpObject.Recreate(aPattern: string; aSettings: RegexOptions);
+begin
+  fRegex := new Regex(aPattern, aSettings);
 end;
 
 end.

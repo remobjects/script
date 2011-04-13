@@ -389,6 +389,7 @@ begin
   FPos := 0;
   FRow := 1;
   FLastEnterPos := -1;
+  FEndPosition.Pos := 0;
   FEndPosition.Col := 1;
   FEndPosition.Row := 1;
   
@@ -455,8 +456,10 @@ begin
         Stop := true;
         FPosition.Col := lStartColumn;
         FPosition.Row := lStartRow;
+        FPosition.Pos := fPos;
         FEndPosition.Col := (FPos + fLen) - FLastEnterPos;
         FEndPosition.Row := Row;
+        FEndPosition.Pos:= fPos + FLen;
       end;
     end;
   end

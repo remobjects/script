@@ -359,12 +359,12 @@ end;
 
 method ScriptComponent.DebugLine(aFilename: string; aStartRow, aStartCol, aEndRow, aEndCol: Integer);
 begin
-  fDebugLastPos := new PositionPair(aStartRow, aStartCol, aEndRow, aendCol, aFilename);
+  fDebugLastPos := new PositionPair(0, aStartRow, aStartCol, 0, aEndRow, aendCol, aFilename);
   if Status = ScriptStatus.Stopping then raise new ScriptAbortException();
   if  fTracing then exit;
   fTracing := true;
   try
-    if DebugTracePoint <> nil then DebugTracePoint(self, new ScriptDebugEventArgs(fStackList[fStackItems.Count-1].Method, new PositionPair(aSTartRow, aStartCol, aEndRow, aEndCol, aFilename)));
+    if DebugTracePoint <> nil then DebugTracePoint(self, new ScriptDebugEventArgs(fStackList[fStackItems.Count-1].Method, new PositionPair(0, aSTartRow, aStartCol, 0, aEndRow, aEndCol, aFilename)));
     if (Status = ScriptStatus.StepInto) or 
           ((Status = ScriptStatus.StepOver) and (fLastFrame = fStackList.Count)) then Status := ScriptStatus.Pausing;
     CheckShouldPause;
