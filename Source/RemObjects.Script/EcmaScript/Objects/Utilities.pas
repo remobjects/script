@@ -303,10 +303,10 @@ begin
   var ms := new StringBuilder;
   var i:= 0;
   while i < s.Length do begin
-    if not aComponent and (s[i] = '+') then begin
-      ms.Append(#32);
-      inc(i);
-    end else
+    //if not aComponent and (s[i] = '+') then begin
+    //  ms.Append(#32);
+    //  inc(i);
+    //end else
     if (s[i] = '%') then begin
        if not (i +2 < s.Length)  then exit nil;
        var b: Byte;
@@ -317,6 +317,7 @@ begin
           ms.append(char('%'));
           ms.append(s[i+1]);
           ms.append(s[i+2]);
+          inc(i, 3);
          end else begin
            inc(i, 3);
            if 0 = (b and $80) then 

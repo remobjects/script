@@ -68,7 +68,7 @@ end;
 
 method GlobalObject.RegExpCtor(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  result := new EcmaScriptRegexpObject(self, Utilities.GetArgAsString(args, 0, aCaller), Utilities.GetArgAsString(args, 1, aCaller));
+  result := new EcmaScriptRegexpObject(self, Utilities.GetArgAsString(args, 0, aCaller), if Length(args) < 2 then '' else Utilities.GetArgAsString(args, 1, aCaller));
 end;
 
 method GlobalObject.RegExpExec(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;

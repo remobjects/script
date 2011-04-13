@@ -14,9 +14,14 @@ type
   [Xunit.RunWith(typeof(SputnikTests))]
   SputnikTest = public class(Xunit.Sdk.ITestCommand, Xunit.Sdk.IMethodInfo)
   private
+    fLongTimeout: Boolean;
+    fName: string;
+    fContent: string;
+    fOwner: SputnikTests;
   public
-    property Owner: SputnikTests;
-    property Name: string;
+    constructor(aOwner: SputnikTests; aName: string);
+    property Owner: SputnikTests read fOwner;
+    property Name: string read fName;
 
     method ToString: String; override;
 
@@ -30,7 +35,8 @@ type
     method GetCustomAttributes(attributeType: System.Type): sequence of Xunit.Sdk.IAttributeInfo;
     method CreateInstance: System.Object; empty;
     method ToStartXml: System.Xml.XmlNode; empty;
-    property Timeout: System.Int32 read 30000;
+    property Timeout: System.Int32 read if LongTimeout then 60000 else 30000;
+    property LongTimeout: Boolean read fLongTimeout;
     property ShouldCreateInstance: System.Boolean read false;
     method Execute(testClass: System.Object): Xunit.Sdk.MethodResult;
     property DisplayName: System.String read Name;
@@ -62,9 +68,11 @@ type
   public
     constructor;
 
+    property TestRoot: string read fTestRoot;
+
 
     method Include(arg: System.Text.RegularExpressions.Match): string;
-    method RunTest(aName: string);
+    method RunTest(aContent, aName: string);
     method SpecialCall(aMatch: System.Text.RegularExpressions.Match): string;
     property TypeUnderTest: Xunit.Sdk.ITypeInfo;
     property ObjectUnderTest: System.Object read nil;
@@ -118,12 +126,12 @@ begin
   end;
 end;
 
-method SputnikTests.RunTest(aName: string); 
+method SputnikTests.RunTest(aContent, aName: string); 
 begin
   if fFramework = nil then
     fFramework := File.ReadAllText(Path.Combine(fLib, 'framework.js'));
-  var lScriptFilename := Path.Combine(fTestRoot, aName);
-  var lScript := fFramework + File.ReadAllText(lScriptFilename);
+
+  var lScript := fFramework + aContent;
   lScript := fInclude.Replace(lScript, new System.Text.RegularExpressions.MatchEvaluator(@Include));
   lScript := fSpecialCall.Replace(lScript, new System.Text.RegularExpressions.MatchEvaluator(@Specialcall));
   using se := new RemObjects.Script.EcmaScriptComponent() do begin
@@ -151,7 +159,7 @@ begin
     
     if el is DirectoryInfo then continue;
     if el.FullName.EndsWith('.js') then begin
-      fTests.Add(new SputnikTest(Owner := self, Name := el.FullName.Substring(fTestRoot.Length+1)));
+      fTests.Add(new SputnikTest(self, el.FullName.Substring(fTestRoot.Length+1)));
     end; 
   end;
   for each el in lItems do begin
@@ -212,7 +220,7 @@ end;
 method SputnikTest.Run(Data: SputnikTest);
 begin
   try
-  Owner.RunTest(Name);
+  Owner.RunTest(fContent, Name);
   except
     raise;
   end;
@@ -227,6 +235,16 @@ end;
 method SputnikTest.HasAttribute(attributeType: System.Type): System.Boolean;
 begin
   exit false;
+end;
+
+constructor SputnikTest(aOwner: SputnikTests; aName: string);
+begin
+  fOwner := aOwner;
+  fName := aName;
+  var lScriptFilename := Path.Combine(aOwner.TestRoot, aName);
+  fContent := File.ReadAllText(lScriptFilename);
+  if fContent.Contains('@longtimeout') then
+    fLongTimeout := true;
 end;
 
 method SputnikException.ToString: String;
