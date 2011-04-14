@@ -94,10 +94,10 @@ begin
   result.Values['prototype'] := PropertyValue.NotAllFlags(FunctionPrototype);
 
   FunctionPrototype.Values['constructor'] := PropertyValue.NotEnum(result);
-  FunctionPrototype.Values.Add('toString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toString', @FunctionToString, 0)));
-  FunctionPrototype.Values.Add('apply', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'apply', @FunctionApply, 2)));
-  FunctionPrototype.Values.Add('call', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'call', @FunctionCall, 1)));
-  FunctionPrototype.Values.Add('bind', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'bind', @FunctionBind, 1)));
+  FunctionPrototype.Values.Add('toString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toString', @FunctionToString, 0, false, true)));
+  FunctionPrototype.Values.Add('apply', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'apply', @FunctionApply, 2, false, true)));
+  FunctionPrototype.Values.Add('call', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'call', @FunctionCall, 1, false, true)));
+  FunctionPrototype.Values.Add('bind', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'bind', @FunctionBind, 1, false, true)));
  
 end;
 
@@ -174,7 +174,9 @@ begin
     if args[1] is array of object then begin
       lArgs := array of object(args[1]);
     end else if args[1] is EcmaScriptArrayObject then begin
-      lArgs := EcmaScriptArrayObject(args[1]).ToArray;
+      lArgs := new Object[EcmaScriptArrayObject(args[1]).Length];
+      for i: Integer:= 0 to lArgs.length -1 do
+        lArgs[i] := EcmaScriptArrayObject(args[1]).Get(aCaller, i.toString);
     end else RaiseNativeError(NativeErrorType.TypeError, 'Function.prototype.apply requires two parameters')
   end;
   exit EcmaScriptObject(aSelf).CallEx(aCaller, lSelf, lArgs);

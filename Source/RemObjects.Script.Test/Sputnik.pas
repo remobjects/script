@@ -35,7 +35,7 @@ type
     method GetCustomAttributes(attributeType: System.Type): sequence of Xunit.Sdk.IAttributeInfo;
     method CreateInstance: System.Object; empty;
     method ToStartXml: System.Xml.XmlNode; empty;
-    property Timeout: System.Int32 read if LongTimeout then 60000 else 30000;
+    property Timeout: System.Int32 read if LongTimeout then 120000 else 30000;
     property LongTimeout: Boolean read fLongTimeout;
     property ShouldCreateInstance: System.Boolean read false;
     method Execute(testClass: System.Object): Xunit.Sdk.MethodResult;

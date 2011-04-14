@@ -313,7 +313,7 @@ begin
       lRealResult.AddValue(lMatchStr);
     end;
   end;
-  if lRealResult.Items.Count = 0 then exit nil;
+  if lRealResult.Length = 0 then exit nil;
 
   exit lRealResult;
 end;

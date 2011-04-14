@@ -426,11 +426,6 @@ begin
   var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0, aCaller);
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'Type(O) is not Object');
   var lName := Utilities.GetArgAsString(args, 1, aCaller);
-  var lArr := EcmaScriptArrayObject (lWork);
-  var lVal: Integer;
-  if (lArr <> nil) and Int32.TryParse(lName, out lval) and (lval < lArr.Items.Count) and (lval >= 0) then begin
-    exit  FromPropertyDescriptor(new PropertyValue(PropertyAttributes.All, lArr.Items[lval]));
-  end;
 
 
   var lPV: PropertyValue;
@@ -556,10 +551,7 @@ begin
   var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0, aCaller);
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'Type(O) is not Object');
   var lResult := new EcmaScriptArrayObject(0, self);
-  if lWork is EcmaScriptArrayObject then begin
-    for i: Integer := 0 to EcmaScriptArrayObject(lWork).Items.Count -1 do
-      lREsult.AddValue(i.ToString());
-  end;
+  
   for each el in lWork.Values.Keys do 
     lResult.AddValue(el);
   exit lResult;

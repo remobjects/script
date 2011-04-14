@@ -40,6 +40,7 @@ type
     class method GetArgAsString(arg: Array of object; &index: Integer; ec: ExecutionContext): string;
     class method GetObjAsEcmaScriptObject(arg: object; ec: ExecutionContext): EcmaScriptObject;
     class method GetObjAsInteger(arg: object; ec: ExecutionContext): Integer;
+    class method GetObjAsCardinal(arg: object; ec: ExecutionContext): Cardinal;
     class method GetObjAsInt64(arg: object; ec: ExecutionContext): Int64;
     class method GetObjAsDouble(arg: object; ec: ExecutionContext): Double;
     class method GetObjAsBoolean(arg: Object; ec: ExecutionContext): Boolean;
@@ -746,6 +747,46 @@ begin
   for n: Integer := i to length(arr) -1 do
     if arr[n] <> '0' then exit false;
   exit true;
+end;
+
+class method Utilities.GetObjAsCardinal(arg: object; ec: ExecutionContext): Cardinal;
+begin
+    if arg is EcmaScriptObject then arg := GetObjectAsPrimitive(ec, EcmaScriptObject(arg), PrimitiveType.Number);
+  if (arg = nil) then exit 0;
+  case &Type.GetTypeCode(arg.GetType) of
+    TypeCode.Boolean: Result := iif(boolean(arg), 1, 0);
+    TypeCode.Byte: result := byte(arg);
+    TypeCode.Char: result := Integer(Char(arg));
+    TypeCode.Decimal: result := Integer(Decimal(arg));
+    TypeCode.Double: begin
+      var lVal := Double(arg);
+      if Double.IsNaN(lVal) or (Double.IsInfinity(lVal)) then 
+        exit 0;
+      result := Integer(Cardinal(Math.Sign(lVal) * Math.Floor(Math.Abs(lVal))));
+    end;
+    TypeCode.Int16: result := Int16(arg);
+    TypeCode.Int32: result := Int32(arg);
+    TypeCode.Int64: result := Int64(arg);
+    TypeCode.SByte: result := SByte(arg);
+    TypeCode.Single: result := Integer(Single(arg));
+    TypeCode.String: begin
+       arg := String(arg).Trim();
+       if not (if string(arg).StartsWith('0x', StringComparison.InvariantCultureIgnoreCase) then
+         UInt32.TryParse(string(arg).Substring(2), System.Globalization.NumberStyles.AllowHexSpecifier, System.Globalization.NumberFormatInfo.InvariantInfo, out result)
+       else
+          UInt32.TryParse(string(arg), out result)) then begin
+        var lWork: Double := Utilities.ParseDouble(string(arg));
+        if Double.IsNaN(lWork) then result := 0
+        else
+          result := Integer(Cardinal(Math.Sign(lWork) * Math.Floor(Math.Abs(lWork))));
+      end;
+    end;
+    TypeCode.UInt16: result := UInt16(arg);
+    TypeCode.UInt32: result := UInt32(arg);
+    TypeCode.UInt64: result := UInt64(arg);
+    else 
+      result := 0;
+  end; // case
 end;
 
 end.

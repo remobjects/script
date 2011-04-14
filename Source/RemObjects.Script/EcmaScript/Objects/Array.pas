@@ -22,6 +22,8 @@ type
     method CreateArray: EcmaScriptObject;
 
     property DefaultCompareInstance: EcmaScriptFunctionObject;
+  
+    method QuickSort(EC: ExecutionContext; aSelf: EcmaScriptObject; aFirst, aLast: Integer; aCompare: EcmaScriptBaseFunctionObject);
     method ArrayIsArray(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method ArrayCtor(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method ArrayToString(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
@@ -47,10 +49,12 @@ type
     method ArrayReduceRight(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 
     method DefaultCompare(aCaller: ExecutionContext; aSelf: Object; params Args: Array of Object): Object;
+  private
+    method Swap(EC: ExecutionContext; aSelf: EcmaScriptObject; L: Int32; R: Int32);
   end;
   RemObjects.Script.EcmaScript.EcmaScriptArrayObject = public class(EcmaScriptObject)
   private
-    fItems: List<Object> := new List<Object>;
+    method get_Length: Cardinal;
   public
     constructor(aRoot: GlobalObject; aLength: Integer);
     constructor(aCapacity: Integer; aRoot: GlobalObject);
@@ -59,14 +63,12 @@ type
     class var Method_AddValue: System.Reflection.MethodInfo := typeof(EcmaScriptArrayObject).GetMethod('AddValue', [typeof(Object)]); readonly;
     method AddValues(aItems: Array of Object): EcmaScriptArrayObject;
     method AddValue(aItem: Object);
-    method Put(aExecutionContext: ExecutionContext; aName: String; aValue: Object; aThrow: Integer): Object; override;
-    method Get(aExecutionContext: ExecutionContext; aFlags: Integer; aName: String): Object; override;
-    method PutIndex(aName: Int32; aValue: Object): Object; 
-    method GetIndex(aName: Int32): Object; 
-    method GetOwnProperty(aName: String): PropertyValue; override;
-    property ToArray: array of Object read fItems.ToArray;
-    property Items: List<Object> read fItems;
-    method GetNames: IEnumerator<String>; override;
+
+    property Length: Cardinal read get_Length;
+
+    method DefineOwnProperty(aName: String; aValue: PropertyValue; aThrow: Boolean): Boolean; override;
+    
+    class method TryGetArrayIndex(s: string; out val: Cardinal): Boolean;
   end;
 
   EcmaScriptArrayObjectObject = class(EcmaScriptFunctionObject)
@@ -121,6 +123,115 @@ begin
 end;
 
 
+
+
+constructor EcmaScriptArrayObject(aRoot: GlobalObject; aLength: Integer);
+begin
+  inherited constructor(aRoot, aRoot.ArrayPrototype);
+  &Class := 'Array';
+  if aLength < 0 then aLength := 0;
+  
+  inherited DefineOwnProperty('length', new PropertyValue(PropertyAttributes.writable, aLength), false);
+end;
+
+constructor EcmaScriptArrayObject(aCapacity: Integer; aRoot: GlobalObject);
+begin
+  inherited constructor(aRoot, aRoot.ArrayPrototype);
+  &Class := 'Array';
+  inherited DefineOwnProperty('length', new PropertyValue(PropertyAttributes.writable, 0), false);
+end;
+
+class method EcmaScriptArrayObject.TryGetArrayIndex(s: string; out val: Cardinal): Boolean;
+begin
+  result := UInt32.TryParse(s, out val)  and (val <> Cardinal.MaxValue);
+end;
+
+method EcmaScriptArrayObject.DefineOwnProperty(aName: String; aValue: PropertyValue; aThrow: Boolean): Boolean; 
+begin
+  var lOldLenDesc := GetOwnProperty('length');
+  
+  var lOldLen := Utilities.GetObjAsCardinal(lOldLenDesc:Value, Root.ExecutionContext);
+  if aName = 'length' then begin
+    if PropertyAttributes.HasValue not in aValue.Attributes then
+      exit inherited;
+    var lNewLen := Utilities.GetObjAsCardinal(aValue.Value, Root.ExecutionContext);
+    var lLenVal := if lNewLen < cardinal(Int32.MaxValue) then Integer(lNewLen) else Double(Int64(lNewLen));
+    if not Utilities.GetObjAsBoolean(Operators.Equal(lLenVal, Utilities.GetObjAsDouble(aValue.Value, Root.ExecutionContext), root.ExecutionContext), Root.ExecutionContext) then
+      Root.RaiseNativeError(NativeErrorType.RangeError, 'Index out of range');
+    aValue.Value := lLenVal;
+    if lNewLen > lOldLen then 
+      exit inherited;
+    if not PropertyAttributes.writable not in lOldLenDesc.Attributes then begin
+      if aThrow then
+        Root.RaiseNativeError(NativeErrorType.TypeError, 'Value not writable');
+      exit true;
+    end;
+    var lNewWritable := PropertyAttributes.writable in aValue.Attributes;
+    aValue.Attributes := aValue.Attributes or PropertyAttributes.writable;
+    if not inherited DefineOwnProperty(aName, aValue, aThrow) then exit false; // set the actual length
+    while lNewLen < lOldLen do begin
+      lOldLen := lOldLen - 1;
+      if not Delete(lOldLen.ToString, false) then begin
+         lOldLen := lOldLen +1;
+        aValue.Value := if lOldLen < cardinal(Int32.MaxValue) then Integer(lOldLen) else Double(lOldLen);
+        inherited DefineOwnProperty(aName, aValue, false);
+        if aThrow then
+          Root.RaiseNativeError(NativeErrorType.TypeError, 'Element '+(lOldLen-1)+' cannot be removed');
+        exit true;
+      end;
+    end;
+    if not lNewWritable then begin
+      lOldLenDesc.Attributes := lOldLenDesc.Attributes and not PropertyAttributes.writable;
+    end;
+    exit true;
+  end;
+  var lIndex: Cardinal;
+  if TryGetArrayIndex(aName, out lIndex) then begin
+    if (PropertyAttributes.writable not in lOldLenDesc.Attributes) and (lIndex >= loldLen) then begin
+      if aThrow then
+        Root.RaiseNativeError(NativeErrorType.TypeError, 'Element out of range of array and length is readonly');
+      exit true;
+    end;
+    if not inherited DefineOwnProperty(aName, aValue, false) then begin
+      if aThrow then
+        Root.RaiseNativeError(NativeErrorType.TypeError, 'Cannot write element '+aName);
+      exit true;
+    end;
+    if lIndex >= lOldLen then begin
+      lOldLen := lIndex + 1;
+      lOldLenDesc.Value := if lOldLen < cardinal(Int32.MaxValue) then Integer(lOldLen) else Double(lOldLen);
+    end;
+    exit true;
+  end;
+  exit inherited;
+end;
+
+method EcmaScriptArrayObject.get_Length: Cardinal;
+begin
+  exit Utilities.GetObjAsCardinal(GetOwnProperty('length').Value, Root.ExecutionContext);
+end;
+
+method EcmaScriptArrayObject.AddValues(aItems: Array of Object): EcmaScriptArrayObject;
+begin
+  var lLen := Length;
+  DefineOwnProperty('length', new PropertyValue(PropertyAttributes.writable, lLen + aItems.Length), true);
+  for i: Cardinal := 0 to aItems.Length -1 do
+    DefineOwnProperty((lLen + i).ToString, new PropertyValue(PropertyAttributes.All, aItems[i]), true);
+  exit self;
+end;
+
+method EcmaScriptArrayObject.AddValue(aItem: Object);
+begin
+    DefineOwnProperty(Length.ToString(), new PropertyValue(PropertyAttributes.All, aItem), true);
+end;
+
+
+constructor EcmaScriptArrayObjectObject(aOwner: GlobalObject);
+begin
+  inherited constructor(aOwner, 'Array', @aOwner.ArrayCtor, 1, false);
+end;
+
+
 method GlobalObject.ArrayCtor(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
   if Args.Length = 1 then begin
@@ -142,16 +253,22 @@ method GlobalObject.ArrayConcat(aCaller: ExecutionContext;aSelf: Object; params 
 begin
   var lSelf := Utilities.ToObject(aCaller, aSelf);
   var lRes: EcmaScriptArrayObject;
+  var lLen :=  Utilities.GetObjAsInteger(lSelf.Get('length'), aCaller);
   lRes := new EcmaScriptArrayObject(self, 0);
-  for i: Integer := 0 to Utilities.GetObjAsInteger(lSelf.Get('length'), aCaller) -1 do begin
-    lRes.Items.Add(lSelf.Get(aCaller, 3, i.ToString()));
+  for i: Integer := 0 to lLen -1 do begin
+    lRes.AddValue(lSelf.Get(aCaller, 3, i.ToString()));
   end;
 
   for each el in Args do begin
     if el is EcmaScriptArrayObject then begin
-      lRes.Items.AddRange(EcmaScriptArrayObject(el).Items);
+      for i: Cardinal := 0 to EcmaScriptArrayObject(el).Length -1 do
+      begin
+        var lVal := lRes.GetOwnProperty(i.ToString());
+        if lVal <> nil then 
+        lRes.AddValue(lVal.Value);
+      end;
     end else
-      lRes.Items.Add(el);
+      lRes.AddValue(el);
   end;
   result := lRes;
 end;
@@ -173,118 +290,235 @@ end;
 
 method GlobalObject.ArrayPop(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  var lSelf := EcmaScriptArrayObject(aSelf);
-  if lSelf = nil then exit Undefined.Instance;
-  if lSelf.Items.Count = 0 then exit Undefined.Instance;
-  result := lSelf.Items[lSelf.Items.Count -1];
-  lSelf.Items.RemoveAt(lSelf.Items.Count -1);
+  var lSelf := Utilities.ToObject(aCaller, aSelf);
+  var lLen := Utilities.GetObjAsCardinal(lSelf.Get(aCaller, 0, 'length'), aCaller);
+  if lLen = 0 then begin
+    lSelf.Put(aCaller, 'length', 0, 1);
+    exit Undefined.Instance;
+  end;
+  var indx := (lLen -1).ToString;
+  var el := lSelf.Get(aCaller, indx);
+  lSelf.Delete(indx, true);
+  lLen := (lLen -1);
+  lSelf.Put(aCaller, 'length', indx);
+  exit el;
 end;
 
 method GlobalObject.ArrayPush(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  var lSelf := EcmaScriptArrayObject(aSelf);
-  if lSelf = nil then exit Undefined.Instance;
-  //if lSelf.Items.Count = 0 then exit Undefined.Instance;
-  for each el in args do 
-    lSelf.Items.Add(el);
-  exit lSelf.Items.Count;
+  var lSelf := Utilities.ToObject(aCaller, aSelf);
+  var lLen := Utilities.GetObjAsCardinal(lSelf.Get(aCaller, 0, 'length'), aCaller);
+  for each el in args do begin
+    lSelf.Put(aCaller, lLen.ToString, el);
+    inc(lLen);
+  end;
+  exit Put(aCaller, 'length', if lLen < Cardinal(Int32.MaxValue) then Integer(lLen) else Double(lLen));
 end;
 
 method GlobalObject.ArrayReverse(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  var lSelf := EcmaScriptArrayObject(aSelf);
-  if lSelf = nil then exit Undefined.Instance;
-  lSelf.Items.Reverse;
+  var lSelf := Utilities.ToObject(aCaller, aSelf);
+  var lLen := Utilities.GetObjAsCardinal(lSelf.Get(aCaller, 0, 'length'), aCaller);
+  var lMid := lLen / 2;
+  var lLow := 0;
+  while lLow <> lMid do begin
+    var lUp := lLen - lLow -1;
+    var lUpP := lUp.ToString;
+    var lLowP := lLow.ToString;
+    var lLowVal := lSelf.Get(aCaller, lLowP);
+    var lUpVal := lSelf.Get(aCaller, lUpP);
+    var lLowerExists := lSelf.HasProperty(lLowP);
+    var lUpperExists := lSelf.HasProperty(lUpP);
+    if lLowerExists and lUpperExists then begin
+      lSelf.Put(aCaller, lLowP, lUpVal, 1);
+      lSelf.Put(aCaller, lUpP, lLowVal, 1);
+    end else if not lLowerExists and lUpperExists then begin
+      lSelf.Put(aCaller, lLowP, lUpVal, 1);
+      lSelf.Delete(lUpP, true);
+    end else if not lLowerExists and not lUpperExists then begin
+      lSelf.Delete(lLowP, true);
+      lSelf.Put(aCaller, lUpP, lLowVal, 1);
+    end;
+
+    inc(lLow);
+  end;
   exit lSelf;
 end;
 
 method GlobalObject.ArrayShift(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  var lSelf := EcmaScriptArrayObject(aSelf);
-  if lSelf = nil then exit Undefined.Instance;
-  if lSelf.Items.Count = 0 then exit Undefined.Instance;
-  result := lSelf.Items[0];
-  lSelf.Items.RemoveAt(0);
+  var lSelf := Utilities.ToObject(aCaller, aSelf);
+  var lLen := Utilities.GetObjAsCardinal(lSelf.Get(aCaller, 0, 'length'), aCaller);
+  if lLen = 0 then begin
+    lSelf.Put(aCaller, 'length', 0, 1);
+    exit Undefined.Instance;
+  end;
+  var first := lSelf.Get(aCaller, 0, '0');
+  var k: Cardinal := 1;
+  while k < lLen do begin
+    var lfrom := k.ToString;
+    var lto  := (k-1).ToString;
+    if lSelf.HasProperty(lFrom) then begin
+      lSelf.Put(aCaller, lTo, lSelf.Get(aCaller, lFrom));
+    end else
+      lSelf.Delete(lTo, true);
+    inc(k);
+  end;
+  var lNewLen := (lLen -1).ToString;
+  lSelf.Delete(lNewLen, true);
+  lSelf.Put(aCaller, 'length', lNewLen);
+  exit first;
 end;
 
 method GlobalObject.ArraySlice(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  var lSelf := EcmaScriptArrayObject(aSelf);
-  if lSelf = nil then exit Undefined.Instance;
-  var lStart := Utilities.GetArgAsInteger(Args, 0, aCaller);
-  var lObj := Utilities.GetArg(Args, 1);
-  var lEnd := Iif((lObj = nil) or (lObj = Undefined.Instance), Int32.MaxValue, Utilities.GetObjAsInteger(lObj, aCaller));
-  if lStart < 0 then begin
-    lStart := lSelf.Items.Count + lStart;
-    if lStart < 0 then 
-      lStart := 0;
-  end;
+  var lSelf := Utilities.ToObject(aCaller, aSelf);
+  var lLen := Utilities.GetObjAsCardinal(lSelf.Get(aCaller, 0, 'length'), aCaller);
 
-  if lEnd < 0 then begin 
-    lEnd := lSelf.Items.Count + lEnd;
-    if lEnd < 0 then lEnd := 0;
-  end;
-  if lEnd < lStart then lEnd := lStart;
-  if lStart > lSelf.Items.Count then lStart := lSelf.Items.Count;
-  if lEnd > lSelf.Items.Count then lEnd := lSelf.Items.Count;
+  var lRelStart := Utilities.GetArgAsInteger(args, 0, aCaller);
+  var k := if lRelStart < 0 then Math.Max(lLen + lRelStart, 0) else Math.Min(lRelStart, Integer(lLen));
+  var lRelEnd := if (lengtH(args) < 2) or (args[1] = Undefined.Instance) then lLen else Utilities.GetArgAsInteger(args, 1, aCaller);
+  var lFinal := if lRelEnd < 0 then Math.Max(lLen + lRelEnd, 0) else Math.Min(lRelEnd, Integer(lLen));
+  var a := new EcmaScriptArrayObject(Root, 0);
+  var n := 0;
+  while k < lFinal do begin
+    var pk := k.ToString;
+    if lSelf.HasProperty(pk) then begin
+      a.Put(aCaller, n.ToString(), lSelf.Get(aCaller, 0, pk), 0);
+    end;
 
-  var lRes := new EcmaScriptArrayObject(self, 0);
-  for i: Integer := 0 to lEnd - lStart do begin
-    lRes.Items.Add(lSelf.Items[lStart+i]);
+    inc(n);
+    inc(k);
   end;
-  exit lRes;
+  exit A;
+end;
+
+method GlobalObject.QuickSort(EC: ExecutionContext; aSelf: EcmaScriptObject; aFirst, aLast: Integer; aCompare: EcmaScriptBaseFunctionObject);
+var
+  L, R: Integer;
+  Pivot: Object;
+begin
+  while aFirst < aLast do begin
+    if (aLast - aFirst) >= 2 then begin
+      R := (aFirst + aLast) div 2;
+      if Utilities.GetObjAsInteger(aCompare.CallEx(EC, aSElf, aSelf.Get(EC, aFirst.ToString),aSelf.Get(EC, R.ToString())), EC) > 0 then 
+        Swap(EC, aSelf, aFirst, R);
+
+      if  Utilities.GetObjAsInteger(aCompare.CallEx(EC, aSElf, aSelf.Get(EC, aFirst.ToString),aSelf.Get(EC, aLast.ToString())), EC) > 0 then 
+        Swap(EC, aSelf, aFirst, aLast);
+
+      if Utilities.GetObjAsInteger(aCompare.CallEx(EC, aSElf, aSelf.Get(EC, R.ToString),aSelf.Get(EC, aLast.ToString())), EC) > 0 then
+        Swap(EC, aSelf, R, aLast);
+
+      Pivot := aSelf.Get(EC, R.ToString);
+    end
+    else 
+      Pivot := aSelf.Get(EC, aFirst.ToString);
+
+    L := aFirst - 1;
+    R := aLast + 1;
+    loop begin
+      repeat 
+        dec(R); 
+      until Utilities.GetObjAsInteger(aCompare.CallEx(EC, aSElf, aSelf.Get(EC, R.ToString), Pivot), EC) <= 0;
+
+      repeat 
+        inc(L); 
+      until Utilities.GetObjAsInteger(aCompare.CallEx(EC, aSElf, aSelf.Get(EC, L.ToString), Pivot), EC) >= 0;
+      if (L >= R) then break;
+      Swap(EC, aSelf, L, R);
+    end;
+    if (aFirst < R) then
+      QuickSort(EC, aSelf, aFirst, R, aCompare); 
+    aFirst := R + 1;
+  end;
 end;
 
 method GlobalObject.ArraySort(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  var lSelf := EcmaScriptArrayObject(aSelf);
-  if lSelf = nil then exit Undefined.Instance;
+  var lSelf := Utilities.ToObject(aCaller, aSelf);
+  var lLen := Utilities.GetObjAsCardinal(lSelf.Get(aCaller, 0, 'length'), aCaller);
+
   var lFunc := EcmaScriptBaseFunctionObject(Utilities.GetArg(Args, 0));
   if lFunc = nil then begin
     lFunc := DefaultCompareInstance;
   end;
-
-  lSelf.Items.Sort(
-    method(x, y: Object): Integer begin
-      exit Utilities.GetObjAsInteger(lFunc.CallEx(aCaller, lSelf, x, y), aCaller);
-    end);
+  QuickSort(aCaller, lSelf, 0, lLen -1, lFunc);
+  exit lSelf;
 end;
 
 method GlobalObject.ArraySplice(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  var lSelf := EcmaScriptArrayObject(aSelf);
-  if lSelf = nil then exit Undefined.Instance;
-  var lStart := Utilities.GetArgAsInteger(Args, 0, aCaller);
-  var lEnd := Utilities.GetArgAsInteger(Args, 1, aCaller);
-  if lStart < 0 then begin
-    lStart := lSelf.Items.Count + lStart;
-    if lStart < 0 then 
-      lStart := 0;
-  end;
-  if lStart > lSelf.Items.Count then lStart := lSelf.Items.Count;
-  var lRes := new EcmaScriptArrayObject(self, 0);
-  for i: Integer := 0 to lStart -1 do begin
-    lRes.Items.Add(lSelf.Items[i]);
-  end;
-  for i: Integer := 0 to Length(Args) -3 do begin
-    lRes.Items.Add(Args[i+2]);
-  end;
-  for i: Integer := lStart + lEnd to lSelf.Items.Count -1 do begin
-    lRes.Items.Add(lSelf.Items[i]);
+  var lSelf := Utilities.ToObject(aCaller, aSelf);
+  var A := new EcmaScriptArrayObject(self, 0);
+  var lLen := Utilities.GetObjAsCardinal(lSelf.Get(aCaller, 0, 'length'), aCaller);
+
+  var lRelativeStart := Utilities.GetArgAsInteger(Args, 0, aCaller);
+  var lActualStart := if lRelativeStart < 0 then Math.Max(lLen + lRelativeStart, 0) else Math.Min(lRelativeStart, Integer(lLen));
+
+  var lActualDeleteCount := Math.Min(Math.Max(Utilities.GetArgAsInteger(Args, 1, aCaller), 0), lLen - lActualStart);
+  var k: Integer := 0;
+  while k < lActualDeleteCount do begin
+    var lFrom := (lRelativeStart + k).ToString;
+    if lSelf.HasProperty(lFrom) then begin
+      A.Put(aCaller, K.ToString(), lSelf.Get(aCaller, lFrom));
+    end;
+    inc(k);
   end;
 
-  exit lRes;
+  if Length(Args) - 2< lActualDeleteCount then begin
+    k := lActualStart;
+    while k < (lLen - lActualDeleteCount) do begin
+      var lFrom := (k + lActualDeleteCount).ToString;
+      var lTo := (k + Length(Args) - 2).ToString;
+      if lSelf.HasProperty(lFrom) then 
+        lSelf.Put(aCaller, lTo, lSelf.Get(aCaller, lFrom))
+      else
+        lSelf.Delete(lTo, true);
+      inc(k);
+    end;
+  end else if length(args) -2 > lActualDeleteCount then begin
+    k := lLen - lActualDeleteCount;
+    while k > lActualStart do begin
+      var lFrom := (k + lActualDeleteCount -1).ToString;
+      var lTo := (k + length(Args)- 3).ToString;
+      if lSelf.HasProperty(lFrom) then 
+        lSelf.Put(aCaller, lTo, lSelf.Get(aCaller, lFrom))
+      else
+        lSelf.Delete(lTo, true);
+      dec(k);
+    end;
+  end;
+  k := lActualStart;
+  for i: Integer := 2 to Length(Args) -1 do begin
+    lSelf.Put(aCaller, k.ToString(), Args[i]);
+    inc(k);
+  end;
 
+  lSelf.Put(aCaller, 'length', Integer(lLen - lActualDeleteCount + (length(Args)-2)));
+  exit A;
 end;
 
 method GlobalObject.ArrayUnshift(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  var lSelf := EcmaScriptArrayObject(aSelf);
-  if lSelf = nil then exit Undefined.Instance;
-  if lSelf.Items.Count = 0 then exit Undefined.Instance;
-  for each el in args index n do 
-    lSelf.Items.Insert(n, el);
-  exit lSelf.Items.Count;
+  var lSelf := Utilities.ToObject(aCaller, aSelf);
+  var lLen := Utilities.GetObjAsCardinal(lSelf.Get(aCaller, 0, 'length'), aCaller);
+  var argcount := Length(args);
+  var k := lLen;
+  while k > 0 do begin
+    var lfrom := (k-1).ToString;
+    var lto  := (k+argcount-1).ToString;
+    if lSelf.HasProperty(lFrom) then begin
+      lSelf.Put(aCaller, lTo, lSelf.Get(aCaller, lFrom));
+    end else
+      lSelf.Delete(lTo, true);
+    dec(k);
+  end;
+  for j: Integer := 0 to Length(Args) -1 do begin
+    lSelf.Put(aCaller, j.ToString(), args[j], 1);
+  end;
+  lSelf.Put(aCaller, 'length', Integer(lLen)+argcount);
+  exit lSelf;
 end;
 
 method GlobalObject.DefaultCompare(aCaller: ExecutionContext; aSelf: Object; params Args: Array of Object): Object;
@@ -334,7 +568,7 @@ method GlobalObject.ArrayIsArray(aCaller: ExecutionContext;aSelf: Object; params
 begin
   var lEl := EcmaScriptArrayObject(Utilities.GetArg(Args, 0));
   if lEl = nil then exit false;
-  exit lEl.Class = 'Array';
+  exit lEl <> nil;
 end;
 
 method GlobalObject.ArrayIndexOf(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
@@ -521,118 +755,26 @@ begin
   exit lInitialValue;
 end;
 
-constructor EcmaScriptArrayObject(aRoot: GlobalObject; aLength: Integer);
+method GlobalObject.Swap(EC: ExecutionContext; aSelf: EcmaScriptObject; L: Int32; R: Int32);
 begin
-  inherited constructor(aRoot, aRoot.ArrayPrototype);
-  &Class := 'Array';
-  if aLength > 0 then begin
-    fItems.Capacity := aLength;
-    while fItems.Count < aLength do fItems.Add(Undefined.Instance);
+  var lStr := L.ToString;
+  var LVal := aSElf.Get(ec, lStr);
+  var lHasL := aSelf.HasProperty(lStr);
+  var RStr := R.ToString;
+  var RVal := aSElf.Get(ec, rStr);
+  var lHasR := aSelf.HasProperty(rStr);
+
+  if lHasL and lHasR then begin
+    aSelf.Put(EC, lStr, RVal, 1);
+    aSelf.Put(EC, RStr, lVal, 1);
+  end else if not lHasL and lHasR then begin
+    aSelf.Put(EC, lStr, RVal, 1);
+    aSelf.Delete(RStr, true);
+  end else if not lHasL and not lHasR then begin
+    aSelf.Delete(lStr, true);
+    aSelf.Put(EC, RStr, LVal, 1);
   end;
-end;
 
-
-method EcmaScriptArrayObject.Put(aExecutionContext: ExecutionContext; aName: String; aValue: Object; aThrow: Integer): Object; 
-begin
-  if aName = 'length' then begin
-    var lLength := Utilities.GetObjAsInteger(aValue, aExecutionContext);
-    if lLength < 0 then lLength := 0;
-    if lLength < fItems.Count then 
-      fItems.RemoveRange(lLength, fItems.Count - lLength)
-    else begin
-      if lLength < fItems.Capacity  then fItems.Capacity := lLength;
-      while fItems.Count < lLength do fItems.Add(Undefined.Instance);
-    end;
-    exit lLength;
-  end else begin
-    var lIndex: Integer;
-    if Int32.TryParse(aname, out lIndex) then
-      exit PutIndex(lIndex, aValue)
-    else
-      exit inherited Put(aExecutionContext, aName, aValue, aThrow);
-  end;
-end;
-
-method EcmaScriptArrayObject.Get(aExecutionContext: ExecutionContext; aFlags: Integer; aName: String): Object;
-begin
-  if aName = 'length' then exit fItems.Count;
-  var lIndex: Integer;
-  if Int32.TryParse(aname, out lIndex) then
-    Result := GetIndex(lIndex)
-  else
-    Result := inherited Get(aExecutionContext, aFlags, aName);
-end;
-
-method EcmaScriptArrayObject.PutIndex(aName: Int32; aValue: Object): Object;
-begin
-  if aName < 0 then raise new IndexOutOfRangeException;
-  if aName >= fItems.Count then begin
-    if aName >= fItems.Capacity then fItems.Capacity := aName;
-    while fItems.Count <= aName do fItems.Add(Undefined.Instance);
-  end;
-  fItems[aName] := aValue;
-  exit aValue;
-end;
-
-method EcmaScriptArrayObject.GetIndex(aName: Int32): Object;
-begin
-  if (aName < 0) or (aName >= fItems.Count) then exit Undefined.Instance;
-  result := fItems[aName];
-end;
-
-
-method EcmaScriptArrayObject.AddValues(aItems: Array of Object): EcmaScriptArrayObject;
-begin
-  var lNewLength  := fItems.Count + length(aItems);
-  if fItems.Capacity < lNewLength then fItems.Capacity := lNewLength;
-  for i: Integer := 0 to Length(aItems) -1 do fItems.Add(aItems[i]);
-  result := self;
-end;
-
-
-constructor EcmaScriptArrayObject(aCapacity: Integer; aRoot: GlobalObject);
-begin
-  constructor(aRoot, 0);
-  fItems.Capacity := aCapacity;
-end;
-
-method EcmaScriptArrayObject.AddValue(aITem: Object);
-begin
-  fItems.Add(aItem);
-end;
-
-method EcmaScriptArrayObject.GetNames: IEnumerator<String>;
-begin
-  var lItems := new List<string>;
-  var lCurr: EcmaScriptObject := self;
-  for i: Integer := 0 to Items.Count -1 do
-    lItems.Add(i.ToString());
-  while assigned(lCurr) do begin
-    for each el in lCurr.Values do begin
-      if PropertyAttributes.Enumerable in el.Value.Attributes then begin
-        if not lItems.Contains(el.Key) then lItems.Add(el.Key);
-      end;
-    end;
-    lCurr := lCurr.Prototype;
-  end;
-  exit System.Linq.Enumerable.Where(lItems, a-> HasProperty(a)).GetEnumerator;
-end;
-
-method EcmaScriptArrayObject.GetOwnProperty(aName: String): PropertyValue;
-begin
-  var el: Integer;
-  if Int32.TryParse(aName, out el) and (el < fItems.Count) then begin
-    var lItem := fItems[el];
-    exit new PropertyValue(PropertyAttributes.All, lItem);
-  end else if aname = 'length' then
-     exit new PropertyValue(PropertyAttributes.None, fItems.Count)
-  else
-    exit inherited GetOwnProperty(aname);
-end;
-
-constructor EcmaScriptArrayObjectObject(aOwner: GlobalObject);
-begin
-  inherited constructor(aOwner, 'Array', @aOwner.ArrayCtor, 1, false);
 end;
 
 method EcmaScriptArrayObjectObject.Construct(context: ExecutionContext; params args: array of Object): Object;

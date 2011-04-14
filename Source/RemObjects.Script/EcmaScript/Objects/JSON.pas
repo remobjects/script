@@ -161,8 +161,8 @@ begin
     var lItem :=  EcmaScriptArrayObject(Utilities.GetArg(Args, 1));
     lPropList := new List<String>;
     if lItem <> nil then begin
-      for i: Integer := 0 to lItem.Items.Count -1 do begin
-        var lEl := lItem.Items[i];
+      for i: Integer := 0 to lItem.Length -1 do begin
+        var lEl := lItem.Get(aCaller, 0, i.ToString);
         if (lEl = nil) or (lEl =  Undefined.Instance) then continue;
         lPropList.Add(lEl.ToString);
       end;
@@ -196,12 +196,13 @@ begin
     var lArr := EcmaScriptArrayObject(lEc);
     if lArr <> nil then begin
       var i: Integer := 0;
-      while i < lArr.Items.Count do begin
+      var lLen := Integer(lArr.Length);
+      while i < lLen do begin
         var lNewVal := Walk(aCaller, aRoot, aReviver,i.ToString, lArr);
         if lNewVal = Undefined.Instance then
-          lArr.Items.RemoveAt(i)
+          lArr.Delete(i.ToString(), false)
         else begin
-          lArr.Items[i] := lNewVal;
+          lArr.Put(acaller, i.ToString(), lNewVal);
           inc(i);
         end;
       end;
@@ -258,14 +259,14 @@ begin
     aStack.Add(lObj);
     var lWork := new StringBuilder;
     if lObj.Class = 'Array' then begin
-      if EcmaScriptArrayObject(lObj).Items.Count = 0 then begin
+      if EcmaScriptArrayObject(lObj).Length = 0 then begin
         lWork.Append('[]');
 
       end;
 
       aIndent := aIndent + aGap;
 
-      for i: Integer := 0 to EcmaScriptArrayObject(lObj).Items.Count -1 do begin
+      for i: Integer := 0 to EcmaScriptArrayObject(lObj).Length -1 do begin
         var el := JSONStr(aExecutionContext, aStack, aGap, aIndent,aReplacerFunction, aProplist, lObj, i.ToString());
         if el =  nil then el := 'null';
         if i = 0 then begin
@@ -277,7 +278,7 @@ begin
           end;
         end;
         lWork.Append(el);
-        if i = EcmaScriptArrayObject(lObj).Items.Count -1 then begin
+        if i = EcmaScriptArrayObject(lObj).Length -1 then begin
           if aGap = '' then begin
             lWork.Append(']')
           end else begin
