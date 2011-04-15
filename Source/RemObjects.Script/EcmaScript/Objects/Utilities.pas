@@ -33,13 +33,13 @@ type
     class method UrlDecode(s: String; aComponent: Boolean): String;
     class method GetArg(arg: Array of object; &index: Integer): Object;
     class method GetArgAsEcmaScriptObject(arg: Array of object; &index: Integer; ec: ExecutionContext): EcmaScriptObject;
-    class method GetArgAsInteger(arg: Array of object; &index: Integer; ec: ExecutionContext): Integer;
+    class method GetArgAsInteger(arg: Array of object; &index: Integer; ec: ExecutionContext; aTreatInfinity: Boolean := false): Integer;
     class method GetArgAsInt64(arg: Array of object; &index: Integer; ec: ExecutionContext): Int64;
     class method GetArgAsDouble(arg: Array of object; &index: Integer; ec: ExecutionContext): Double;
     class method GetArgAsBoolean(arg: Array of object; &index: Integer; ec: ExecutionContext): Boolean;
     class method GetArgAsString(arg: Array of object; &index: Integer; ec: ExecutionContext): string;
     class method GetObjAsEcmaScriptObject(arg: object; ec: ExecutionContext): EcmaScriptObject;
-    class method GetObjAsInteger(arg: object; ec: ExecutionContext): Integer;
+    class method GetObjAsInteger(arg: object; ec: ExecutionContext; aTreatInfinity: Boolean := false): Integer;
     class method GetObjAsCardinal(arg: object; ec: ExecutionContext): Cardinal;
     class method GetObjAsInt64(arg: object; ec: ExecutionContext): Int64;
     class method GetObjAsDouble(arg: object; ec: ExecutionContext): Double;
@@ -71,13 +71,13 @@ begin
     result := EcmaScriptObject(lValue);
 end;
 
-class method Utilities.GetArgAsInteger(arg: Array of object; &index: Integer; ec: ExecutionContext): Integer;
+class method Utilities.GetArgAsInteger(arg: Array of object; &index: Integer; ec: ExecutionContext; aTreatInfinity: Boolean := false): Integer;
 begin
   var lValue := GetArg(arg, index);
   if (lValue = nil) or (lValue = Undefined.Instance) then begin
     result := 0;
   end else
-    result := GetObjAsInteger(lValue, ec);
+    result := GetObjAsInteger(lValue, ec, aTreatInfinity);
 end;
 
 class method Utilities.GetArgAsInt64(arg: Array of object; &index: Integer; ec: ExecutionContext): Int64;
@@ -115,7 +115,7 @@ begin
     result := EcmaScriptObject(arg);
 end;
 
-class method Utilities.GetObjAsInteger(arg: object; ec: ExecutionContext): Integer;
+class method Utilities.GetObjAsInteger(arg: object; ec: ExecutionContext; aTreatInfinity: Boolean := false): Integer;
 begin
   if arg is EcmaScriptObject then arg := GetObjectAsPrimitive(ec, EcmaScriptObject(arg), PrimitiveType.Number);
   if (arg = nil) then exit 0;
@@ -126,6 +126,10 @@ begin
     TypeCode.Decimal: result := Integer(Decimal(arg));
     TypeCode.Double: begin
       var lVal := Double(arg);
+      if aTreatInfinity then begin
+        if Double.IsPositiveInfinity(lVal) then exit Int32.MaxValue;
+        if Double.IsNegativeInfinity(lVal) then exit Int32.MinValue;
+      end;
       if Double.IsNaN(lVal) or (Double.IsInfinity(lVal)) then 
         exit 0;
       result := Integer(Cardinal(Math.Sign(lVal) * Math.Floor(Math.Abs(lVal))));

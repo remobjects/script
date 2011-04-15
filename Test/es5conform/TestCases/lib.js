@@ -8,7 +8,7 @@ var supportsStrict = undefined;
 function fnSupportsStrict() {
    "use strict";
    if (supportsStrict!==undefined) return supportsStrict;
-   try {eval('with ({}) {}'); supportsStrict=false;} catch (e) {supportsStrict=true;};     
+   supportsStrict=true; // speed them up
    return supportsStrict;
   }
 

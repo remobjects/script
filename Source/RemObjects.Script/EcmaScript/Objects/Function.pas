@@ -241,7 +241,8 @@ end;
 method EcmaScriptFunctionObject.Construct(context: ExecutionContext; params args: array of Object): Object;
 begin
   var lRes := new EcmaScriptObject(Root);
-  lRes.Prototype := coalesce(EcmaScriptObject(Get(context, 0, 'prototype')), Root.ObjectPrototype);
+  lRes.Prototype := EcmaScriptObject(Get(context, 0, 'prototype'));
+  if lRes.Prototype = nil then Root.RaiseNativeError(NativeErrorType.TypeError, 'No construct method');
   var lFunc := fDelegate;
   result := lFunc(context, lRes, args);
   if Result is not EcmaScriptObject then result := lRes;

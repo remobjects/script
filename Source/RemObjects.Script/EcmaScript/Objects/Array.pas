@@ -23,7 +23,7 @@ type
 
     property DefaultCompareInstance: EcmaScriptFunctionObject;
   
-    method QuickSort(EC: ExecutionContext; aSelf: EcmaScriptObject; aFirst, aLast: Integer; aCompare: EcmaScriptBaseFunctionObject);
+    method Sort<T>(aList: T; aStart, aEnd: Integer; aSwap: Action<T, Integer, Integer>; aCompare: Func<T, Integer, Integer, Integer>): Boolean;
     method ArrayIsArray(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method ArrayCtor(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method ArrayToString(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
@@ -56,7 +56,7 @@ type
   private
     method get_Length: Cardinal;
   public
-    constructor(aRoot: GlobalObject; aLength: Integer);
+    constructor(aRoot: GlobalObject; aLength: Object);
     constructor(aCapacity: Integer; aRoot: GlobalObject);
 
     class var &Constructor: System.Reflection.ConstructorInfo := typeof(EcmaScriptArrayObject).GetConstructor([typeof(Integer), typeof(GlobalObject)]); readonly; 
@@ -85,7 +85,8 @@ begin
   result := EcmaScriptObject(Get(nil, 0, 'Array'));
   if result <> nil then exit;
 
-  result := new EcmaScriptArrayObjectObject(self, &Class := 'Array');
+  result := new EcmaScriptArrayObjectObject(self, &Class := 'Function');
+  result.Prototype := FunctionPrototype;
   Values.Add('Array', PropertyValue.NotEnum(Result));
 
   ArrayPrototype := new EcmaScriptObject(self, &Class := 'Array');
@@ -96,42 +97,42 @@ begin
 
   DefaultCompareInstance := new EcmaScriptFunctionObject(self, 'defaultCompare', @DefaultCompare, 2);
   ArrayPrototype.Values['constructor'] := PropertyValue.NotEnum(result);
-  ArrayPrototype.Values.Add('toString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toString', @ArrayToString, 0)));
-  ArrayPrototype.Values.Add('toLocaleString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toLocaleString', @ArrayToLocaleString, 0)));
-  ArrayPrototype.Values.Add('concat', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'concat', @ArrayConcat, 1)));
-  ArrayPrototype.Values.Add('join', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'join', @ArrayJoin, 1)));
-  ArrayPrototype.Values.Add('pop', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'pop', @ArrayPop, 0)));
-  ArrayPrototype.Values.Add('push', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'push', @ArrayPush, 1)));
-  ArrayPrototype.Values.Add('reverse', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'reverse', @ArrayReverse, 0)));
-  ArrayPrototype.Values.Add('shift', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'shift', @ArrayShift, 0)));
-  ArrayPrototype.Values.Add('slice', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'slice', @ArraySlice, 2)));
-  ArrayPrototype.Values.Add('sort', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'sort', @ArraySort, 1)));
-  ArrayPrototype.Values.Add('splice', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'splice', @ArraySplice, 2)));
-  ArrayPrototype.Values.Add('unshift', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'unshift', @ArrayUnshift, 1)));
+  ArrayPrototype.Values['length'] := PropertyValue.NotAllFlags(0);
+  ArrayPrototype.Values.Add('toString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toString', @ArrayToString, 0, false, true)));
+  ArrayPrototype.Values.Add('toLocaleString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toLocaleString', @ArrayToLocaleString, 0, false, true)));
+  ArrayPrototype.Values.Add('concat', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'concat', @ArrayConcat, 1, false, true)));
+  ArrayPrototype.Values.Add('join', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'join', @ArrayJoin, 1, false, true)));
+  ArrayPrototype.Values.Add('pop', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'pop', @ArrayPop, 0, false, true)));
+  ArrayPrototype.Values.Add('push', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'push', @ArrayPush, 1, false, true)));
+  ArrayPrototype.Values.Add('reverse', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'reverse', @ArrayReverse, 0, false, true)));
+  ArrayPrototype.Values.Add('shift', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'shift', @ArrayShift, 0, false, true)));
+  ArrayPrototype.Values.Add('slice', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'slice', @ArraySlice, 2, false, true)));
+  ArrayPrototype.Values.Add('sort', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'sort', @ArraySort, 1, false, true)));
+  ArrayPrototype.Values.Add('splice', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'splice', @ArraySplice, 2, false, true)));
+  ArrayPrototype.Values.Add('unshift', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'unshift', @ArrayUnshift, 1, false, true)));
 
 
 
-  ArrayPrototype.Values.Add('indexOf', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'indexOf', @ArrayindexOf, 1)));
-  ArrayPrototype.Values.Add('lastIndexOf', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'lastIndexOf', @ArraylastIndexOf, 1)));
-  ArrayPrototype.Values.Add('every', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'every', @Arrayevery, 1)));
-  ArrayPrototype.Values.Add('some', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'some', @Arraysome, 1)));
-  ArrayPrototype.Values.Add('forEach', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'forEach', @ArrayforEach, 1)));
-  ArrayPrototype.Values.Add('map', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'map', @ArrayMap, 1)));
-  ArrayPrototype.Values.Add('filter', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'filter', @Arrayfilter, 1)));
-  ArrayPrototype.Values.Add('reduce', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'reduce', @Arrayreduce, 1)));
-  ArrayPrototype.Values.Add('reduceRight', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'reduceRight', @ArrayreduceRight, 1)));
+  ArrayPrototype.Values.Add('indexOf', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'indexOf', @ArrayindexOf, 1, false, true)));
+  ArrayPrototype.Values.Add('lastIndexOf', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'lastIndexOf', @ArraylastIndexOf, 1, false, true)));
+  ArrayPrototype.Values.Add('every', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'every', @Arrayevery, 1, false, true)));
+  ArrayPrototype.Values.Add('some', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'some', @Arraysome, 1, false, true)));
+  ArrayPrototype.Values.Add('forEach', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'forEach', @ArrayforEach, 1, false, true)));
+  ArrayPrototype.Values.Add('map', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'map', @ArrayMap, 1, false, true)));
+  ArrayPrototype.Values.Add('filter', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'filter', @Arrayfilter, 1, false, true)));
+  ArrayPrototype.Values.Add('reduce', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'reduce', @Arrayreduce, 1, false, true)));
+  ArrayPrototype.Values.Add('reduceRight', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'reduceRight', @ArrayreduceRight, 1, false, true)));
 end;
 
 
 
 
-constructor EcmaScriptArrayObject(aRoot: GlobalObject; aLength: Integer);
+constructor EcmaScriptArrayObject(aRoot: GlobalObject; aLength: Object);
 begin
   inherited constructor(aRoot, aRoot.ArrayPrototype);
   &Class := 'Array';
-  if aLength < 0 then aLength := 0;
-  
-  inherited DefineOwnProperty('length', new PropertyValue(PropertyAttributes.writable, aLength), false);
+  inherited DefineOwnProperty('length', new PropertyValue(PropertyAttributes.writable, Integer(0)), false);
+  DefineOwnProperty('length', new PropertyValue(PropertyAttributes.writable, aLength), false)
 end;
 
 constructor EcmaScriptArrayObject(aCapacity: Integer; aRoot: GlobalObject);
@@ -234,8 +235,8 @@ end;
 
 method GlobalObject.ArrayCtor(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  if Args.Length = 1 then begin
-    result := new EcmaScriptArrayObject(self, Utilities.GetArgAsInteger(Args, 0, aCaller)); // create a new array of length arg
+  if (length(args) = 1) and ((args[0] is Integer) or (args[0] is Double)) then begin
+    result := new EcmaScriptArrayObject(self, Args[0]); // create a new array of length arg
   end else begin
     result := new EcmaScriptArrayObject(self, 0).AddValues(Args);
   end;
@@ -263,7 +264,7 @@ begin
     if el is EcmaScriptArrayObject then begin
       for i: Cardinal := 0 to EcmaScriptArrayObject(el).Length -1 do
       begin
-        var lVal := lRes.GetOwnProperty(i.ToString());
+        var lVal := EcmaScriptArrayObject(el).GetOwnProperty(i.ToString());
         if lVal <> nil then 
         lRes.AddValue(lVal.Value);
       end;
@@ -375,10 +376,14 @@ begin
   var lSelf := Utilities.ToObject(aCaller, aSelf);
   var lLen := Utilities.GetObjAsCardinal(lSelf.Get(aCaller, 0, 'length'), aCaller);
 
-  var lRelStart := Utilities.GetArgAsInteger(args, 0, aCaller);
-  var k := if lRelStart < 0 then Math.Max(lLen + lRelStart, 0) else Math.Min(lRelStart, Integer(lLen));
-  var lRelEnd := if (lengtH(args) < 2) or (args[1] = Undefined.Instance) then lLen else Utilities.GetArgAsInteger(args, 1, aCaller);
-  var lFinal := if lRelEnd < 0 then Math.Max(lLen + lRelEnd, 0) else Math.Min(lRelEnd, Integer(lLen));
+  var lRelStart := Utilities.GetArgAsDouble(args, 0, aCaller);
+  var k: Cardinal;
+  if lRelStart < 0 then 
+    k := Cardinal(Int64(Math.Max(Double(lLen + lRelStart), 0))) 
+  else 
+    k := Cardinal(Int64(Math.Min(lRelStart, Double(Int64(lLen)))));
+  var lRelEnd := if (lengtH(args) < 2) or (args[1] = Undefined.Instance) then lLen else Utilities.GetArgAsDouble(args, 1, aCaller);
+  var lFinal := if lRelEnd < 0 then Cardinal(Math.Max(lLen + Integer(lRelEnd), 0)) else Cardinal(Int64(Math.Min(lRelEnd, Double(lLen))));
   var a := new EcmaScriptArrayObject(Root, 0);
   var n := 0;
   while k < lFinal do begin
@@ -393,47 +398,6 @@ begin
   exit A;
 end;
 
-method GlobalObject.QuickSort(EC: ExecutionContext; aSelf: EcmaScriptObject; aFirst, aLast: Integer; aCompare: EcmaScriptBaseFunctionObject);
-var
-  L, R: Integer;
-  Pivot: Object;
-begin
-  while aFirst < aLast do begin
-    if (aLast - aFirst) >= 2 then begin
-      R := (aFirst + aLast) div 2;
-      if Utilities.GetObjAsInteger(aCompare.CallEx(EC, aSElf, aSelf.Get(EC, aFirst.ToString),aSelf.Get(EC, R.ToString())), EC) > 0 then 
-        Swap(EC, aSelf, aFirst, R);
-
-      if  Utilities.GetObjAsInteger(aCompare.CallEx(EC, aSElf, aSelf.Get(EC, aFirst.ToString),aSelf.Get(EC, aLast.ToString())), EC) > 0 then 
-        Swap(EC, aSelf, aFirst, aLast);
-
-      if Utilities.GetObjAsInteger(aCompare.CallEx(EC, aSElf, aSelf.Get(EC, R.ToString),aSelf.Get(EC, aLast.ToString())), EC) > 0 then
-        Swap(EC, aSelf, R, aLast);
-
-      Pivot := aSelf.Get(EC, R.ToString);
-    end
-    else 
-      Pivot := aSelf.Get(EC, aFirst.ToString);
-
-    L := aFirst - 1;
-    R := aLast + 1;
-    loop begin
-      repeat 
-        dec(R); 
-      until Utilities.GetObjAsInteger(aCompare.CallEx(EC, aSElf, aSelf.Get(EC, R.ToString), Pivot), EC) <= 0;
-
-      repeat 
-        inc(L); 
-      until Utilities.GetObjAsInteger(aCompare.CallEx(EC, aSElf, aSelf.Get(EC, L.ToString), Pivot), EC) >= 0;
-      if (L >= R) then break;
-      Swap(EC, aSelf, L, R);
-    end;
-    if (aFirst < R) then
-      QuickSort(EC, aSelf, aFirst, R, aCompare); 
-    aFirst := R + 1;
-  end;
-end;
-
 method GlobalObject.ArraySort(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
   var lSelf := Utilities.ToObject(aCaller, aSelf);
@@ -443,7 +407,25 @@ begin
   if lFunc = nil then begin
     lFunc := DefaultCompareInstance;
   end;
-  QuickSort(aCaller, lSelf, 0, lLen -1, lFunc);
+  Sort(lSelf, 0, lLen -1,
+    method (aList: EcmaScriptObject; L, R: Integer) begin
+      if l <> r then self.Swap(self.ExecutionContext, aList, L, R);
+    end,
+    method (aList: EcmaScriptObject; L, R: Integer): Integer begin
+      var jString := L.ToString;
+      var kString := R.ToString;
+      var hasJ := aList.HasProperty(jString);
+      var hasK := aList.HasProperty(kString);
+      if not hasJ and not hasK then exit 0;
+      if not hasJ then exit 1;
+      if not hasK then exit -1;
+      var x := aList.Get(aCaller, 0, jString);
+      var y := aList.Get(aCaller, 0, kString);
+      if (x=Undefined.Instance) and (y = Undefined.Instance) then exit 0;
+      if x = Undefined.Instance then exit 1;
+      if y = Undefined.Instance then exit -1;
+      exit Utilities.GetObjAsInteger(lFunc.CallEx(aCaller, aList, x, y), aCaller);
+    end);
   exit lSelf;
 end;
 
@@ -562,6 +544,37 @@ begin
     lREs.Append(lData);
   end;
   exit lRes.ToString;
+end;
+
+method GlobalObject.Sort<T>(aList: T; aStart, aEnd: Integer; aSwap: Action<T, Integer, Integer>; aCompare: Func<T, Integer, Integer, Integer>): Boolean;
+begin
+  var I: Integer;
+  repeat
+    I := aStart;
+    var J := aEnd;
+    var P := (aStart + aEnd) shr 1;
+    repeat
+      while aCompare(aList, I, P) < 0 do
+        Inc(I);
+      while aCompare(aList, J, P) > 0 do
+        Dec(J);
+      if I <= J then begin
+        Result := true;
+        aSwap(aList, I, J);
+
+        if P = I then
+          P := J
+        else if P = J then
+          P := I;
+
+        Inc(I);
+        Dec(J);
+      end;
+    until I > J;
+    if aStart < J then
+       Result := Sort<T>(aList, aStart, J, aSwap, aCompare) or Result;
+    aStart := I;
+  until I >= aEnd;
 end;
 
 method GlobalObject.ArrayIsArray(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
@@ -779,7 +792,7 @@ end;
 
 method EcmaScriptArrayObjectObject.Construct(context: ExecutionContext; params args: array of Object): Object;
 begin
-  exit root.ArrayCtor(context, self, args);
+    exit root.ArrayCtor(context, self, args)
 end;
 
 end.
