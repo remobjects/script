@@ -7,15 +7,14 @@ namespace RemObjects.Script.EcmaScript;
 
 interface
 
-
 uses
   System.Collections.Generic,
+  System.Globalization,
   System.Text,
   System.Linq,
   Microsoft,
   RemObjects.Script,
   RemObjects.Script.EcmaScript.Internal;
-
 
 type
   GlobalObject = public partial class(EcmaScriptObject)
@@ -29,8 +28,14 @@ type
   private
     method JSONStr(aExecutionContext: ExecutionContext; aStack: List<Object>; aGap, aIndent: string; aReplacerFunction: EcmaScriptBaseFunctionObject; 
       aProplist: List<String>; aWork: EcmaScriptObject; aValue: String): string;
-    class method JSONQuote(val: String): string;
-  end;  
+  end;
+
+
+  JSON = public static class
+  public
+    class method QuoteString(value: String): String;
+    class method ToString(value: Object): String;
+  end;
 
 
 implementation
@@ -219,15 +224,16 @@ begin
   exit aReviver.CallEx(aCaller, aRoot,aName, lItem);
 end;
 
+
 method GlobalObject.JSONStr(aExecutionContext: ExecutionContext; aStack: List<Object>; aGap, aIndent: string; aReplacerFunction: EcmaScriptBaseFunctionObject; 
       aProplist: List<String>; aWork: EcmaScriptObject; aValue: String): string;
 begin
   var value := aWork.Get(aExecutionContext, 0, aValue);
   var lObj := EcmaScriptObject(Value);
-  if lObj<> nil then begin
+  if  (assigned(lObj))  then  begin
     var lCall := EcmaScriptBaseFunctionObject(lObj.Get(aExecutionContext, 0, 'toJSON'));
-    if lCall <> nil then
-      value := lCall.CallEx(aExecutionContext, lObj, aValue);
+    if  (assigned(lCall))  then
+      exit  (String(lCall.CallEx(aExecutionContext, lObj, aValue)));
   end;
   if aReplacerFunction <> nil then begin
     value := aReplacerFunction.CallEx(aExecutionContext, aWork,aValue, Value);
@@ -238,21 +244,11 @@ begin
     if lObj.Class = 'String' then Value := lObj.Value;
     if lObj.Class = 'Boolean' then Value := lObj.Value;
   end;
-  if value = nil then exit 'null';
-  if value is boolean then begin 
-    if boolean(value) then 
-      exit 'true';
-    exit 'false';
-  end;
-  if value is string then exit JSONQuote(String(value));
-  if value is double then begin
-    if Double.IsInfinity(Double(value)) then
-      exit 'null'
-    else
-      exit Double(value).ToString(System.Globalization.NumberFormatInfo.InvariantInfo);
-  end;
-  if value is Int32 then exit Int32(Value).ToString;
-  if value is Int64 then exit Int64(Value).ToString;
+
+  var lResult: String := JSON.ToString(value);
+  if  (assigned(lResult))  then
+    exit  (lResult);
+
   lObj := EcmaScriptObject(VAlue);
   if (lObj <> nil) and ((lObj is not EcmaScriptBaseFunctionObject) or (lObj is EcmaScriptObjectWrapper)) then begin
     if aStack.Contains(lObj) then RaiseNativeError(NativeErrorType.TypeError, 'Recursive JSON structure');
@@ -308,9 +304,9 @@ begin
         var lVal := JSONStr(aExecutionContext, aStack, aGap, aIndent, aReplacerFunction, aProplist, lObj, el);
         if lVal <> nil then begin
           if aGap = '' then
-            lItems.Add(JSONQuote(el)+':'+lVal)
+            lItems.Add(JSON.QuoteString(el)+':'+lVal)
           else
-            lItems.Add(JSONQuote(el)+': '+lVal);
+            lItems.Add(JSON.QuoteString(el)+': '+lVal);
         end;
       end;
       if lItems.Count = 0 then
@@ -345,30 +341,63 @@ begin
   exit nil;
 end;
 
-class method GlobalObject.JSONQuote(val: String): string;
+
+class method JSON.QuoteString(value: String): String;
 begin
-  var sb := new StringBuilder;
+  var sb: StringBuilder := new StringBuilder();
+
   sb.Append('"');
-  for i: Integer := 0 to val.Length -1 do begin
-    case val[i] of
-      '"': sb.Append('\"');
-      '\': sb.Append('\\');
-      #10: sb.Append('\n');
-      #13: sb.Append('\r');
-      #12: sb.Append('\f');
-      #9: sb.Append('\t');
-      #8: sb.Append('\b');
-      #0 .. #7, #11, #14 ..#31: begin
-        sb.Append('\u');
-        sb.Append(Integer(val[i]).ToString('x4'));
-      end
-    else
-      sb.Append(val[i]);
-    end; // case
+  for  i: Int32  :=  0  to  value.Length-1  do  begin
+    case  value[i]  of
+      '"':         sb.Append('\"');
+      '\':         sb.Append('\\');
+      #10:         sb.Append('\n');
+      #13:         sb.Append('\r');
+      #12:         sb.Append('\f');
+      #9:          sb.Append('\t');
+      #8:          sb.Append('\b');
+      #0 .. #7,
+      #11,
+      #14 ..#31:   begin
+                     sb.Append('\u');
+                     sb.Append(Int32(value[i]).ToString('x4'));
+                   end
+    else           sb.Append(value[i]);
+    end;
   end;
 
   sb.Append('"');
-  exit sb.ToString;
+
+  exit  (sb.ToString());
 end;
+
+
+class method JSON.ToString(value: Object): String;
+begin
+  if  (value = nil)       then  exit  ('null');
+  if  (value is Boolean)  then  exit  (iif(Boolean(value), 'true', 'false'));
+  if  (value is Char)     then  exit  (JSON.QuoteString(new String(Char(value), 1)));
+  if  (value is String)   then  exit  (JSON.QuoteString(String(value)));
+  if  (value is Int32)    then  exit  (Int32(value).ToString(CultureInfo.InvariantCulture));
+  if  (value is Int64)    then  exit  (Int64(value).ToString(CultureInfo.InvariantCulture));
+
+  if  (value is DateTime)  then
+    exit  (String.Format('/Date({0:#})/', new TimeSpan(DateTime(value).ToUniversalTime().Ticks-(new DateTime(1970, 1, 1)).Ticks).TotalMilliseconds));
+
+  if  (value is Decimal)  then
+    value := Convert.ToDouble(Decimal(value));
+
+  if  (value is Double)  then  begin
+    var lValue: Double := Double(value);
+    
+    if  (Double.IsInfinity(lValue))  then
+      exit  ('null');
+
+    exit  (lValue.ToString(NumberFormatInfo.InvariantInfo));
+  end;
+
+  exit  (nil);
+end;
+
 
 end.
