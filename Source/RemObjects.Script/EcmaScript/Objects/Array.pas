@@ -514,7 +514,7 @@ begin
   if lRight = nil then exit -1;
 
   if (lLeft is String) or (lRight is String) then 
-    exit String.Compare(Utilities.GetObjAsString(lLeft, aCaller), Utilities.GetObjAsString(lRight, aCaller));
+    exit String.Compare(Utilities.GetObjAsString(lLeft, aCaller), Utilities.GetObjAsString(lRight, aCaller), StringComparison.Ordinal);
   if lLeft is EcmaScriptObject then 
     exit iif(lRight is EcmaScriptObject, 1, 0);
   if lRight is EcmaScriptObject then 

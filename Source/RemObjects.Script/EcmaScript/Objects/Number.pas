@@ -119,21 +119,21 @@ method GlobalObject.NumberToFixed(aCaller: ExecutionContext;aSelf: Object; param
 begin
   var lFrac := Utilities.GetArgAsInteger(args, 0, aCaller);
   var lValue := Utilities.GetObjAsDouble(aSelf, aCaller);
-  exit lValue.ToString('F'+lFrac.ToString);
+  exit lValue.ToString('F'+lFrac.ToString, system.Globalization.NumberFormatInfo.InvariantInfo);
 end;
 
 method GlobalObject.NumberToExponential(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   var lFrac := Utilities.GetArgAsInteger(args, 0, aCaller);
   var lValue := Utilities.GetObjAsDouble(aSelf, aCaller);
-  exit lValue.ToString('E'+lFrac.ToString);
+  exit lValue.ToString('E'+lFrac.ToString, system.Globalization.NumberFormatInfo.InvariantInfo);
 end;
 
 method GlobalObject.NumberToPrecision(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   var lFrac := Utilities.GetArgAsInteger(args, 0, aCaller);
   var lValue := Utilities.GetObjAsDouble(aSelf, aCaller);
-  exit lValue.ToString('N'+lFrac.ToString)  ;
+  exit lValue.ToString('N'+lFrac.ToString, system.Globalization.NumberFormatInfo.InvariantInfo)  ;
 end;
 method EcmaScriptNumberObject.Call(context: ExecutionContext; params args: array of Object): Object;
 begin

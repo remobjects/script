@@ -87,6 +87,7 @@ type
   EcmaScriptCompiler = public class
   assembly
     fRoot: EnvironmentRecord;
+    fLastData: string;
   private
     fGlobal: GlobalObject;
     fUseStrict: Boolean;
@@ -100,7 +101,6 @@ type
     fStatementStack: List<Statement>;
     fBreak,
     fContinue: nullable Label;
-    fLastData: string;
     method Parse(aFilename, aData: string; aEval: Boolean := false): List<SourceElement>; // eval throws different exception
     method MarkLabelled(aBreak, aContinue: nullable Label);
     method WriteDebugStack;

@@ -150,8 +150,13 @@ begin
 
   var lFunc := new FunctionDeclarationElement(lCode.PositionPair, FunctionDeclarationType.None, nil, lParams, lCode);
 
- 
+  var lPrev := fParser.fLastData;
+  fPArser.fLastData := lBody;
+  try
   exit new EcmaScriptInternalFunctionObject(self, fParser.fRoot, nil, InternalFunctionDelegate(fParser.Parse(lFunc, false, nil, lCode.Items)), lFunc.Parameters.Count, lBody, aCaller.Strict);
+  finally
+    fParser.fLastData := lPrev;
+  end;
 end;
 
 method GlobalObject.FunctionToString(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
@@ -171,13 +176,15 @@ begin
   var lArgs: array of object;
   if (Length(args) < 2) then lArgs := [] else begin
     if (args[1] = nil) or (args[1] = Undefined.Instance) then lArgs := [] else 
-    if args[1] is array of object then begin
-      lArgs := array of object(args[1]);
-    end else if args[1] is EcmaScriptArrayObject then begin
-      lArgs := new Object[EcmaScriptArrayObject(args[1]).Length];
-      for i: Integer:= 0 to lArgs.length -1 do
-        lArgs[i] := EcmaScriptArrayObject(args[1]).Get(aCaller, i.toString);
-    end else RaiseNativeError(NativeErrorType.TypeError, 'Function.prototype.apply requires two parameters')
+    if args[1] is not EcmaScriptObject then begin
+      RaiseNativeError(NativeErrorType.TypeError, 'Array expected for argArray parameter');
+    end;
+    var lArgObj := EcmaScriptObject(args[1]);
+    var lLen := lArgObj.Get(aCaller, 0, 'length');
+    if (lLen = nil) or (lLen = Undefined.Instance) then RaiseNativeError(NativeErrorType.TypeError, 'Array expected for argArray parameter');
+    lArgs := new Object[Utilities.GetObjAsCardinal(lLen, aCaller)];
+    for i: Integer := 0 to lArgs.Length -1 do
+       lArgs[i] := lArgObj.Get(aCaller, 2, i.ToString());
   end;
   exit EcmaScriptObject(aSelf).CallEx(aCaller, lSelf, lArgs);
 end;
