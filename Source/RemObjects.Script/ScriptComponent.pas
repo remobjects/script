@@ -63,7 +63,6 @@ type
 		fStatus: ScriptStatus;
     fStackItems: System.Collections.ObjectModel.ReadOnlyCollection<ScriptStackFrame>;
     fDebugLastPos: PositionPair;
-    fLastFrame: Integer;
     fWaitEvent: System.Threading.ManualResetEvent := new System.Threading.ManualResetEvent(true);
     method DebugLine(aFilename: string; aStartRow, aStartCol, aEndRow, aEndCol: Integer); 
     method EnterScope(aName: string; athis: Object; aContext: ExecutionContext); // enter method
@@ -76,6 +75,7 @@ type
 		method set_RunInThread(value: Boolean);
     method CheckShouldPause;
   protected
+    fLastFrame: Integer;
     fExceptionResult: Exception;
     fStackList: List<ScriptStackFrame> := new List<ScriptStackFrame>;
 		fGlobals: ScriptScope;
@@ -123,7 +123,8 @@ type
 		/// <summary>Executes the given function by name. After calling Run the global object
 		///	 will contain a list of all functions, these can be called
 		///	 by name. Note this only works after calling Run first.</summary>
-		method RunFunction(aName: String; params args: Array of object): Object; abstract;
+		method RunFunction(aName: String; params args: Array of object): Object; 
+    method RunFunction(aInitialStatus: ScriptStatus; aName: String; params args: Array of object): Object; abstract;
 
 		property Status: ScriptStatus read fStatus protected write set_Status;
 		method StepInto;
@@ -165,7 +166,7 @@ type
 		property GlobalObject: RemObjects.Script.EcmaScript.GlobalObject read fGlobalObject;
     method ExposeType(&type: &Type; Name: String); override;
 		method HasFunction(aName: String): Boolean; override;
-		method RunFunction(aName: String; params args: Array of object): Object; override;
+		method RunFunction(aInitialStatus: ScriptStatus; aName: String; params args: Array of object): Object; override;
 	end;
   SyntaxErrorException = public class(Exception)
   private
@@ -457,17 +458,31 @@ begin
 
 end;
 
+method ScriptComponent.RunFunction(aName: String; params args: Array of object): Object;
+begin
+  exit RunFunction(ScriptStatus.Running, aName, args);
+end;
+
 method EcmaScriptComponent.HasFunction(aName: String): Boolean;
 begin
 	exit fGlobalObject.Get(aName) is RemObjects.Script.EcmaScript.EcmaScriptBaseFunctionObject;
 end;
 
-method EcmaScriptComponent.RunFunction(aName: String; params args: Array of object): Object;
+method EcmaScriptComponent.RunFunction(aInitialStatus: ScriptStatus; aName: String; params args: Array of object): Object;
 begin
-	var lItem := fGlobalObject.Get(aName) as RemObjects.Script.EcmaScript.EcmaScriptBaseFunctionObject;
-	if lItem = nil then raise new ScriptComponentException(String.Format(RemObjects.Script.Properties.Resources.eNoSuchFunction, aName));
-  if args = nil then Args := [];
-  exit lItem.Call(fRoot, Args.Select(a->EcmaScriptScope.DoTryWrap(fGlobalObject, a)).ToArray());
+  try
+	  var lItem := fGlobalObject.Get(aName) as RemObjects.Script.EcmaScript.EcmaScriptBaseFunctionObject;
+	  if lItem = nil then raise new ScriptComponentException(String.Format(RemObjects.Script.Properties.Resources.eNoSuchFunction, aName));
+    if args = nil then Args := [];
+    if aInitialStatus = ScriptStatus.StepInto then begin
+      Status := aInitialStatus;
+      fLastFrame := fStackList.Count;
+    end else
+      Status := ScriptStatus.Running;
+    exit lItem.Call(fRoot, Args.Select(a->EcmaScriptScope.DoTryWrap(fGlobalObject, a)).ToArray());
+  finally
+    Status := ScriptStatus.Stopped;
+  end;
 end;
 
 method EcmaScriptComponent.IntRun: Object;
