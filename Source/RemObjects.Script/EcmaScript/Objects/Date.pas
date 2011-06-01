@@ -1,4 +1,4 @@
-﻿{
+{
 
   Copyright (c) 2009-2010 RemObjects Software. See LICENSE.txt for more details.
 
@@ -501,7 +501,7 @@ begin
   var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime;
   lValue := new DateTime(lValue.Year, 
     Utilities.GetArgAsInteger(args, 0, aCaller),
-    iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller)),
+    iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller), 0),
     lValue.Hour,
     lValue.Minute,
     lValue.Second,
@@ -515,7 +515,7 @@ begin
   var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller));
   lValue := new DateTime(lValue.Year, 
     Utilities.GetArgAsInteger(args, 0, aCaller),
-    iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller)),
+    iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller), 0),
     lValue.Hour,
     lValue.Minute,
     lValue.Second,
@@ -527,8 +527,8 @@ method GlobalObject.DateSetFullYear(aCaller: ExecutionContext;aSelf: Object; par
 begin
   var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime;
   lValue := new DateTime(Utilities.GetArgAsInteger(args, 0, aCaller), 
-    iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller)),
-    iif(args.Length > 2, Utilities.GetArgAsInteger(args, 2, aCaller)),
+    iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller), 0),
+    iif(args.Length > 2, Utilities.GetArgAsInteger(args, 2, aCaller), 0),
     lValue.Hour,
     lValue.Minute,
     lValue.Second,
@@ -540,8 +540,8 @@ method GlobalObject.DateSetUTCFullYear(aCaller: ExecutionContext;aSelf: Object; 
 begin
   var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller));
   lValue := new DateTime(Utilities.GetArgAsInteger(args, 0, aCaller), 
-    iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller)),
-    iif(args.Length > 2, Utilities.GetArgAsInteger(args, 2, aCaller)),
+    iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller), 0),
+    iif(args.Length > 2, Utilities.GetArgAsInteger(args, 2, aCaller), 0),
     lValue.Hour,
     lValue.Minute,
     lValue.Second,

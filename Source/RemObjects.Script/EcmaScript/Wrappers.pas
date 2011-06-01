@@ -93,7 +93,7 @@ end;
 method EcmaScriptObjectWrapper.DefineOwnProperty(aName: String; aValue: PropertyValue; aThrow: Boolean): Boolean;
 begin
   var lItems := fType.GetMembers(BindingFlags.Public or bindingFlags.FlattenHierarchy or if Static then BindingFlags.Static else BindingFlags.Instance).Where(a->a.Name = aName).ToArray;
-  if Length(lItems) = nil then begin
+  if Length(lItems) = 0 then begin
   exit inherited;
   end;
 
@@ -122,7 +122,7 @@ end;
 method EcmaScriptObjectWrapper.GetOwnProperty(aName: String): PropertyValue;
 begin
   var lItems := fType.GetMembers(BindingFlags.Public or bindingFlags.FlattenHierarchy or if Static then BindingFlags.Static else BindingFlags.Instance).Where(a->a.Name = aName).ToArray;
-  if Length(lItems) = nil then begin
+  if Length(lItems) = 0 then begin
     exit inherited;
   end;
 
