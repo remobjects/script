@@ -1,8 +1,7 @@
 ﻿{
-
-  Copyright (c) 2009-2010 RemObjects Software. See LICENSE.txt for more details.
-
+  Copyright (c) 2009-2011 RemObjects Software. See LICENSE.txt for more details.
 }
+
 namespace RemObjects.Script;
 
 interface
@@ -11,32 +10,36 @@ uses
   System.Collections,
   System.Collections.Generic,
   System.Collections.ObjectModel,
-  System.Text,
-	System.ComponentModel,
+  System.ComponentModel,
   System.Linq,
-	System.Reflection,
+  System.Reflection,
+  System.Text,
   RemObjects.Script.EcmaScript;
 
 type
-	ScriptDebugEventArgs = public class(EventArgs)
-	public
-		constructor(aName: string; aSpan: PositionPair);
+  ScriptDebugEventArgs = public class(EventArgs)
+  public
+    constructor(aName: string; aSpan: PositionPair);
     constructor(aName: string; aSpan: PositionPair; ex: Exception);
-		property Name: String; readonly;
+    property Name: String; readonly;
     property Exception: Exception; readonly;
-		property SourceFileName: String read SourceSpan.File;
-		property SourceSpan: PositionPair; readonly;
-	end;
-	ScriptComponentException = public class(Exception);
+    property SourceFileName: String read SourceSpan.File;
+    property SourceSpan: PositionPair; readonly;
+  end;
+
+
+  ScriptComponentException = public class(Exception);
+
+
   ScriptStatus = public enum(
-		Stopped,
-		StepInto, 
-		StepOver,
-		StepOut,
-		Running,
-		Stopping,
-		Paused,
-		Pausing);
+    Stopped,
+    StepInto, 
+    StepOver,
+    StepOut,
+    Running,
+    Stopping,
+    Paused,
+    Pausing);
 
 
   ScriptStackFrame = public class
@@ -52,15 +55,16 @@ type
     property &Method: string read fMethod;
   end;
 
+
   ScriptComponent = public abstract class({$IFNDEF SILVERLIGHT} Component, {$ENDIF}IDebugSink, IDisposable)
-	private
-		fWorkThread: System.Threading.Thread;
-		fRunResult: Object;
-		fRunInThread: Boolean;
-		fDebug: Boolean;
-		//fSetup: ScriptRuntimeSetup;
-		fTracing: boolean; volatile;
-		fStatus: ScriptStatus;
+  private
+    fWorkThread: System.Threading.Thread;
+    fRunResult: Object;
+    fRunInThread: Boolean;
+    fDebug: Boolean;
+    //fSetup: ScriptRuntimeSetup;
+    fTracing: boolean; volatile;
+    fStatus: ScriptStatus;
     fStackItems: System.Collections.ObjectModel.ReadOnlyCollection<ScriptStackFrame>;
     fDebugLastPos: PositionPair;
     fWaitEvent: System.Threading.ManualResetEvent := new System.Threading.ManualResetEvent(true);
@@ -71,105 +75,108 @@ type
     method UncaughtException(e: Exception); // triggers when an exception escapes the main method
     method Debugger; 
     method Idle;
-		method set_Status(value: ScriptStatus);
-		method set_RunInThread(value: Boolean);
+    method set_Status(value: ScriptStatus);
+    method set_RunInThread(value: Boolean);
     method CheckShouldPause;
   protected
     fLastFrame: Integer;
     fExceptionResult: Exception;
     fStackList: List<ScriptStackFrame> := new List<ScriptStackFrame>;
-		fGlobals: ScriptScope;
+    fGlobals: ScriptScope;
     fEntryStatus: ScriptStatus := ScriptStatus.Running;
-		method IntRun: Object; abstract;
-		method SetDebug(b: Boolean); virtual;
+    method IntRun: Object; abstract;
+    method SetDebug(b: Boolean); virtual;
   public
-		constructor;
-		[Category('Script')]
-		property Debug: Boolean read fDebug write SetDebug;
-		[Category('Script')]
-		property SourceFileName: String;
-		[Category('Script')]
-		property Source: String;
-		[Category('Script')]
-		property RunInThread: Boolean read fRunInThread write set_RunInThread;		
+    constructor;
+    [Category('Script')]
+    property Debug: Boolean read fDebug write SetDebug;
+    [Category('Script')]
+    property SourceFileName: String;
+    [Category('Script')]
+    property Source: String;
+    [Category('Script')]
+    property RunInThread: Boolean read fRunInThread write set_RunInThread;    
 
     [Browsable(false)]
     property CallStack: ReadOnlyCollection<ScriptStackFrame> read fStackItems;
-		[Browsable(false)]
-		property Globals: ScriptScope read; abstract;
-    {$IFDEF SILVERLIGHT} 
+    [Browsable(false)]
+    property Globals: ScriptScope read; abstract;
+    {$IFDEF SILVERLIGHT}
     method Dispose;
     {$ELSE}
     method Dispose(disposing: Boolean); override;
     {$ENDIF}
 
-		method ExposeType(&type: &Type; Name: String := nil); abstract;
-		//method UseNamespace(ns: String); virtual;
-		/// <summary>Clears all assemblies and exposed variables</summary>
-		method Clear(aGlobals: Boolean := false); abstract;
+    method ExposeType(&type: &Type; Name: String := nil); abstract;
+    //method UseNamespace(ns: String); virtual;
+    /// <summary>Clears all assemblies and exposed variables</summary>
+    method Clear(aGlobals: Boolean := false); abstract;
 
-		/// <summary>starts the script,
-		///	 this should be ran from another thread
-		///	 if you want to use the debugger</summary>
-		method Run; 
-		property RunResult: Object read fRunResult;
+    /// <summary>starts the script,
+    ///   this should be ran from another thread
+    ///   if you want to use the debugger</summary>
+    method Run; 
+    property RunResult: Object read fRunResult;
     property RunException: Exception read fExceptionResult;
     property DebugLastPos: PositionPair read fDebugLastPos;
-		
-		/// <summary>Returns if there is a function by that name. After calling Run the global object
-		///	 will contain a list of all functions, these can be called
-		///	 by name. Note this only works after calling Run first.</summary>
-		method HasFunction(aName: String): Boolean; abstract;
-		/// <summary>Executes the given function by name. After calling Run the global object
-		///	 will contain a list of all functions, these can be called
-		///	 by name. Note this only works after calling Run first.</summary>
-		method RunFunction(aName: String; params args: Array of object): Object; 
+
+    /// <summary>Returns if there is a function by that name. After calling Run the global object
+    ///   will contain a list of all functions, these can be called
+    ///   by name. Note this only works after calling Run first.</summary>
+    method HasFunction(aName: String): Boolean; abstract;
+    /// <summary>Executes the given function by name. After calling Run the global object
+    ///   will contain a list of all functions, these can be called
+    ///   by name. Note this only works after calling Run first.</summary>
+    method RunFunction(aName: String; params args: Array of object): Object; 
     method RunFunction(aInitialStatus: ScriptStatus; aName: String; params args: Array of object): Object; abstract;
 
-		property Status: ScriptStatus read fStatus protected write set_Status;
-		method StepInto;
-		method StepOver;
-		method StepOut;
-		method Pause;
-		method &Stop;
+    property Status: ScriptStatus read fStatus protected write set_Status;
+    method StepInto;
+    method StepOver;
+    method StepOut;
+    method Pause;
+    method &Stop;
 
-		event DebugFrameEnter: EventHandler<ScriptDebugEventArgs>;
+    event DebugFrameEnter: EventHandler<ScriptDebugEventArgs>;
     event DebugFrameExit: EventHandler<ScriptDebugEventArgs>;
     event DebugThreadExit: EventHandler<ScriptDebugEventArgs>;
     event DebugTracePoint: EventHandler<ScriptDebugEventArgs>;
     event DebugDebugger: EventHandler<ScriptDebugEventArgs>;
     event DebugException: EventHandler<ScriptDebugEventArgs>;
     event DebugExceptionUnwind: EventHandler<ScriptDebugEventArgs>;
-		event StatusChanged: EventHandler;
+    event StatusChanged: EventHandler;
     event NonThreadedIdle: EventHandler;
   end;
 
+
   ScriptAbortException = class (Exception) end;
+
 
   {$REGION Designtime Attributes}
   {$IFDEF DESIGN}
   [System.Drawing.ToolboxBitmap(typeof(RemObjects.Script.EcmaScriptComponent), 'Glyphs.EcmaScriptComponent.png')]
   {$ENDIF}
   {$ENDREGION}
-	EcmaScriptComponent = public class(ScriptComponent)
-	protected
+  EcmaScriptComponent = public class(ScriptComponent)
+  protected
     fCompiler: EcmaScriptCompiler;
     fScope: ScriptScope;
     fRoot: ExecutionContext;
-		fGlobalObject: RemObjects.Script.EcmaScript.GlobalObject;
-		method SetDebug(b: Boolean); override;
-		method IntRun: Object; override;
-	public
+    fGlobalObject: RemObjects.Script.EcmaScript.GlobalObject;
+    method SetDebug(b: Boolean); override;
+    method IntRun: Object; override;
+  public
     property RootContext: ExecutionContext; 
     method Clear(aGlobals: Boolean := false); override;
     property Globals: ScriptScope read fScope; override;
-		property GlobalObject: RemObjects.Script.EcmaScript.GlobalObject read fGlobalObject;
+    property GlobalObject: RemObjects.Script.EcmaScript.GlobalObject read fGlobalObject;
     method ExposeType(&type: &Type; Name: String); override;
-		method HasFunction(aName: String): Boolean; override;
-		method RunFunction(aInitialStatus: ScriptStatus; aName: String; params args: Array of object): Object; override;
-	end;
+    method HasFunction(aName: String): Boolean; override;
+    method RunFunction(aInitialStatus: ScriptStatus; aName: String; params args: Array of object): Object; override;
+  end;
+
+
   SyntaxErrorException = public class(Exception)
-  private
   public
     constructor(aSource: string; aMessage: String; aSpan: PositionPair; anErrorCode: Int32); 
     property Message: string; readonly; reintroduce;
@@ -177,14 +184,16 @@ type
     property SourceFilename: string; readonly; reintroduce;
     property Span: PositionPair; readonly;
     property ErrorCode: Int32; readonly;
-    
+
     method ToString: String; override;
   end;
+
+
 implementation
 
 constructor ScriptDebugEventArgs(aName: string; aSpan: PositionPair);
 begin
-	Name := aName;
+  Name := aName;
   SourceSpan := aSpan;
 end;
 
@@ -198,13 +207,13 @@ constructor ScriptComponent;
 begin
   inherited constructor;
   fStackItems := new ReadOnlyCollection<ScriptStackFrame>(fStackList);
-	Clear;
+  Clear;
 end;
 
 method ScriptComponent.SetDebug(b: Boolean);
 begin
   if fDebug = b then exit;
-	fDebug := b;
+  fDebug := b;
 end;
 
 
@@ -271,80 +280,80 @@ end;
 
 method ScriptComponent.Stop;
 begin
-	locking self do begin
-		case Status of
-			ScriptStatus.Paused: begin Status := ScriptStatus.Stopping; fWaitEvent.Set(); end;
-			ScriptStatus.Stopping,
-			ScriptStatus.Pausing, 
-			ScriptStatus.Running, 
-			ScriptStatus.StepInto,
-			ScriptStatus.StepOut, 
-			ScriptStatus.StepOver:  Status := ScriptStatus.Stopping;
-			ScriptStatus.Stopped: ;
-		end; // case
-	end;
+  locking self do begin
+    case Status of
+      ScriptStatus.Paused: begin Status := ScriptStatus.Stopping; fWaitEvent.Set(); end;
+      ScriptStatus.Stopping,
+      ScriptStatus.Pausing, 
+      ScriptStatus.Running, 
+      ScriptStatus.StepInto,
+      ScriptStatus.StepOut, 
+      ScriptStatus.StepOver:  Status := ScriptStatus.Stopping;
+      ScriptStatus.Stopped: ;
+    end; // case
+  end;
 end;
 
 method ScriptComponent.set_RunInThread(value: Boolean);
 begin
   if Status = ScriptStatus.Stopped then 
-	  fRunInThread := value 
-	else
-	  raise new ScriptComponentException(Properties.Resources.eRunInThreadCannotBeModifiedWhenScriptIsRunning);
+    fRunInThread := value 
+  else
+    raise new ScriptComponentException(Properties.Resources.eRunInThreadCannotBeModifiedWhenScriptIsRunning);
 end;
 
 method ScriptComponent.set_Status(value: ScriptStatus);
 begin
-	fStatus := value;
-	if assigned(StatusChanged) then StatusChanged(self, EventArgs.Empty);
+  fStatus := value;
+  if assigned(StatusChanged) then StatusChanged(self, EventArgs.Empty);
 end;
 
 
 
 method ScriptComponent.Run;
 begin
-	if fRunInThread then begin
+  if fRunInThread then begin
     locking self do begin
-	  	if Status in [ScriptStatus.StepInto, ScriptStatus.StepOut, ScriptStatus.StepOver] then begin
-		  	Status := ScriptStatus.Running;
-			  exit;
-  		end else if Status = ScriptStatus.Paused  then begin
-		    Status := ScriptStatus.Running;
+      if Status in [ScriptStatus.StepInto, ScriptStatus.StepOut, ScriptStatus.StepOver] then begin
+        Status := ScriptStatus.Running;
+        exit;
+      end else if Status = ScriptStatus.Paused  then begin
+        Status := ScriptStatus.Running;
         fWaitEvent.Set();
-		  	exit;
-  		end else if Status <> ScriptStatus.Stopped then raise new ScriptComponentException(RemObjects.Script.Properties.Resources.eAlreadyRunning);
-			Status := ScriptStatus.Running;
-		end;
+        exit;
+      end else if Status <> ScriptStatus.Stopped then raise new ScriptComponentException(RemObjects.Script.Properties.Resources.eAlreadyRunning);
+      Status := ScriptStatus.Running;
+    end;
       fExceptionResult := nil;
-		  fWorkThread := new System.Threading.Thread(method begin
+      fWorkThread := new System.Threading.Thread(method begin
         try
-				  fRunResult := IntRun;
+          fRunResult := IntRun;
         except
           on e: Exception do
             fExceptionResult := e;
-				end;
-			end);
-			try
-			  fWorkThread.Start;
-			except
-				Status := ScriptStatus.Stopped;
-				raise;
-			end;
-	end else begin
+        end;
+      end);
+      try
+        fWorkThread.Start;
+      except
+        Status := ScriptStatus.Stopped;
+        raise;
+      end;
+  end else begin
     if Status = ScriptStatus.Paused then begin Status := ScriptStatus.Running; exit; end;
-		if Status <> ScriptStatus.Stopped then raise new ScriptComponentException(RemObjects.Script.Properties.Resources.eAlreadyRunning);
+    if Status <> ScriptStatus.Stopped then raise new ScriptComponentException(RemObjects.Script.Properties.Resources.eAlreadyRunning);
     fRunResult := IntRun;
-	end;
+  end;
 
 end;
 
 method ScriptComponent.Pause;
 begin
   locking self do begin
-  	if Status = ScriptStatus.Running then begin
-		  Status := ScriptStatus.Pausing;
-  	end;
-	end;
+    if Status = ScriptStatus.Running then begin
+      Status := ScriptStatus.Pausing;
+    end;
+  end;
 end;
 
 method ScriptComponent.Idle;
@@ -465,14 +474,14 @@ end;
 
 method EcmaScriptComponent.HasFunction(aName: String): Boolean;
 begin
-	exit fGlobalObject.Get(aName) is RemObjects.Script.EcmaScript.EcmaScriptBaseFunctionObject;
+  exit fGlobalObject.Get(aName) is RemObjects.Script.EcmaScript.EcmaScriptBaseFunctionObject;
 end;
 
 method EcmaScriptComponent.RunFunction(aInitialStatus: ScriptStatus; aName: String; params args: Array of object): Object;
 begin
   try
-	  var lItem := fGlobalObject.Get(aName) as RemObjects.Script.EcmaScript.EcmaScriptBaseFunctionObject;
-	  if lItem = nil then raise new ScriptComponentException(String.Format(RemObjects.Script.Properties.Resources.eNoSuchFunction, aName));
+    var lItem := fGlobalObject.Get(aName) as RemObjects.Script.EcmaScript.EcmaScriptBaseFunctionObject;
+    if lItem = nil then raise new ScriptComponentException(String.Format(RemObjects.Script.Properties.Resources.eNoSuchFunction, aName));
     if args = nil then Args := [];
     if aInitialStatus = ScriptStatus.StepInto then begin
       Status := aInitialStatus;
@@ -490,8 +499,8 @@ begin
   Status := fEntryStatus; 
   fEntryStatus := ScriptStatus.Running;
   try
-	  if String.IsNullOrEmpty(SourceFileName) then SourceFileName := 'main.js';
-	  if Source = nil then Source := '';
+    if String.IsNullOrEmpty(SourceFileName) then SourceFileName := 'main.js';
+    if Source = nil then Source := '';
     fGlobalObject.FrameCount := 0;
     var lCallback := fCompiler.Parse(SourceFileName, Source);
     result := lCallback(fRoot, fGlobalObject, []);
