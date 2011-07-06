@@ -149,7 +149,8 @@ type
   end;
 
 
-  ScriptAbortException = class (Exception) end;
+  ScriptAbortException = public class (Exception)
+  end;
 
 
   {$REGION Designtime Attributes}
