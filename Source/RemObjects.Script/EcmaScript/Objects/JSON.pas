@@ -249,96 +249,102 @@ begin
   if  (assigned(lResult))  then
     exit  (lResult);
 
-  lObj := EcmaScriptObject(VAlue);
-  if (lObj <> nil) and ((lObj is not EcmaScriptBaseFunctionObject) or (lObj is EcmaScriptObjectWrapper)) then begin
-    if aStack.Contains(lObj) then RaiseNativeError(NativeErrorType.TypeError, 'Recursive JSON structure');
-    aStack.Add(lObj);
-    var lWork := new StringBuilder;
-    if lObj.Class = 'Array' then begin
-      if EcmaScriptArrayObject(lObj).Length = 0 then begin
-        lWork.Append('[]');
+  if  (lObj = nil)  then
+    exit  (nil);
 
-      end;
+  if  ((lObj is EcmaScriptBaseFunctionObject)  and  (lObj is not EcmaScriptObjectWrapper))  then
+    exit  (nil);
 
-      aIndent := aIndent + aGap;
+  if  (typeOf(&Delegate).IsAssignableFrom(EcmaScriptObjectWrapper(lObj).Value.GetType().BaseType))  then
+    exit  ('function');
 
-      for i: Integer := 0 to EcmaScriptArrayObject(lObj).Length -1 do begin
-        var el := JSONStr(aExecutionContext, aStack, aGap, aIndent,aReplacerFunction, aProplist, lObj, i.ToString());
-        if el =  nil then el := 'null';
-        if i = 0 then begin
-          if aGap = '' then
-            lWork.Append('[')
-          else begin
-            lWork.Append('['#10);
-            lWork.Append(aIndent);
-          end;
+  if aStack.Contains(lObj) then RaiseNativeError(NativeErrorType.TypeError, 'Recursive JSON structure');
+  aStack.Add(lObj);
+  var lWork := new StringBuilder;
+  if lObj.Class = 'Array' then begin
+    if EcmaScriptArrayObject(lObj).Length = 0 then begin
+      lWork.Append('[]');
+
+    end;
+
+    aIndent := aIndent + aGap;
+
+    for i: Integer := 0 to EcmaScriptArrayObject(lObj).Length -1 do begin
+      var el := JSONStr(aExecutionContext, aStack, aGap, aIndent,aReplacerFunction, aProplist, lObj, i.ToString());
+      if el =  nil then el := 'null';
+      if i = 0 then begin
+        if aGap = '' then
+          lWork.Append('[')
+        else begin
+          lWork.Append('['#10);
+          lWork.Append(aIndent);
         end;
-        lWork.Append(el);
-        if i = EcmaScriptArrayObject(lObj).Length -1 then begin
-          if aGap = '' then begin
-            lWork.Append(']')
-          end else begin
-            lWork.Append(#10);
-            lWork.Append(aIndent.Substring(0, aIndent.Length - aGap.Length));
-            lWork.Append(']');
-          end;
+      end;
+      lWork.Append(el);
+      if i = EcmaScriptArrayObject(lObj).Length -1 then begin
+        if aGap = '' then begin
+          lWork.Append(']')
         end else begin
-          if aGap = '' then lWork.Append(',') else begin
+          lWork.Append(#10);
+          lWork.Append(aIndent.Substring(0, aIndent.Length - aGap.Length));
+          lWork.Append(']');
+        end;
+      end else begin
+        if aGap = '' then lWork.Append(',') else begin
+          lWork.Append(','#10);
+          lWork.Append(aIndent);
+        end;
+      end;
+    end; 
+  end else begin
+    var lStepBack := aIndent;
+    aIndent := aIndent + aGap;
+    var k := aProplist:ToArray;
+    if Length(k) = 0 then begin
+      if lObj is EcmaScriptObjectWrapper then
+        k := EcmaScriptObjectWrapper(lObj).GetOwnNames.ToArray
+      else
+        k := lObj.Values.Where(a->PropertyAttributes.Enumerable in a.Value.Attributes).Select(a->a.Key).ToArray;
+    end;
+    var lItems := new List<string>;
+    for each el in k do begin
+      var lVal := JSONStr(aExecutionContext, aStack, aGap, aIndent, aReplacerFunction, aProplist, lObj, el);
+      if lVal <> nil then begin
+        if aGap = '' then
+          lItems.Add(JSON.QuoteString(el)+':'+lVal)
+        else
+          lItems.Add(JSON.QuoteString(el)+': '+lVal);
+      end;
+    end;
+    if lItems.Count = 0 then
+      lWork.Append('{}')
+    else begin
+      if aGap = '' then begin
+        lWork.Append('{');
+        for i: Integer := 0 to lItems.Count -1 do begin
+          if i <> 0 then lWork.Append(',');
+          lWork.Append(lItems[i]);
+        end;
+        lWork.Append('}');
+      end else begin
+        lWork.Append('{'#10);
+        lWork.Append(aIndent);
+        for i: Integer := 0 to lItems.Count -1 do begin
+          if (i <> 0) and (i <> lItems.Count- 1) then begin 
             lWork.Append(','#10);
             lWork.Append(aIndent);
           end;
+          lWork.Append(lItems[i]);
         end;
-      end; 
-    end else begin
-      var lStepBack := aIndent;
-      aIndent := aIndent + aGap;
-      var k := aProplist:ToArray;
-      if Length(k) = 0 then begin
-        if lObj is EcmaScriptObjectWrapper then
-          k := EcmaScriptObjectWrapper(lObj).GetOwnNames.ToArray
-        else
-          k := lObj.Values.Where(a->PropertyAttributes.Enumerable in a.Value.Attributes).Select(a->a.Key).ToArray;
-      end;
-      var lItems := new List<string>;
-      for each el in k do begin
-        var lVal := JSONStr(aExecutionContext, aStack, aGap, aIndent, aReplacerFunction, aProplist, lObj, el);
-        if lVal <> nil then begin
-          if aGap = '' then
-            lItems.Add(JSON.QuoteString(el)+':'+lVal)
-          else
-            lItems.Add(JSON.QuoteString(el)+': '+lVal);
-        end;
-      end;
-      if lItems.Count = 0 then
-        lWork.Append('{}')
-      else begin
-        if aGap = '' then begin
-          lWork.Append('{');
-          for i: Integer := 0 to lItems.Count -1 do begin
-            if i <> 0 then lWork.Append(',');
-            lWork.Append(lItems[i]);
-          end;
-          lWork.Append('}');
-        end else begin
-          lWork.Append('{'#10);
-          lWork.Append(aIndent);
-          for i: Integer := 0 to lItems.Count -1 do begin
-            if (i <> 0) and (i <> lItems.Count- 1) then begin 
-              lWork.Append(','#10);
-              lWork.Append(aIndent);
-            end;
-            lWork.Append(lItems[i]);
-          end;
-          lWork.Append(#10);
-          lWork.Append(aIndent.Substring(0, aIndent.Length - aGap.Length));
-          lWork.Append('}');
-        end;
+        lWork.Append(#10);
+        lWork.Append(aIndent.Substring(0, aIndent.Length - aGap.Length));
+        lWork.Append('}');
       end;
     end;
-    aStack.Remove(lObj);
-    exit lWork.ToString;
   end;
-  exit nil;
+  aStack.Remove(lObj);
+
+  exit  (lWork.ToString());
 end;
 
 
