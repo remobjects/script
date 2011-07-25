@@ -107,7 +107,8 @@ type
     method Dispose(disposing: Boolean); override;
     {$ENDIF}
 
-    method ExposeType(&type: &Type; Name: String := nil); abstract;
+    method ExposeType(&type: &Type;  name: String := nil); abstract;
+
     //method UseNamespace(ns: String); virtual;
     /// <summary>Clears all assemblies and exposed variables</summary>
     method Clear(aGlobals: Boolean := false); abstract;
@@ -160,10 +161,11 @@ type
   {$ENDREGION}
   EcmaScriptComponent = public class(ScriptComponent)
   protected
-    fCompiler: EcmaScriptCompiler;
-    fScope: ScriptScope;
-    fRoot: ExecutionContext;
-    fGlobalObject: RemObjects.Script.EcmaScript.GlobalObject;
+    var fCompiler: EcmaScriptCompiler;
+    var fScope: ScriptScope;
+    var fRoot: ExecutionContext;
+    var fGlobalObject: RemObjects.Script.EcmaScript.GlobalObject;
+
     method SetDebug(b: Boolean); override;
     method IntRun: Object; override;
   public
@@ -171,7 +173,7 @@ type
     method Clear(aGlobals: Boolean := false); override;
     property Globals: ScriptScope read fScope; override;
     property GlobalObject: RemObjects.Script.EcmaScript.GlobalObject read fGlobalObject;
-    method ExposeType(&type: &Type; Name: String); override;
+    method ExposeType(&type: &Type;  name: String); override;
     method HasFunction(aName: String): Boolean; override;
     method RunFunction(aInitialStatus: ScriptStatus; aName: String; params args: Array of object): Object; override;
   end;
@@ -516,11 +518,14 @@ begin
 end;
 
 
-method EcmaScriptComponent.ExposeType(&type: &Type; Name: String);
+method EcmaScriptComponent.ExposeType(&type: &Type;  name: String);
 begin
-  if Name = nil then Name := &Type.Name;
-  fGlobalObject.AddValue(name, new EcmaScriptObjectWrapper(nil, &Type, fGlobalObject));
+  if  (String.IsNullOrEmpty(name))  then
+    name := &type.Name;
+
+  self.fGlobalObject.AddValue(name, new EcmaScriptObjectWrapper(nil, &type, self.fGlobalObject));
 end;
+
 
 method EcmaScriptComponent.SetDebug(b: Boolean);
 begin

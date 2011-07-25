@@ -28,8 +28,8 @@ type
 
   EcmaScriptObjectWrapper = public class(EcmaScriptBaseFunctionObject)
   private
-    fValue: Object;
-    fType: &Type;
+    var fValue: Object;
+    var fType: &Type;
     class method ConvertTo(val: Object; aType: &Type): Object;
   public
     property &Type: &Type read fType;
@@ -209,8 +209,12 @@ begin
     end else
       lReal[j] := ConvertTo(aArgs[j], lParams[j].ParameterType);
   end;
-  try 
-  exit EcmaScriptScope.DoTryWrap(aRoot, lMeth.Invoke(aSelf, lReal));
+
+  try
+    if  (lMeth  is  ConstructorInfo)  then
+      exit  (EcmaScriptScope.DoTryWrap(aRoot, ConstructorInfo(lMeth).Invoke(lReal)));
+
+    exit  (EcmaScriptScope.DoTryWrap(aRoot, lMeth.Invoke(aSelf, lReal)));
   except
     on e: TargetInvocationException do begin
       if e.InnerException is RemObjects.Script.ScriptRuntimeException then
@@ -256,8 +260,11 @@ end;
 
 method EcmaScriptObjectWrapper.Construct(context: ExecutionContext; params args: array of Object): Object;
 begin
-  if not Static then Root.RaiseNativeError(NativeErrorType.ReferenceError, 'Cannot call new on instance');
-  exit FindAndCallBestOverload(fType.GetConstructors(bindingFlags.Public).Cast<MethodBase>.ToArray, Root, '<constructor>', nil, args);
+  if  (not self.Static)  then
+    self.Root.RaiseNativeError(NativeErrorType.ReferenceError, 'Cannot call new on instance');
+
+  exit  (EcmaScriptObjectWrapper.FindAndCallBestOverload(self.fType.GetConstructors(BindingFlags.Public Or BindingFlags.Instance).Cast<MethodBase>.ToArray(),
+                   self.Root, '<constructor>', nil, args));
 end;
 
 method EcmaScriptObjectWrapper.Get(aExecutionContext: ExecutionContext; aFlags: Integer; aName: String): Object;
