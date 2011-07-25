@@ -10,12 +10,11 @@ uses
 
 type
   MyDelegate = method(params args: Array of object): Object;  
-  
+
   Scripts = public class
   assembly
     fResult: String;
     method ExecuteJS(s: String): Object;
-  protected
   public
     [Fact]
     method Error;
@@ -45,6 +44,13 @@ type
     method UnknownCall2;
     [Fact]
     method NativeMethodCall;
+
+    [Theory]
+    [InlineData('var x = new JSType(); writeln(x.A);',        'JSType', '42')]
+    [InlineData('var x = new JSType(); writeln(x.B);',        'JSType', 'Foo')]
+    [InlineData('writeln(JSType.Foo());',                     'JSType', 'Bar')]
+    [InlineData('var x = new SimpleCLRType(); writeln(x.A);', '',       '42')]
+    method ExposeType(aScript: String;  aTypeName: String;  aExpectedResult: String);
   end;
 
   LDA = public class
@@ -54,6 +60,18 @@ type
     constructor(aScripts: Scripts);
     method Call;
   end;
+
+  SimpleCLRType = class
+  public
+    constructor();
+
+    property A: Int32 read write;
+    property B: String read write;
+
+    class method Foo(): String;
+  end;
+
+
 implementation
 
 method Scripts.EvalTest;
@@ -343,14 +361,54 @@ begin
 Assert.Equal(fResult, 'LDA.CALL CALLED'#13#10);
 end;
 
+
+method Scripts.ExposeType(aScript: String;  aTypeName: String;  aExpectedResult: String);
+begin
+  var lScriptEngine := new RemObjects.Script.EcmaScriptComponent();
+  lScriptEngine.Debug := false;
+  lScriptEngine.RunInThread := false;
+
+  lScriptEngine.Source := aScript;
+  self.fResult := String.Empty;
+
+  var lWriteLn: MyDelegate :=
+                   method (params args: array of Object): Object
+                   begin
+                     for each  el  in  args  do
+                       self.fResult := self.fResult + RemObjects.Script.EcmaScript.Utilities.GetObjAsString(el, lScriptEngine.GlobalObject.ExecutionContext);
+                   end;
+  lScriptEngine.Globals.SetVariable("writeln", lWriteLn);
+
+  lScriptEngine.ExposeType(typeOf(SimpleCLRType), aTypeName);
+  lScriptEngine.Run();
+
+  Assert.Equal(aExpectedResult, self.fResult);
+end;
+
+
 constructor LDA(aScripts: Scripts);
 begin
   fScripts := aScripts;
 end;
 
+
 method LDA.Call;
 begin
   fScripts.fResult := fScripts.fResult + 'LDA.CALL CALLED'#13#10;
 end;
+
+
+constructor SimpleCLRType();
+begin
+  self.A := 42;
+  self.B := 'Foo';
+end;
+
+
+class method SimpleCLRType.Foo(): String;
+begin
+  exit  ('Bar');
+end;
+
 
 end.
