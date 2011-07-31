@@ -315,17 +315,18 @@ begin
   if  ((lObj is EcmaScriptBaseFunctionObject)  and  (lObj is not EcmaScriptObjectWrapper))  then
     exit  (nil);
 
-  if  (typeOf(&Delegate).IsAssignableFrom(EcmaScriptObjectWrapper(lObj).Value.GetType().BaseType))  then
-    exit  ('function');
+  with matching  wrapper := EcmaScriptObjectWrapper(lObj)  do
+    if  (typeOf(&Delegate).IsAssignableFrom(wrapper.Value.GetType().BaseType))  then
+      exit  ('function');
 
-  if aStack.Contains(lObj) then RaiseNativeError(NativeErrorType.TypeError, 'Recursive JSON structure');
+  if  (aStack.Contains(lObj))  then
+    RaiseNativeError(NativeErrorType.TypeError, 'Recursive JSON structure');
+
   aStack.Add(lObj);
   var lWork := new StringBuilder;
-  if lObj.Class = 'Array' then begin
-    if EcmaScriptArrayObject(lObj).Length = 0 then begin
+  if  (lObj.Class = 'Array')  then  begin
+    if  (EcmaScriptArrayObject(lObj).Length = 0)  then
       lWork.Append('[]');
-
-    end;
 
     aIndent := aIndent + aGap;
 
