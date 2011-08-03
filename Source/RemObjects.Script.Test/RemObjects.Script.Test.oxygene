@@ -63,28 +63,8 @@
     </FutureHelperClassName>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Dynamic">
-      <HintPath>..\..\Bin\Microsoft.Dynamic.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.Scripting">
-      <HintPath>..\..\Bin\Microsoft.Scripting.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.Scripting.Core">
-      <HintPath>..\..\Bin\Microsoft.Scripting.Core.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="mscorlib">
       <HintPath>mscorlib.dll</HintPath>
-    </Reference>
-    <Reference Include="nunit.framework">
-      <HintPath>C:\Program Files %28x86%29\NUnit 2.5\bin\net-2.0\framework\nunit.framework.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="nunit.mocks">
-      <HintPath>C:\Program Files %28x86%29\NUnit 2.5\bin\net-2.0\framework\nunit.mocks.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="System">
       <HintPath>System.dll</HintPath>
