@@ -1,32 +1,33 @@
 ﻿namespace Debugger
 {
-	partial class MainForm
-	{
-		/// <summary>
-		/// Required designer variable.
-		/// </summary>
-		private System.ComponentModel.IContainer components = null;
+    partial class MainForm
+    {
+        /// <summary>
+        /// Required designer variable.
+        /// </summary>
+        private System.ComponentModel.IContainer components = null;
 
-		/// <summary>
-		/// Clean up any resources being used.
-		/// </summary>
-		/// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
-		protected override void Dispose (bool disposing)
-		{
-			if(disposing && (components != null)) {
-				components.Dispose ();
-			}
-			base.Dispose (disposing);
-		}
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+            }
+            base.Dispose(disposing);
+        }
 
-		#region Windows Form Designer generated code
+        #region Windows Form Designer generated code
 
-		/// <summary>
-		/// Required method for Designer support - do not modify
-		/// the contents of this method with the code editor.
-		/// </summary>
-		private void InitializeComponent ()
-		{
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.mainsplit = new System.Windows.Forms.SplitContainer();
             this.tbMain = new ICSharpCode.TextEditor.TextEditorControl();
@@ -61,6 +62,7 @@
             this.dlgOpen = new System.Windows.Forms.OpenFileDialog();
             this.dlgSave = new System.Windows.Forms.SaveFileDialog();
             this.ScriptEngine = new RemObjects.Script.EcmaScriptComponent();
+            ((System.ComponentModel.ISupportInitialize)(this.mainsplit)).BeginInit();
             this.mainsplit.Panel1.SuspendLayout();
             this.mainsplit.Panel2.SuspendLayout();
             this.mainsplit.SuspendLayout();
@@ -364,6 +366,7 @@
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.mainsplit.Panel1.ResumeLayout(false);
             this.mainsplit.Panel2.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.mainsplit)).EndInit();
             this.mainsplit.ResumeLayout(false);
             this.tabs.ResumeLayout(false);
             this.tbOutput.ResumeLayout(false);
@@ -374,43 +377,43 @@
             this.ResumeLayout(false);
             this.PerformLayout();
 
-		}
+        }
 
-		#endregion
+        #endregion
 
-		private RemObjects.Script.EcmaScriptComponent ScriptEngine;
-		private System.Windows.Forms.SplitContainer mainsplit;
-		private System.Windows.Forms.TabControl tabs;
-		private System.Windows.Forms.TabPage tbOutput;
-		private System.Windows.Forms.TextBox edOutput;
+        private RemObjects.Script.EcmaScriptComponent ScriptEngine;
+        private System.Windows.Forms.SplitContainer mainsplit;
+        private System.Windows.Forms.TabControl tabs;
+        private System.Windows.Forms.TabPage tbOutput;
+        private System.Windows.Forms.TextBox edOutput;
         private System.Windows.Forms.TabPage tbLocals;
-		private System.Windows.Forms.MenuStrip menuStrip1;
-		private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem newToolStripMenuItem;
-		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
-		private System.Windows.Forms.ToolStripMenuItem openToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem saveToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem saveAsToolStripMenuItem;
-		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem2;
-		private System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem debugToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem runToolStripMenuItem;
-		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
-		private System.Windows.Forms.ToolStripMenuItem stepIntoToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem stepOverToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem stepOutToolStripMenuItem;
-		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem4;
-		private System.Windows.Forms.ToolStripMenuItem setClearBreakpointToolStripMenuItem;
-		private System.Windows.Forms.ToolStripSeparator toolStripMenuItem5;
-		private System.Windows.Forms.ToolStripMenuItem stopToolStripMenuItem;
-		private ICSharpCode.TextEditor.TextEditorControl tbMain;
-		private System.Windows.Forms.ListView lvLocals;
-		private System.Windows.Forms.ColumnHeader columnHeader1;
-		private System.Windows.Forms.ColumnHeader columnHeader2;
-		private System.Windows.Forms.OpenFileDialog dlgOpen;
-		private System.Windows.Forms.SaveFileDialog dlgSave;
-		private System.Windows.Forms.ToolStripMenuItem helpToolStripMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
-	}
+        private System.Windows.Forms.MenuStrip menuStrip1;
+        private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem newToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem1;
+        private System.Windows.Forms.ToolStripMenuItem openToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem saveToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem saveAsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem2;
+        private System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem debugToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem runToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem3;
+        private System.Windows.Forms.ToolStripMenuItem stepIntoToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem stepOverToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem stepOutToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem4;
+        private System.Windows.Forms.ToolStripMenuItem setClearBreakpointToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator toolStripMenuItem5;
+        private System.Windows.Forms.ToolStripMenuItem stopToolStripMenuItem;
+        private ICSharpCode.TextEditor.TextEditorControl tbMain;
+        private System.Windows.Forms.ListView lvLocals;
+        private System.Windows.Forms.ColumnHeader columnHeader1;
+        private System.Windows.Forms.ColumnHeader columnHeader2;
+        private System.Windows.Forms.OpenFileDialog dlgOpen;
+        private System.Windows.Forms.SaveFileDialog dlgSave;
+        private System.Windows.Forms.ToolStripMenuItem helpToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem aboutToolStripMenuItem;
+    }
 }
 
