@@ -251,8 +251,11 @@ begin
   if  (val = Undefined.Instance)  then
     exit  (nil);
 
-  if  (aType.IsAssignableFrom(typeOf(val)))  then
+  if  (aType.IsAssignableFrom(val.GetType()))  then
     exit  (val);
+
+  with matching  wrapper := EcmaScriptObjectWrapper(val)  do
+    exit  (ConvertTo(wrapper.Value, aType));
 
   exit  (Convert.ChangeType(val, aType, System.Globalization.CultureInfo.InvariantCulture));
 end;
