@@ -449,7 +449,7 @@ begin
   if  (value is Int64)    then  exit  (Int64(value).ToString(CultureInfo.InvariantCulture));
 
   if  (value is DateTime)  then
-    exit  (String.Format('/Date({0:#})/', new TimeSpan(DateTime(value).ToUniversalTime().Ticks-(new DateTime(1970, 1, 1)).Ticks).TotalMilliseconds));
+    exit  (String.Format('"/Date({0:#})/"', new TimeSpan(DateTime(value).ToUniversalTime().Ticks-(new DateTime(1970, 1, 1)).Ticks).TotalMilliseconds));
 
   if  (value is Decimal)  then
     value := Convert.ToDouble(Decimal(value));
