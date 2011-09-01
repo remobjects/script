@@ -1,52 +1,54 @@
 ﻿{
 
-  Copyright (c) 2009-2010 RemObjects Software. See LICENSE.txt for more details.
+  Copyright (c) 2009-2011 RemObjects Software. See LICENSE.txt for more details.
 
 }
+
 namespace RemObjects.Script.EcmaScript;
 
 interface
-
 
 uses
   System.Collections.Generic,
   System.Text,
   RemObjects.Script.EcmaScript.Internal;
 
-
 type
   GlobalObject = public partial class(EcmaScriptObject)
   public
     method CreateString: EcmaScriptObject;
 
-    method StringCall(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method StringCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method StringFromCharCode(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method StringToString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method StringValueOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method StringCharAt(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method StringCharCodeAt(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method StringConcat(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method StringIndexOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method StringLastIndexOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method StringLocaleCompare(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method StringMatch(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method StringReplace(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method StringSearch(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method StringSlice(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method StringSplit(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method StringSubString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method StringToLowerCase(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method StringToUpperCase(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method StringToLocaleLowerCase(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method StringToLocaleUpperCase(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method StringTrim(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+    method StringCall(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
+    method StringCtor(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
+    method StringFromCharCode(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
+    method StringToString(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
+    method StringValueOf(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
+    method StringCharAt(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
+    method StringCharCodeAt(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
+    method StringConcat(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
+    method StringIndexOf(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
+    method StringLastIndexOf(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
+    method StringLocaleCompare(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
+    method StringMatch(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
+    method StringReplace(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
+    method StringSearch(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
+    method StringSlice(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
+    method StringSplit(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
+    method StringSubString(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
+    method StringToLowerCase(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
+    method StringToUpperCase(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
+    method StringToLocaleLowerCase(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
+    method StringToLocaleUpperCase(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
+    method StringTrim(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
   end;
+
+
   EcmaScriptStringObject = class(EcmaScriptFunctionObject)
   public
-    method Call(context: ExecutionContext; params args: array of Object): Object; override;
-    method Construct(context: ExecutionContext; params args: array of Object): Object; override;
+    method Call(context: ExecutionContext;  params args: array of Object): Object; override;
+    method Construct(context: ExecutionContext;  params args: array of Object): Object; override;
   end;
+
 
 implementation
 
@@ -54,13 +56,14 @@ implementation
 method GlobalObject.CreateString: EcmaScriptObject;
 begin
   result := EcmaScriptObject(Get('String'));
-  if result <> nil then exit;
+  if  (result <> nil)  then
+    exit;
 
   result := new EcmaScriptStringObject(self, 'String', @StringCall, 1, &Class := 'String');
   Values.Add('String', PropertyValue.NotEnum(Result));
 
   StringPrototype := new EcmaScriptObject(self, &Class := 'String');
-  StringPrototype.Values.add('constructor', PropertyValue.NotEnum(result));
+  StringPrototype.Values.Add('constructor', PropertyValue.NotEnum(result));
   StringPrototype.Prototype := ObjectPrototype;
   result.Values['prototype'] := PropertyValue.NotAllFlags(StringPrototype);
   
@@ -90,108 +93,158 @@ begin
   StringPrototype.Values.Add('trim', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'trim', @StringTrim, 0)));
 end;
 
-method GlobalObject.StringCall(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.StringCall(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
 begin
   exit coalesce(Utilities.GetArgAsString(args, 0, aCaller), String.Empty);
 end;
 
-method GlobalObject.StringCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.StringCtor(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
 begin
-  var lVal := if length(args) = 0 then String.Empty else Coalesce(Utilities.GetArgAsString(args, 0, aCaller), String.Empty);
+  var lVal := if  (length(args) = 0)  then
+                String.Empty
+              else
+                coalesce(Utilities.GetArgAsString(args, 0, aCaller), String.Empty);
+
   var lObj := new EcmaScriptObject(self, StringPrototype, &Class := 'String', Value := lVal);
   lObj.Values.Add('length', PropertyValue.NotDeleteAndReadOnly(lVal.Length));
-  exit lObj;
+
+  exit  (lObj);
 end;
 
-method GlobalObject.StringFromCharCode(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.StringFromCharCode(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
 begin
-  var lRes := new char[Length(args)];
-  for i: Integer := 0 to lRes.Length -1 do begin
+  var lRes := new Char[length(args)];
+
+  for  i: Int32  :=  0  to  lRes.Length-1  do
     lRes[i] := Char(Utilities.GetArgAsInteger(args, i, aCaller));
-  end;
-  exit new String(lRes);
+
+  exit  (new String(lRes));
 end;
 
-method GlobalObject.StringToString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.StringToString(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
 begin
-  if aSelf is String then exit aSelf;
-  if (aSelf is EcmaSCriptObject) and(EcmaScriptObject(aSelf).Class = 'String') then  exit EcmaScriptObject(aSelf).Value;
+  if  (aSelf is String)  then
+    exit  (aSelf);
+
+  if  ((aSelf is EcmaScriptObject)  and  (EcmaScriptObject(aSelf).Class = 'String'))  then
+    exit  (EcmaScriptObject(aSelf).Value);
+
   RaiseNativeError(NativeErrorType.TypeError, 'String.prototype.toString is not generic');
 end;
 
-method GlobalObject.StringValueOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.StringValueOf(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
 begin
-  if aSelf is String then exit aSelf;
-  if (aSelf is EcmaSCriptObject) and(EcmaScriptObject(aSelf).Class = 'String') then  exit EcmaScriptObject(aSelf).Value;
+  if  (aSelf is String)  then
+    exit  (aSelf);
+  if  ((aSelf is EcmaScriptObject)  and  (EcmaScriptObject(aSelf).Class = 'String'))  then
+    exit  (EcmaScriptObject(aSelf).Value);
+
   RaiseNativeError(NativeErrorType.TypeError, 'String.prototype.valueOf is not generic');
 end;
 
-method GlobalObject.StringCharAt(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.StringCharAt(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
 begin
-  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
+  var lSelf := coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
   var lIndex := Utilities.GetArgAsInteger(args, 0, aCaller);
-  if (lIndex < 0) or (lIndex>=lSelf.Length) then exit string.Empty;
-  exit new string(lSelf[lIndex], 1);
+
+  if  ((lIndex < 0)  or  (lIndex >= lSelf.Length))  then
+    exit  (String.Empty);
+
+  exit  (new String(lSelf[lIndex], 1));
 end;
 
-method GlobalObject.StringCharCodeAt(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.StringCharCodeAt(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
 begin
-  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
+  var lSelf := coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
   var lIndex := Utilities.GetArgAsInteger(args, 0, aCaller);
-  if (lIndex < 0) or (lIndex>=lSelf.Length) then exit Double.NaN;
-  exit Integer(lSelf[lIndex]);
+
+  if  ((lIndex < 0)  or  (lIndex >= lSelf.Length))  then
+    exit  (Double.NaN);
+
+  exit  (Integer(lSelf[lIndex]));
 end;
 
-method GlobalObject.StringConcat(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.StringConcat(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
 begin
-  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
-  if args.Length = 0 then exit lSelf;
-  if args.Length = 1 then exit lSelf + Utilities.GetArgAsString(args, 0, aCaller);
-  if args.Length = 2 then exit lSelf + Utilities.GetArgAsString(args, 0, aCaller)+ Utilities.GetArgAsString(args, 1, aCaller);
-  var fsb := new StringBuilder;
+  var lSelf := coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
+
+  if  (args.Length = 0)  then
+    exit  (lSelf);
+
+  if  (args.Length = 1)  then
+    exit  (lSelf + Utilities.GetArgAsString(args, 0, aCaller));
+
+  if  (args.Length = 2)  then
+    exit  (lSelf + Utilities.GetArgAsString(args, 0, aCaller)+ Utilities.GetArgAsString(args, 1, aCaller));
+
+  var fsb := new StringBuilder();
   fsb.Append(lSelf);
-  for i: Integer := 0 to args.Length -1 do begin
+
+  for  i: Int32  :=  0  to  args.Length-1  do
     fsb.Append(Utilities.GetArgAsString(args, i, aCaller));
-  end;
-  exit fsb.ToString;
+
+  exit  (fsb.ToString());
 end;
 
-method GlobalObject.StringIndexOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.StringIndexOf(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
 begin
-  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
-  var lNeedle := Coalesce(Utilities.GetArgAsString(args, 0, aCaller), String.Empty);
+  var lSelf := coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
+  var lNeedle := coalesce(Utilities.GetArgAsString(args, 0, aCaller), String.Empty);
   var lIndex := Utilities.GetArgAsInteger(args, 1, aCaller);
-  if lIndex >= lSelf.Length then exit -1;
-  exit lSelf.IndexOf(lNeedle, lIndex);
+
+  if  (lIndex >= lSelf.Length)  then
+    exit  (-1);
+
+  exit  (lSelf.IndexOf(lNeedle, lIndex));
 end;
 
-method GlobalObject.StringLastIndexOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.StringLastIndexOf(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
 begin
-  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
-  var lNeedle := Coalesce(Utilities.GetArgAsString(args, 0, aCaller), String.Empty);
+  var lSelf := coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
+  var lNeedle := coalesce(Utilities.GetArgAsString(args, 0, aCaller), String.Empty);
   var lIndex := Utilities.GetArgAsInteger(args, 1, aCaller);
-  if (lIndex >= lSelf.Length) or (lIndex = 0) then exit lSelf.Length;
-  exit lSelf.LastIndexOf(lNeedle, lIndex);
+
+  if  ((lIndex >= lSelf.Length)  or  (lIndex = 0))  then
+    exit  (lSelf.Length);
+
+  exit  (lSelf.LastIndexOf(lNeedle, lIndex));
 end;
 
-method GlobalObject.StringReplace(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.StringReplace(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
 begin
-  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
-  var lSearch := Coalesce(Utilities.GetArgAsString(args, 0, aCaller), String.Empty);
-  var lReplace := Coalesce(Utilities.GetArgAsString(args, 1, aCaller), String.Empty);
-  exit lSelf.Replace(lSearch, lReplace);
+  var lSelf := coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
+  var lSearch := coalesce(Utilities.GetArgAsString(args, 0, aCaller), String.Empty);
+  var lReplace := coalesce(Utilities.GetArgAsString(args, 1, aCaller), String.Empty);
+
+  exit  (lSelf.Replace(lSearch, lReplace));
 end;
 
-method GlobalObject.StringSlice(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.StringSlice(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
 begin
-  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
-  if lSelf = nil then exit Undefined.Instance;
-  var lStart := Utilities.GetArgAsInteger(Args, 0, aCaller);
-  var lObj := Utilities.GetArg(Args, 1);
-  var lEnd := Iif((lObj = nil) or (lObj = Undefined.Instance), Int32.MaxValue, Utilities.GetObjAsInteger(lObj, aCaller));
-  if lStart < 0 then begin
+  var lSelf := coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
+
+  if  (lSelf = nil)  then
+    exit  (Undefined.Instance);
+
+  var lStart := Utilities.GetArgAsInteger(args, 0, aCaller);
+  var lObj := Utilities.GetArg(args, 1);
+  var lEnd := iif((lObj = nil) or (lObj = Undefined.Instance), Int32.MaxValue, Utilities.GetObjAsInteger(lObj, aCaller));
+
+  if  (lStart < 0)  then  begin
     lStart := lSelf.Length + lStart;
-    if lStart < 0 then 
+    if  (lStart < 0)  then 
       lStart := 0;
   end;
 
@@ -205,13 +258,16 @@ begin
   exit lSelf.Substring(lStart, lEnd - lStart);
 end;
 
-method GlobalObject.StringSplit(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.StringSplit(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
 begin
-  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
-  var lNeedle := Coalesce(Utilities.GetArgAsString(args, 0, aCaller), String.Empty);
+  var lSelf := coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
+  var lNeedle := coalesce(Utilities.GetArgAsString(args, 0, aCaller), String.Empty);
   var lMax := Utilities.GetArgAsInteger(args, 1, aCaller);
-  if lMax <= 0 then lMax := Int32.MaxValue;
-  {$IFDEF SILVERLIGHT} 
+
+  if  (lMax <= 0)  then
+    lMax := Int32.MaxValue;
+{$IFDEF SILVERLIGHT} 
   var lValues := lSelf.Split([lNeedle], StringSplitOptions.None);
   if lValues.length > lMax then begin
     result := new EcmaScriptArrayObject(self, 0);
@@ -221,77 +277,105 @@ begin
     exit;
   end else
     exit new EcmaScriptArrayObject(self, 0).AddValues(lValues);
-  {$ELSE}
-  exit new EcmaScriptArrayObject(self, 0).AddValues(lSelf.Split([lNeedle], lMax, StringSplitOptions.None));
-  {$ENDIF}
+{$ELSE}
+  exit  (new EcmaScriptArrayObject(self, 0).AddValues(lSelf.Split([lNeedle], lMax, StringSplitOptions.None)));
+{$ENDIF}
 end;
 
-method GlobalObject.StringSubString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.StringSubString(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
 begin
-  exit StringSlice(aCaller, aSelf, Args);
+  exit  (StringSlice(aCaller, aSelf, args));
 end;
 
-method GlobalObject.StringToLowerCase(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.StringToLowerCase(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
 begin
-  var lSelf: string := string(aSelf);
-  if (lSelf = nil) and (aSelf is EcmaScriptObject) then
-    lSelf := string(EcmaScriptObject(aSelf).Value);
-  if lSelf = nil then RaiseNativeError(NativeErrorType.TypeError, 'String.prototype.toLowerCase is not generic');
-  exit lSelf.ToLowerInvariant;
+  var lSelf: String := String(aSelf);
+
+  if  ((lSelf = nil)  and  (aSelf is EcmaScriptObject))  then
+    lSelf := String(EcmaScriptObject(aSelf).Value);
+
+  if  (lSelf = nil)  then
+    RaiseNativeError(NativeErrorType.TypeError, 'String.prototype.toLowerCase is not generic');
+
+  exit  (lSelf.ToLowerInvariant());
 end;
 
-method GlobalObject.StringToUpperCase(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.StringToUpperCase(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
 begin
-  var lSelf: string := string(aSelf);
-  if (lSelf = nil) and (aSelf is EcmaScriptObject) then
-    lSelf := string(EcmaScriptObject(aSelf).Value);
-  if lSelf = nil then RaiseNativeError(NativeErrorType.TypeError, 'String.prototype.toUpperCase is not generic');
-  exit lSelf.ToUpperInvariant;
+  var lSelf: String := String(aSelf);
+
+  if  ((lSelf = nil)  and  (aSelf is EcmaScriptObject))  then
+    lSelf := String(EcmaScriptObject(aSelf).Value);
+
+  if  (lSelf = nil)  then
+    RaiseNativeError(NativeErrorType.TypeError, 'String.prototype.toUpperCase is not generic');
+
+  exit  (lSelf.ToUpperInvariant());
 end;
 
-method GlobalObject.StringToLocaleLowerCase(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.StringToLocaleLowerCase(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
 begin
-  var lSelf: string := string(aSelf);
-  if (lSelf = nil) and (aSelf is EcmaScriptObject) then
-    lSelf := string(EcmaScriptObject(aSelf).Value);
-  if lSelf = nil then RaiseNativeError(NativeErrorType.TypeError, 'String.prototype.toLocaleLowerCase is not generic');
-  exit lSelf.ToLower;
+  var lSelf: String := String(aSelf);
+
+  if  ((lSelf = nil)  and  (aSelf is EcmaScriptObject))  then
+    lSelf := String(EcmaScriptObject(aSelf).Value);
+
+  if  (lSelf = nil)  then
+    RaiseNativeError(NativeErrorType.TypeError, 'String.prototype.toLocaleLowerCase is not generic');
+
+  exit  (lSelf.ToLower());
 end;
 
-method GlobalObject.StringToLocaleUpperCase(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.StringToLocaleUpperCase(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
 begin
-    var lSelf: string := string(aSelf);
-  if (lSelf = nil) and (aSelf is EcmaScriptObject) then
-    lSelf := string(EcmaScriptObject(aSelf).Value);
-  if lSelf = nil then RaiseNativeError(NativeErrorType.TypeError, 'String.prototype.toLocaleUpperCase is not generic');
-  exit lSelf.ToUpper;
+  var lSelf: String := String(aSelf);
+  if  ((lSelf = nil)  and  (aSelf is EcmaScriptObject))  then
+    lSelf := String(EcmaScriptObject(aSelf).Value);
+
+  if  (lSelf = nil)  then
+    RaiseNativeError(NativeErrorType.TypeError, 'String.prototype.toLocaleUpperCase is not generic');
+
+  exit  (lSelf.ToUpper());
 end;
 
-method GlobalObject.StringSearch(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.StringSearch(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
 begin
-  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
+  var lSelf := coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
   var lObj: EcmaScriptRegexpObject;
-  if (Length(args) = 0) or (args[0] is not EcmaScriptRegexpObject) then begin
-    lObj := new EcmaScriptRegexpObject(self, Utilities.GetArgAsString(args,0, aCaller), '');
-  end else lObj := EcmaScriptRegexpObject(args[0]);
+
+  if  ((length(args) = 0)  or  (args[0] is not EcmaScriptRegexpObject))  then
+    lObj := new EcmaScriptRegexpObject(self, Utilities.GetArgAsString(args,0, aCaller), '')
+  else
+    lObj := EcmaScriptRegexpObject(args[0]);
 
   try
-  var lMatch := lObj.Regex.Match(lSelf);
-  exit iif((lMatch = nil) or not lMatch.Success, -1, lMatch.Index);
+    var lMatch := lObj.Regex.Match(lSelf);
+    exit  (iif((lMatch = nil) or not lMatch.Success, -1, lMatch.Index));
   except
-    on e: Exception do 
-    RaiseNativeError(NativeErrorType.SyntaxError, e.Message);
+    on  ex: Exception  do
+      RaiseNativeError(NativeErrorType.SyntaxError, ex.Message);
   end;
 end;
 
-method GlobalObject.StringMatch(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.StringMatch(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
 begin
-  var lSelf := Coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
+  var lSelf := coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
   var lObj: EcmaScriptRegexpObject;
-  if (Length(args) = 0) or (args[0] is not EcmaScriptRegexpObject) then begin
-    lObj := new EcmaScriptRegexpObject(self, Utilities.GetArgAsString(args,0, aCaller), '');
-  end else lObj := EcmaScriptRegexpObject(args[0]);
-  if not lObj.GlobalVal then exit RegExpExec(aCaller, lObj, lSelf);
+
+  if  ((length(args) = 0) or (args[0] is not EcmaScriptRegexpObject))  then
+    lObj := new EcmaScriptRegexpObject(self, Utilities.GetArgAsString(args,0, aCaller), '')
+  else
+    lObj := EcmaScriptRegexpObject(args[0]);
+
+  if  (not lObj.GlobalVal)  then
+    exit  (RegExpExec(aCaller, lObj, lSelf));
   
   var lRealResult := new EcmaScriptArrayObject(self, 0);
 
@@ -306,34 +390,40 @@ begin
       var lThisIndex := Utilities.GetObjAsInteger(lObj.Get(aCaller, 0, 'lastIndex'), aCaller);
       if lThisIndex = lPrevLastIndex then begin
         lPrevLastIndex := lThisIndex + 1;
-        lOBj.LastIndex := lPrevLastIndex;
+        lObj.LastIndex := lPrevLastIndex;
       end else
         lPrevLastIndex := lThisIndex;
       var lMatchStr := lRes.Get(aCaller, 2, '0');
       lRealResult.AddValue(lMatchStr);
     end;
   end;
-  if lRealResult.Length = 0 then exit nil;
 
-  exit lRealResult;
+  if  (lRealResult.Length = 0)  then
+    exit  (nil);
+
+  exit  (lRealResult);
 end;
 
-method GlobalObject.StringLocaleCompare(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.StringLocaleCompare(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
 begin
   if (aSelf = nil) or (aSelf = Undefined.Instance) then RaiseNativeError(NativeErrorType.TypeError, 'null/undefined not coercible');
   exit String.Compare(Utilities.GetObjAsString(aSelf, aCaller), Utilities.GetArgAsString(args, 0, aCaller), StringComparison.CurrentCulture);
 end;
 
-method GlobalObject.StringTrim(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.StringTrim(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
 begin
   if (aSelf = nil) or (aSelf = Undefined.Instance) then RaiseNativeError(NativeErrorType.TypeError, 'null/undefined not coercible');
   exit Utilities.GetObjAsString(aSelf, aCaller).Trim();
 end;
 
+
 method EcmaScriptStringObject.Call(context: ExecutionContext; params args: array of Object): Object;
 begin
   exit Root.StringCall(context, self, args);
 end;
+
 
 method EcmaScriptStringObject.Construct(context: ExecutionContext; params args: array of Object): Object;
 begin
