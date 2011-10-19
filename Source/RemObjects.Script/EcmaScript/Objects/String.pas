@@ -223,11 +223,20 @@ end;
 
 method GlobalObject.StringReplace(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
 begin
-  var lSelf := coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
-  var lSearch := coalesce(Utilities.GetArgAsString(args, 0, aCaller), String.Empty);
-  var lReplace := coalesce(Utilities.GetArgAsString(args, 1, aCaller), String.Empty);
+  var lSelf: String := coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
 
-  exit  (lSelf.Replace(lSearch, lReplace));
+  var lPattern: EcmaScriptRegexpObject;
+  if  (args[0] is EcmaScriptRegexpObject)  then
+    lPattern := EcmaScriptRegexpObject(args[0])
+  else
+    lPattern := new EcmaScriptRegexpObject(self, Utilities.GetArgAsString(args, 0, aCaller), String.Empty);
+
+  var lNewValue: String := coalesce(Utilities.GetArgAsString(args, 1, aCaller), String.Empty);
+
+  if  (lPattern.GlobalVal)  then
+    exit  (lPattern.Regex.Replace(lSelf, lNewValue));
+
+  exit  (lPattern.Regex.Replace(lSelf, lNewValue, 1));
 end;
 
 
