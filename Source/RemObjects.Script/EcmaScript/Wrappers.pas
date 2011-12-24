@@ -32,12 +32,15 @@ type
     var fType: &Type;
     class method ConvertTo(val: Object; aType: &Type): Object;
   public
+    constructor(aValue: Object; aType: &Type; aGlobal: GlobalObject);
+
     property &Type: &Type read fType;
     property Value: Object read fValue; reintroduce;
     property &Static: Boolean read fValue = nil;
-    class method IsCompatibleType(aInput: &Type; aTarget: &Type): Boolean;
-    class method FindAndCallBestOverload(aMethods: array of System.Reflection.MethodBase;  aRoot: GlobalObject;  aNiceName: String; aSelf: Object; aArgs: array of Object): Object;
-    constructor(aValue: Object; aType: &Type; aGlobal: GlobalObject);
+
+    class method IsCompatibleType(sourceType: &Type;  targetType: &Type): Boolean;
+    class method FindAndCallBestOverload(methods: array of MethodBase;  root: GlobalObject;  methodName: String;  &self: Object;  parameters: array of Object): Object;
+
     method DefineOwnProperty(aName: String; aValue: PropertyValue; aThrow: Boolean): Boolean; override;
     method GetOwnProperty(aName: String): PropertyValue; override;
     method Get(aExecutionContext: ExecutionContext; aFlags: Integer; aName: String): Object; override;
@@ -191,13 +194,14 @@ begin
 end;
 
 
-class method EcmaScriptObjectWrapper.FindAndCallBestOverload(aMethods: array of MethodBase;  aRoot: GlobalObject;  aNiceName: String;
-                   aSelf: Object;  aArgs: array of Object): Object;
+class method EcmaScriptObjectWrapper.FindAndCallBestOverload(methods: array of MethodBase;  root: GlobalObject;  methodName: String;
+                   &self: Object;  parameters: array of Object): Object;
 begin
-  var lMethods := new List<System.Reflection.MethodBase>(aMethods);
-  for  i: Int32  :=  0  to  length(aArgs)-1  do  begin
-    if  (aArgs[i] is EcmaScriptObjectWrapper)  then
-      aArgs[i] := EcmaScriptObjectWrapper(aArgs[i]).Value; // if these were wrapped before, we should unwrap
+  var lMethods := new List<MethodBase>(methods);
+
+  for  i: Int32  :=  0  to  length(parameters)-1  do  begin
+    if  (parameters[i] is EcmaScriptObjectWrapper)  then
+      parameters[i] := EcmaScriptObjectWrapper(parameters[i]).Value; // if these were wrapped before, we should unwrap
   end;
 
   for  i: Int32  :=  lMethods.Count-1  downto  0  do  begin
@@ -205,9 +209,9 @@ begin
     var lParams := lMeth.GetParameters();
     var lParamStart := -1;
 
-    if  (lParams.Length <> length(aArgs))  then  begin
+    if  (lParams.Length <> length(parameters))  then  begin
       if  (not ((lParams.Length > 0)  and  (length(lParams[lParams.Length-1].GetCustomAttributes(typeOf(ParamArrayAttribute), false)) > 0)
-                   and  (aArgs.Length >= lParams.Length-1)))  then  begin
+                   and  (parameters.Length >= lParams.Length-1)))  then  begin
         lMethods.RemoveAt(i);
 
         continue;
@@ -218,12 +222,8 @@ begin
     else if  ((lParams.Length > 0)  and  (length(lParams[lParams.Length-1].GetCustomAttributes(typeOf(ParamArrayAttribute), false)) > 0))  then 
       lParamStart := lParams.Length -1;
     // Now we'll have to see if the parameter types matches what's in the arguments array
-    for  j: Int32  :=  0  to  length(aArgs)-1  do  begin
-      if  (not IsCompatibleType(aArgs[j]:GetType,
-                   if  ((lParamStart <> -1)  and  (j >= lParamStart))  then
-                     lParams[lParams.Length-1].ParameterType.GetElementType()
-                   else
-                     lParams[j].ParameterType))  then  begin
+    for  j: Int32  :=  0  to  length(parameters)-1  do  begin
+      if  (not IsCompatibleType(parameters[j]:GetType(), iif(((lParamStart <> -1)  and  (j >= lParamStart)), lParams[lParams.Length-1].ParameterType.GetElementType(), lParams[j].ParameterType)))  then  begin
         lMeth := nil;
         break;
       end;
@@ -234,10 +234,10 @@ begin
   end;
 
   if  (lMethods.Count > 1)  then
-    aRoot.RaiseNativeError(NativeErrorType.TypeError,String.Format( RemObjects.Script.Properties.Resources.Ambigious_overloaded_method_0_with_1_parameters, aNiceName, aArgs.Length));
+    root.RaiseNativeError(NativeErrorType.TypeError,String.Format( RemObjects.Script.Properties.Resources.Ambigious_overloaded_method_0_with_1_parameters, methodName, parameters.Length));
 
   if  (lMethods.Count = 0)  then
-    aRoot.RaiseNativeError(NativeErrorType.TypeError,String.Format( RemObjects.Script.Properties.Resources.No_overloaded_method_0_with_1_parameters, aNiceName, aArgs.Length));
+    root.RaiseNativeError(NativeErrorType.TypeError,String.Format( RemObjects.Script.Properties.Resources.No_overloaded_method_0_with_1_parameters, methodName, parameters.Length));
 
   var lMeth := lMethods[0];
   var lParams := lMeth.GetParameters();
@@ -247,51 +247,51 @@ begin
   if  ((lParams.Length > 0)  and  (length(lParams[lParams.Length-1].GetCustomAttributes(typeOf(ParamArrayAttribute), false)) > 0)) then 
     lParamStart := lParams.Length -1;
 
-  for  j: Int32  :=  0  to  length(aArgs)-1  do  begin
+  for  j: Int32  :=  0  to  length(parameters)-1  do  begin
     if  ((lParamStart <> -1)  and  (j >= lParamStart))  then  begin
       if  (j = lParamStart)  then
-        lReal[j] := Array.CreateInstance(lParams[lParams.Length-1].ParameterType.GetElementType, length(aArgs) - lParamStart);
+        lReal[j] := Array.CreateInstance(lParams[lParams.Length-1].ParameterType.GetElementType, length(parameters) - lParamStart);
 
-      Array(lReal[lParamStart]).SetValue(ConvertTo(aArgs[j], lParams[lParams.Length-1].ParameterType.GetElementType()), j - lParamStart);
+      Array(lReal[lParamStart]).SetValue(ConvertTo(parameters[j], lParams[lParams.Length-1].ParameterType.GetElementType()), j - lParamStart);
     end
     else  begin
-      lReal[j] := ConvertTo(aArgs[j], lParams[j].ParameterType);
+      lReal[j] := ConvertTo(parameters[j], lParams[j].ParameterType);
     end;
   end;
 
   try
     if  (lMeth  is  ConstructorInfo)  then
-      exit  (EcmaScriptScope.DoTryWrap(aRoot, ConstructorInfo(lMeth).Invoke(lReal)));
+      exit  (EcmaScriptScope.DoTryWrap(root, ConstructorInfo(lMeth).Invoke(lReal)));
 
-    exit  (EcmaScriptScope.DoTryWrap(aRoot, lMeth.Invoke(aSelf, lReal)));
+    exit  (EcmaScriptScope.DoTryWrap(root, lMeth.Invoke(&self, lReal)));
   except
-    on  e: TargetInvocationException  do  begin
-      if  (e.InnerException is RemObjects.Script.ScriptRuntimeException)  then
-        raise e.InnerException;
+    on  ex: TargetInvocationException  do  begin
+      if  (ex.InnerException is RemObjects.Script.ScriptRuntimeException)  then
+        raise ex.InnerException;
 
-      raise  new RemObjects.Script.ScriptRuntimeException(EcmaScriptScope.DoTryWrap(aRoot, e.InnerException) as EcmaScriptObject);
+      raise  new RemObjects.Script.ScriptRuntimeException(EcmaScriptScope.DoTryWrap(root, ex.InnerException) as EcmaScriptObject);
     end;
-    on  e: Exception where e is not RemObjects.Script.ScriptRuntimeException  do
-      raise new RemObjects.Script.ScriptRuntimeException(EcmaScriptScope.DoTryWrap(aRoot, e) as EcmaScriptObject);
+    on  ex: Exception where ex is not RemObjects.Script.ScriptRuntimeException  do
+      raise new RemObjects.Script.ScriptRuntimeException(EcmaScriptScope.DoTryWrap(root, ex) as EcmaScriptObject);
   end;
 end;
 
 
-class method EcmaScriptObjectWrapper.IsCompatibleType(aInput: &Type;  aTarget: &Type): Boolean;
+class method EcmaScriptObjectWrapper.IsCompatibleType(sourceType: &Type;  targetType: &Type): Boolean;
 begin
-  if  ((aInput = nil)  or  (aInput = typeOf(Undefined)))  then
-    exit  (not aTarget.IsValueType);
+  if  ((sourceType = nil)  or  (sourceType = typeOf(Undefined)))  then
+    exit  (not sourceType.IsValueType);
 
-  if  (aTarget.IsAssignableFrom(aInput))  then
+  if  (targetType.IsAssignableFrom(sourceType))  then
     exit  (true);
 
-  if  (((aInput = typeOf(Double))  or  (aInput = typeOf(Int32))) 
-                   and  (&Type.GetTypeCode(aTarget)  in  [TypeCode.Byte, TypeCode.Char, TypeCode.DateTime, TypeCode.Decimal,
+  if  (((sourceType = typeOf(Double))  or  (sourceType = typeOf(Int32)))
+                   and  (&Type.GetTypeCode(targetType)  in  [ TypeCode.Byte, TypeCode.Char, TypeCode.DateTime, TypeCode.Decimal,
                                        TypeCode.Double, TypeCode.Int16, TypeCode.Int32, TypeCode.Int64, TypeCode.SByte,
-                                       TypeCode.Single, TypeCode.UInt16, TypeCode.UInt32, TypeCode.UInt64]))  then
+                                       TypeCode.Single, TypeCode.UInt16, TypeCode.UInt32, TypeCode.UInt64 ]))  then
     exit  (true);
 
-  if  (aTarget = typeOf(String))  then
+  if  (targetType = typeOf(String))  then
     exit  (true);
 
   exit  (false);
