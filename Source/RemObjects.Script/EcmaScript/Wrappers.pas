@@ -280,7 +280,7 @@ end;
 class method EcmaScriptObjectWrapper.IsCompatibleType(sourceType: &Type;  targetType: &Type): Boolean;
 begin
   if  ((sourceType = nil)  or  (sourceType = typeOf(Undefined)))  then
-    exit  (not sourceType.IsValueType);
+    exit  (not targetType.IsValueType);
 
   if  (targetType.IsAssignableFrom(sourceType))  then
     exit  (true);
