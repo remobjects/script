@@ -71,6 +71,7 @@ type
     constructor; empty;
     property StackOverflowProtect: Boolean := true;
     property EmitDebugCalls: Boolean;
+    property JustFunctions: Boolean;
     property Context: EnvironmentRecord;
     property GlobalObject: GlobalObject;
   end;
@@ -97,7 +98,7 @@ type
     fExecutionContext: LocalBuilder;
     fILG: ILGenerator;
     fLocals: List<LocalBuilder>;
-    fDisableResult: Boolean;
+    fJustFunctions, fDisableResult: Boolean;
     fStatementStack: List<Statement>;
     fBreak,
     fContinue: nullable Label;
@@ -133,6 +134,7 @@ type
     method EvalParse(aStrict: Boolean; aData: string): InternalDelegate;
     method Parse(aFilename, aData: string): InternalDelegate;
     method Parse(aFunction: FunctionDeclarationElement; aEval: Boolean; aScopeName: string; aElements: List<SourceElement>): Object;
+    property JustFunctions: Boolean read fJustFunctions write fJustFunctions;
   end;
 
   DynamicMethods = public static class
@@ -213,6 +215,7 @@ begin
   fGlobal := aOptions:GlobalObject;
   if assigned(aOptions) then begin
     fDebug := aOptions.EmitDebugCalls;
+    fJustFunctions := aOptions.JustFunctions;
     fStackProtect := aOptions.StackOverflowProtect;
   end else fStackProtect := true;
   if fGlobal = nil then fGlobal := new GlobalObject(self);
@@ -400,9 +403,12 @@ begin
     end;
 
     DefineInScope(aEval, aElements);
+    var lJustFunction := fJustFunctions and (aFunction = nil) and not aEval;
 
-    for i: Integer := 0 to aElements.Count -1 do
-      WriteStatement(aElements[i]);
+    for i: Integer := 0 to aElements.Count -1 do begin
+      if not lJustFunction or (aElements[i].Type = ElementType.FunctionDeclaration) then 
+        WriteStatement(aElements[i]);
+    end;
 
     filg.BeginFinallyBlock();
     if fStackProtect then begin
@@ -418,7 +424,7 @@ begin
       filg.Emit(Opcodes.Callvirt, DebugSink.Method_ExitScope);
     end;
     filg.EndExceptionBlock();
-    if fDebug then begin
+    if fDebug then begin 
       if not aEval and (aFunction = nil) then begin
         filg.BeginCatchBlock(typeof(Exception));
         var lTemp := AllocateLocal(typeof(Exception));
@@ -435,13 +441,14 @@ begin
     filg.Emit(Opcodes.Ldloc, fResultVar);
     filg.Emit(Opcodes.Ret);
   
+    
     fExitLabel := lOldExitLabel;
     fResultVar := lOldResultVar;
     fIlg := lOldILG;
     fExecutionContext := lOldExecutionContext;
     fLocals := lOldLocals;
     fBreak := lOldBreak;
-    fContinue := lOldContinue;
+    fContinue := lOldContinue; 
     if aFunction <> nil then 
     exit lMethod.CreateDelegate(typeof(InternalFunctionDelegate));
     exit lMethod.CreateDelegate(typeof(InternalDelegate));
@@ -1437,7 +1444,8 @@ begin
   filg.Emit(Opcodes.Call, GlobalObject.Method_GetFunction);
   
   filg.Emit(Opcodes.Ldc_I4, el.Parameters.Count);
-  filg.Emit(Opcodes.Ldstr, GetOriginalBody(el));
+  var ob := GetOriginalBody(el);
+  filg.Emit(Opcodes.Ldstr, ob);
   filg.Emit(Opcodes.Ldc_I4, if fUseStrict then 1 else 0);
   filg.Emit(Opcodes.Newobj, EcmaScriptInternalFunctionObject.Constructor);
 

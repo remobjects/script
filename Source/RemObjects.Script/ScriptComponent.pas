@@ -160,16 +160,20 @@ type
   {$ENDIF}
   {$ENDREGION}
   EcmaScriptComponent = public class(ScriptComponent)
+  private
   protected
     var fCompiler: EcmaScriptCompiler;
     var fScope: ScriptScope;
     var fRoot: ExecutionContext;
     var fGlobalObject: RemObjects.Script.EcmaScript.GlobalObject;
+    fJustFunctions: Boolean;
 
+    method set_JustFunctions(value: Boolean);
     method SetDebug(b: Boolean); override;
     method IntRun: Object; override;
   public
     property RootContext: ExecutionContext; 
+    property JustFunctions: Boolean read fJustFunctions write set_JustFunctions;
     method Clear(aGlobals: Boolean := false); override;
     property Globals: ScriptScope read fScope; override;
     property GlobalObject: RemObjects.Script.EcmaScript.GlobalObject read fGlobalObject;
@@ -548,8 +552,17 @@ begin
 
   froot := new ExecutionContext(lRoot, false);
   fGlobalObject.ExecutionContext := fRoot;
-  fCompiler := new EcmaScriptCompiler(new EcmaScriptCompilerOptions(EmitDebugCalls := Debug, GlobalObject := fGlobalObject, Context := fRoot.LexicalScope));
+  fCompiler := new EcmaScriptCompiler(new EcmaScriptCompilerOptions(EmitDebugCalls := Debug, GlobalObject := fGlobalObject, Context := fRoot.LexicalScope, JustFunctions := fJustFunctions));
   fGlobalObject.Parser := fCompiler;
+end;
+
+method EcmaScriptComponent.set_JustFunctions(value: Boolean);
+begin
+  if value <> fJustFunctions then begin
+    fJustFunctions := value;
+    fCompiler.JustFunctions := value;
+  end;
+
 end;
 
 constructor ScriptStackFrame(aMethod: String; aThis: Object; aFrame: EnvironmentRecord);

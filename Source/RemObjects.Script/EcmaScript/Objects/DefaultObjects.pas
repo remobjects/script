@@ -177,7 +177,7 @@ end;
 
 method GlobalObject.eval(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
 begin
-  InnerEval(aCaller, true, aSelf, args); // strict; this is called through the 
+  exit InnerEval(aCaller, true, aSelf, args); // strict; this is called through the 
 end;
 
 
