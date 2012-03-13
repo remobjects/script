@@ -175,6 +175,7 @@ type
     property RootContext: ExecutionContext; 
     property JustFunctions: Boolean read fJustFunctions write set_JustFunctions;
     method Clear(aGlobals: Boolean := false); override;
+    method Include(aFileName, aData: string);
     property Globals: ScriptScope read fScope; override;
     property GlobalObject: RemObjects.Script.EcmaScript.GlobalObject read fGlobalObject;
     method ExposeType(&type: &Type;  name: String); override;
@@ -563,6 +564,14 @@ begin
     fCompiler.JustFunctions := value;
   end;
 
+end;
+
+method EcmaScriptComponent.Include(aFileName: string; aData: string);
+begin
+  if String.IsNullOrEmpty(SourceFileName) then SourceFileName := 'incude.js';
+  if aData = nil then aData := '';
+  var lCallback := fCompiler.Parse(aFilename, aData);
+  lCallback(fRoot, fGlobalObject, []);
 end;
 
 constructor ScriptStackFrame(aMethod: String; aThis: Object; aFrame: EnvironmentRecord);
