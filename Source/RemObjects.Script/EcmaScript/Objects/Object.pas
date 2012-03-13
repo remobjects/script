@@ -35,7 +35,7 @@ type
 
   EcmaScriptObject = public class 
   private
-    fValues: Dictionary<string, PropertyValue> := new Dictionary<String,PropertyValue>;
+    fValues: Dictionary<String, PropertyValue> := new Dictionary<String,PropertyValue>;
     fGlobal: GlobalObject;
   protected
   public
@@ -44,18 +44,18 @@ type
     constructor(obj: GlobalObject); 
     constructor(obj: GlobalObject; aProto: EcmaScriptObject);
 
-    class var &Constructor: System.Reflection.ConstructorInfo := typeof(EcmaScriptObject).GetConstructor([typeof(GlobalObject)]); readonly;
-    class var Method_ObjectLiteralSet: System.Reflection.MethodInfo := typeof(EcmaScriptObject).GetMethod('ObjectLiteralSet'); readonly;
+    class var &Constructor: System.Reflection.ConstructorInfo := typeOf(EcmaScriptObject).GetConstructor([typeOf(GlobalObject)]); readonly;
+    class var Method_ObjectLiteralSet: System.Reflection.MethodInfo := typeOf(EcmaScriptObject).GetMethod('ObjectLiteralSet'); readonly;
 
-    method AddValue(aValue: string; aData: Object): EcmaScriptObject;
-    method AddValues(aValue: array of string; aData: array of Object): EcmaScriptObject;
-    method ObjectLiteralSet(aName: string; aMode: RemObjects.Script.EcmaScript.Internal.FunctionDeclarationType; aData: Object; aStrict: Boolean): EcmaScriptObject;
+    method AddValue(aValue: String; aData: Object): EcmaScriptObject;
+    method AddValues(aValue: array of String; aData: array of Object): EcmaScriptObject;
+    method ObjectLiteralSet(aName: String; aMode: RemObjects.Script.EcmaScript.Internal.FunctionDeclarationType; aData: Object; aStrict: Boolean): EcmaScriptObject;
     
 
     property Values: Dictionary<String, PropertyValue> read fValues;
 
     property Prototype: EcmaScriptObject;
-    property &Class: string := 'Object';
+    property &Class: String := 'Object';
     property Value: Object;
 
     method GetOwnProperty(aName: String): PropertyValue; virtual;
@@ -64,11 +64,11 @@ type
 
     method CanPut(aName: String): Boolean; virtual;
     method &Put(aExecutionContext: ExecutionContext := nil; aName: String; aValue: Object; aFlags: Integer := 1): Object; virtual;
-    method HasProperty(aName: string): Boolean; virtual;
+    method HasProperty(aName: String): Boolean; virtual;
 
-    method Delete(aName: string; aThrow: Boolean): Boolean; virtual;
+    method Delete(aName: String; aThrow: Boolean): Boolean; virtual;
 
-    method DefineOwnProperty(aName: string; aValue: PropertyValue; aThrow: Boolean := true): Boolean; virtual;
+    method DefineOwnProperty(aName: String; aValue: PropertyValue; aThrow: Boolean := true): Boolean; virtual;
 
     method Construct(context: ExecutionContext; params args: array of Object): Object; virtual;
     method Call(context: ExecutionContext; params args: array of Object): Object; virtual;
@@ -84,14 +84,14 @@ type
     method GetNames: IEnumerator<String>; virtual;  // recursive, but unique 
     method IntGetNames: sequence of String;
 
-    property Names: sequence of string read Values.Keys;
+    property Names: sequence of String read Values.Keys;
 
     class method CallHelper(Ref: Object; aSelf: Object; arg: array of Object; ec: ExecutionContext): Object;
-    class var Method_GetNames: System.Reflection.MethodInfo := typeof(EcmaScriptObject).GetMethod('GetNames'); readonly;
-    class var Method_Construct: System.Reflection.MethodInfo := typeof(EcmaScriptObject).GetMethod('Construct'); readonly;
-    class var Method_Call: System.Reflection.MethodInfo := typeof(EcmaScriptObject).GetMethod('Call'); readonly;
-    class var Method_CallEx: System.Reflection.MethodInfo := typeof(EcmaScriptObject).GetMethod('CallEx'); readonly;
-    class var Method_CallHelper: System.Reflection.MethodInfo := typeof(EcmaScriptObject).GetMethod('CallHelper'); readonly;
+    class var Method_GetNames: System.Reflection.MethodInfo := typeOf(EcmaScriptObject).GetMethod('GetNames'); readonly;
+    class var Method_Construct: System.Reflection.MethodInfo := typeOf(EcmaScriptObject).GetMethod('Construct'); readonly;
+    class var Method_Call: System.Reflection.MethodInfo := typeOf(EcmaScriptObject).GetMethod('Call'); readonly;
+    class var Method_CallEx: System.Reflection.MethodInfo := typeOf(EcmaScriptObject).GetMethod('CallEx'); readonly;
+    class var Method_CallHelper: System.Reflection.MethodInfo := typeOf(EcmaScriptObject).GetMethod('CallHelper'); readonly;
   end;
 
   
@@ -118,7 +118,7 @@ method EcmaScriptObject.GetProperty(aName: String): PropertyValue;
 begin
   var lSelf := self;
   while assigned(lSelf) do begin
-    var lRes := lSelf.GetOwnProperty(aname);
+    var lRes := lSelf.GetOwnProperty(aName);
     if lRes <> nil then exit lRes;
     lSelf := lSelf.Prototype;
   end;
@@ -173,21 +173,21 @@ begin
   end;
   lOwn := GetProperty(aName);
   if assigned(lOwn) and IsAccessorDescriptor(lOwn) and (lOwn.Set <> nil) then begin
-    exit lOwn.Set.CallEx(coalesce(aExecutionContext, root.ExecutionContext), self, [aValue]);
+    exit lOwn.Set.CallEx(coalesce(aExecutionContext, Root.ExecutionContext), self, [aValue]);
   end;
   if DefineOwnProperty(aName, new PropertyValue(PropertyAttributes.All, aValue), 0 <> (aFlags and 1)) then
-    exit Avalue;
+    exit aValue;
   exit Undefined.Instance;
 end;
 
-method EcmaScriptObject.HasProperty(aName: string): Boolean;
+method EcmaScriptObject.HasProperty(aName: String): Boolean;
 begin
   exit GetProperty(aName) <> nil;
 end;
 
-method EcmaScriptObject.Delete(aName: string; aThrow: Boolean): Boolean;
+method EcmaScriptObject.Delete(aName: String; aThrow: Boolean): Boolean;
 begin
-  var lValue := GetOwnProperty(aname);
+  var lValue := GetOwnProperty(aName);
   if lValue = nil then exit true;
   if PropertyAttributes.Configurable in lValue.Attributes then
     exit fValues.Remove(aName);
@@ -197,26 +197,26 @@ end;
 
 method EcmaScriptObject.Construct(context: ExecutionContext; params args: array of Object): Object;
 begin
-  root:RaiseNativeError(NativeErrorType.TypeError, 'object is not a function');
+  Root:RaiseNativeError(NativeErrorType.TypeError, 'object is not a function');
 end;
 
 method EcmaScriptObject.Call(context: ExecutionContext; params args: array of Object): Object;
 begin
-  root:RaiseNativeError(NativeErrorType.TypeError, 'object is not a function');
+  Root:RaiseNativeError(NativeErrorType.TypeError, 'object is not a function');
 end;
 
 method EcmaScriptObject.CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object;
 begin
-   root.RaiseNativeError(NAtiveErrorType.TypeError, 'Object '+ToString+' is not a function');
+   Root.RaiseNativeError(NativeErrorType.TypeError, 'Object '+ToString+' is not a function');
 end;
 
-method EcmaScriptObject.AddValue(aValue: string; aData: Object): EcmaScriptObject;
+method EcmaScriptObject.AddValue(aValue: String; aData: Object): EcmaScriptObject;
 begin
   Values[aValue] := new PropertyValue(PropertyAttributes.All, aData);
   result := self;
 end;
 
-method EcmaScriptObject.AddValues(aValue: array of string; aData: array of Object): EcmaScriptObject;
+method EcmaScriptObject.AddValues(aValue: array of String; aData: array of Object): EcmaScriptObject;
 begin
   if aValue.Length <> aData.Length then raise new ArgumentException;
   for i: Integer := 0 to aValue.Length -1 do begin
@@ -240,7 +240,7 @@ end;
 
 method EcmaScriptObject.IsDataDescriptor(aProp: PropertyValue): Boolean;
 begin
-  exit (PropertyAttributes.Writable in aProp.Attributes) or (PropertyAttributes.HasValue in aProp.Attributes);
+  exit (PropertyAttributes.writable in aProp.Attributes) or (PropertyAttributes.HasValue in aProp.Attributes);
 end;
 
 method EcmaScriptObject.IsGenericDescriptor(aProp: PropertyValue): Boolean;
@@ -252,13 +252,13 @@ method EcmaScriptObject.FromPropertyDescriptor(aProp: PropertyValue): EcmaScript
 begin
   var lRes := new EcmaScriptObject(Root, Root.ObjectPrototype);
   lRes.Put('value', aProp.Value);
-  lREs.Put('writable', PropertyAttributes.writable in aProp.Attributes);
-  lREs.Put('enumerable', PropertyAttributes.enumerable in aProp.Attributes);
-  lREs.Put('configurable', PropertyAttributes.configurable in aProp.Attributes);
+  lRes.Put('writable', PropertyAttributes.writable in aProp.Attributes);
+  lRes.Put('enumerable', PropertyAttributes.Enumerable in aProp.Attributes);
+  lRes.Put('configurable', PropertyAttributes.Configurable in aProp.Attributes);
   if aProp.Get <> nil then
-    lREs.Put('get', aProp.Get);
+    lRes.Put('get', aProp.Get);
   if aProp.Set <> nil then
-    lREs.Put('set', aProp.Set);
+    lRes.Put('set', aProp.Set);
   exit lRes;
 end;
 
@@ -268,7 +268,7 @@ begin
   if aProp.HasProperty('enumerable') then
     if Utilities.GetObjAsBoolean(aProp.Get('enumerable'), Root.ExecutionContext) then result.Attributes := result.Attributes or PropertyAttributes.Enumerable;
   if aProp.HasProperty('configurable') then
-    if Utilities.GetObjAsBoolean(aProp.Get('configurable'), Root.ExecutionContext) then result.Attributes := result.Attributes or PropertyAttributes.configurable;
+    if Utilities.GetObjAsBoolean(aProp.Get('configurable'), Root.ExecutionContext) then result.Attributes := result.Attributes or PropertyAttributes.Configurable;
   if aProp.HasProperty('value') then begin
     result.Value := aProp.Get('value');
  end else   result.Attributes := result.Attributes and not PropertyAttributes.HasValue;
@@ -277,7 +277,7 @@ begin
     if Utilities.GetObjAsBoolean(aProp.Get('writable'), Root.ExecutionContext) then result.Attributes := result.Attributes or PropertyAttributes.writable;
   if aProp.HasProperty('get') then begin
     var lGet := aProp.Get('get');
-    if lget <> Undefined.Instance then begin
+    if lGet <> Undefined.Instance then begin
       if lGet is not EcmaScriptBaseFunctionObject then Root.RaiseNativeError(NativeErrorType.TypeError, 'get not callable');
       result.Get := EcmaScriptBaseFunctionObject(lGet);
     end;
@@ -295,12 +295,12 @@ begin
   exit result;
 end;
 
-method EcmaScriptObject.DefineOwnProperty(aName: string; aValue: PropertyValue; aThrow: Boolean := true): Boolean;
+method EcmaScriptObject.DefineOwnProperty(aName: String; aValue: PropertyValue; aThrow: Boolean := true): Boolean;
 begin
   var lCurrent := GetOwnProperty(aName);
   if lCurrent = nil then begin
     if Extensible then begin
-      fValues[aname] := aValue;
+      fValues[aName] := aValue;
       exit true;
     end else begin
       if aThrow then Root.RaiseNativeError(NativeErrorType.TypeError, 'Object not extensible');
@@ -328,16 +328,16 @@ begin
       end;
       if IsDataDescriptor(lCurrent) then begin
         lCurrent.Attributes := lCurrent.Attributes and not PropertyAttributes.writable;
-        lCurrent.Set := avalue.Set;
+        lCurrent.Set := aValue.Set;
         lCurrent.Get := aValue.Set;
       end else begin
         lCurrent.Attributes := lCurrent.Attributes and not PropertyAttributes.writable or aValue.Attributes;
-        lCurrent.Set := avalue.Set;
+        lCurrent.Set := aValue.Set;
         lCurrent.Get := aValue.Set;
       end;
     end else if IsDataDescriptor(aValue) and IsDataDescriptor(lCurrent) then begin
       if PropertyAttributes.Configurable not in lCurrent.Attributes then begin
-        if (PropertyAttributes.writable not in lCurrent.Attributes) and (PropertyAttributes.writable in avalue.Attributes) then begin
+        if (PropertyAttributes.writable not in lCurrent.Attributes) and (PropertyAttributes.writable in aValue.Attributes) then begin
           if aThrow then Root.RaiseNativeError(NativeErrorType.TypeError, 'Property '+aName+' not writable');
           exit false;
         end;
@@ -364,7 +364,7 @@ begin
   exit true;
 end;
 
-method EcmaScriptObject.ObjectLiteralSet(aName: string; aMode: RemObjects.Script.EcmaScript.Internal.FunctionDeclarationType; aData: Object; aStrict: Boolean): EcmaScriptObject;
+method EcmaScriptObject.ObjectLiteralSet(aName: String; aMode: RemObjects.Script.EcmaScript.Internal.FunctionDeclarationType; aData: Object; aStrict: Boolean): EcmaScriptObject;
 begin
   var lDescr: PropertyValue;
   case aMode of
@@ -423,7 +423,7 @@ end;
 
 method EcmaScriptObject.IntGetNames: sequence of String;
 begin
-  var lItems := new List<string>;
+  var lItems := new List<String>;
   var lCurr := self;
   while assigned(lCurr) do begin
     for each el in lCurr.Values do begin

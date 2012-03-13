@@ -87,28 +87,28 @@ type
   FunctionDeclarationElement = public class(SourceElement, IList<SourceElement>)
   private
     fMode: FunctionDeclarationType;
-    fIdentifier: string;
+    fIdentifier: String;
     fParameters: List<ParameterDeclaration>;
-    fItems: List<sourceElement>;
+    fItems: List<SourceElement>;
   public
     constructor(aPositionPair: PositionPair; aMode: FunctionDeclarationType := FunctionDeclarationType.None; anIdentifier: String; aParameters: Array of ParameterDeclaration; params aItems: Array of SourceElement);
     constructor(aPositionPair: PositionPair; aMode: FunctionDeclarationType := FunctionDeclarationType.None; anIdentifier: String; aParameters: sequence of ParameterDeclaration; aItems: sequence of SourceElement);
-    constructor(aPositionPair: PositionPair; aMode: FunctionDeclarationType := FunctionDeclarationType.None; anIdentifier: String; aParameters: List<ParameterDeclaration>; aItems: List<sourceElement>);
-    property Items: List<sourceElement> read fItems; implements IList<SourceElement>;
-    property Identifier: string read fIdentifier;
+    constructor(aPositionPair: PositionPair; aMode: FunctionDeclarationType := FunctionDeclarationType.None; anIdentifier: String; aParameters: List<ParameterDeclaration>; aItems: List<SourceElement>);
+    property Items: List<SourceElement> read fItems; implements IList<SourceElement>;
+    property Identifier: String read fIdentifier;
     property Parameters: List<ParameterDeclaration> read fParameters;
     property Mode: FunctionDeclarationType read fMode;
     property &Type: ElementType read ElementType.FunctionDeclaration; override;
   end;
 
-  BlockStatement = public class(Statement, IList<sourceElement>)
+  BlockStatement = public class(Statement, IList<SourceElement>)
   private
-    fItems: List<sourceElement>;
+    fItems: List<SourceElement>;
   public
-    constructor(aPositionPair: PositionPair; params aStatements: array of sourceElement);
-    constructor(aPositionPair: PositionPair; aStatements: sequence of sourceElement);
-    constructor(aPositionPair: PositionPair; aStatements: List<sourceElement>);
-    property Items: List<sourceElement> read fItems; implements IList<sourceElement>;
+    constructor(aPositionPair: PositionPair; params aStatements: array of SourceElement);
+    constructor(aPositionPair: PositionPair; aStatements: sequence of SourceElement);
+    constructor(aPositionPair: PositionPair; aStatements: List<SourceElement>);
+    property Items: List<SourceElement> read fItems; implements IList<SourceElement>;
     property &Type: ElementType read ElementType.BlockStatement; override;
   end;
 
@@ -478,12 +478,12 @@ type
 
   SubExpression = public class(ExpressionElement)
   private
-    fIdentifier: string;
+    fIdentifier: String;
     fMember: ExpressionElement;
   public
     constructor(aPositionPair: PositionPair; aMember: ExpressionElement; anIdentifier: String);
     property Member: ExpressionElement read fMember;
-    property Identifier: string read fIdentifier;
+    property Identifier: String read fIdentifier;
 
     property &Type: ElementType read ElementType.SubExpression; override;
   end;
@@ -582,7 +582,7 @@ type
     fString,
     fModifier: String;
   public
-    constructor (aPositionPair: PositionPair; aString, aModifier:string);
+    constructor (aPositionPair: PositionPair; aString, aModifier:String);
     property String: String read fString;
     property Modifier: String read fModifier;
     property &Type: ElementType read ElementType.RegExExpression; override;
@@ -600,10 +600,10 @@ type
   
   StringExpression = public class(LiteralExpression)
   private
-    fValue: string;
+    fValue: String;
   public
-    constructor (aPositionPair: PositionPair; aValue: string);
-    property Value: string read fValue;
+    constructor (aPositionPair: PositionPair; aValue: String);
+    property Value: String read fValue;
     property ObjectValue: Object read fValue; override;
     property &Type: ElementType read ElementType.StringExpression; override;
   end;
@@ -636,15 +636,15 @@ type
 
   ProgramElement = public class(LanguageElement, IList<SourceElement>)
   private
-    fItems: List<sourceElement>;
+    fItems: List<SourceElement>;
   public
     constructor(aPositionPair: PositionPair);
     constructor(aPositionPair: PositionPair; aItem: SourceElement);
     constructor(aPositionPair: PositionPair; params aItems: Array of SourceElement);
     constructor(aPositionPair: PositionPair; aItems: sequence of SourceElement);
-    constructor(aPositionPair: PositionPair; aItems: List<sourceElement>);
+    constructor(aPositionPair: PositionPair; aItems: List<SourceElement>);
 
-    property Items: List<sourceElement> read fItems; implements IList<SourceElement>;
+    property Items: List<SourceElement> read fItems; implements IList<SourceElement>;
     property &Type: ElementType read ElementType.Program; override;
   end;
 
@@ -680,7 +680,7 @@ begin
   fItems := new List<SourceElement>(new List<SourceElement>(aItems));
 end;
 
-constructor ProgramElement(aPositionPair: PositionPair; aItems: List<sourceElement>);
+constructor ProgramElement(aPositionPair: PositionPair; aItems: List<SourceElement>);
 begin
   inherited constructor(aPositionPair);
   fItems := aItems;
@@ -704,7 +704,7 @@ begin
   fMode := aMode;
 end;
 
-constructor FunctionDeclarationElement(aPositionPair: PositionPair; aMode: FunctionDeclarationType := FunctionDeclarationType.None; anIdentifier: String; aParameters: List<ParameterDeclaration>; aItems: List<sourceElement>);
+constructor FunctionDeclarationElement(aPositionPair: PositionPair; aMode: FunctionDeclarationType := FunctionDeclarationType.None; anIdentifier: String; aParameters: List<ParameterDeclaration>; aItems: List<SourceElement>);
 begin
   inherited constructor(aPositionPair);
   fIdentifier := anIdentifier;
@@ -713,19 +713,19 @@ begin
   fMode := aMode;
 end;
 
-constructor BlockStatement(aPositionPair: PositionPair; params aStatements: array of sourceElement);
+constructor BlockStatement(aPositionPair: PositionPair; params aStatements: array of SourceElement);
 begin
   inherited constructor(aPositionPair);
-  fItems := new List<sourceElement>(aStatements);
+  fItems := new List<SourceElement>(aStatements);
 end;
 
-constructor BlockStatement(aPositionPair: PositionPair; aStatements: sequence of sourceElement);
+constructor BlockStatement(aPositionPair: PositionPair; aStatements: sequence of SourceElement);
 begin
   inherited constructor(aPositionPair);
-  fItems := new List<sourceElement>(aStatements);
+  fItems := new List<SourceElement>(aStatements);
 end;
 
-constructor BlockStatement(aPositionPair: PositionPair; aStatements: List<sourceElement>);
+constructor BlockStatement(aPositionPair: PositionPair; aStatements: List<SourceElement>);
 begin
   inherited constructor(aPositionPair);
   fItems := aStatements;
@@ -859,7 +859,7 @@ constructor LabelledStatement(aPositionPair: PositionPair; anIdentifier: String;
 begin
   inherited constructor(aPositionPair);
   fIdentifier := anIdentifier;
-  fstatement := aStatement;
+  fStatement := aStatement;
 end;
 
 constructor CaseClause(aPositionPair: PositionPair; anExpression: ExpressionElement := nil; params aBody: Array of Statement);
@@ -1046,7 +1046,7 @@ begin
   fValue := aValue;
 end;
 
-constructor StringExpression(aPositionPair: PositionPair; aValue: string);
+constructor StringExpression(aPositionPair: PositionPair; aValue: String);
 begin
   inherited constructor(aPositionPair);
   fValue := aValue;
@@ -1090,7 +1090,7 @@ begin
   fItems := aItems;
 end;
 
-constructor RegExExpression(aPositionPair: PositionPair; aString, aModifier:string);
+constructor RegExExpression(aPositionPair: PositionPair; aString, aModifier:String);
 begin
   inherited constructor(aPositionPair);
   fString := aString;

@@ -17,7 +17,7 @@ uses
 type
   GlobalObject = public partial class(EcmaScriptObject)
   public
-    class var BaseString: string := '0123456789abcdefghijklmnopqrstuvwxyz'; readonly;
+    class var BaseString: String := '0123456789abcdefghijklmnopqrstuvwxyz'; readonly;
     method CreateNumber: EcmaScriptObject;
 
     method NumberCall(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
@@ -53,7 +53,7 @@ begin
   Result.Values.Add('POSITIVE_INFINITY', PropertyValue.NotAllFlags(Double.PositiveInfinity));
 
   NumberPrototype := new EcmaScriptObject(self, &Class := 'Number');
-  numberPrototype.Values.Add('constructor', PropertyValue.NotEnum(result));
+  NumberPrototype.Values.Add('constructor', PropertyValue.NotEnum(result));
   NumberPrototype.Prototype := ObjectPrototype;
   result.Values['prototype'] := PropertyValue.NotAllFlags(NumberPrototype);
   
@@ -70,7 +70,7 @@ end;
 
 method GlobalObject.NumberCall(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  exit if Length(args) = 0 then 0.0 else Utilities.GetArgAsDouble(args, 0, aCaller);
+  exit if length(args) = 0 then 0.0 else Utilities.GetArgAsDouble(args, 0, aCaller);
 end;
 
 method GlobalObject.NumberCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
@@ -86,9 +86,9 @@ begin
   var lVal := EcmaScriptObject(aSelf);
   if (lVal = nil) and ((aSelf is Double) or (aSelf is Integer)) then 
     lVal := EcmaScriptObject(NumberCtor(aCaller, NumberPrototype, aSelf));
-  if (lVal = nil) or (lVal.Class <> 'Number') then RaiseNativeError(NativeERrorType.TypeError, 'number.prototype.valueOf is not generic');
+  if (lVal = nil) or (lVal.Class <> 'Number') then RaiseNativeError(NativeErrorType.TypeError, 'number.prototype.valueOf is not generic');
   var lRadix := 10;
-  if Length(args) > 0 then lRadix := Utilities.GetArgAsInteger(args, 0, aCaller);
+  if length(args) > 0 then lRadix := Utilities.GetArgAsInteger(args, 0, aCaller);
   if (lRadix < 2) or (lRadix > 36) then RaiseNativeError(NativeErrorType.RangeError, 'Radix parameter should be between 2 and 36');
   if lRadix = 10 then exit Utilities.GetObjAsDouble(lVal.Value, aCaller).ToString(System.Globalization.NumberFormatInfo.InvariantInfo);
   if lRadix in [2, 16, 8] then
@@ -98,7 +98,7 @@ begin
 
   result := '';
   while value <> 0 do begin
-    result := BaseString[value mod lRadix] + string(result);
+    result := BaseString[value mod lRadix] + String(result);
     value := value div lRadix;
   end;
 end;
@@ -106,7 +106,7 @@ end;
 method GlobalObject.NumberValueOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   var lVal := EcmaScriptObject(aSelf);
-  if (lVal = nil) or (lVal.Class <> 'Number') then RaiseNativeError(NativeERrorType.TypeError, 'number.prototype.valueOf is not generic');
+  if (lVal = nil) or (lVal.Class <> 'Number') then RaiseNativeError(NativeErrorType.TypeError, 'number.prototype.valueOf is not generic');
   exit lVal.Value;
 end;
 

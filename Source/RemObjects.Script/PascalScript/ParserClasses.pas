@@ -326,7 +326,7 @@ type
     property &True: Statement read fTrue;
     property &False: Statement read fFalse;
 
-    property &Type: ElementType read elementType.IfStatement; override;
+    property &Type: ElementType read ElementType.IfStatement; override;
   end;
 
   TryStatement = public class(Statement)
@@ -381,7 +381,7 @@ type
     constructor (aPosition: PositionPair; aName: String; aType: TypeReference);
     property Name: String read fName;
     property VarType: TypeReference read fVarType;
-    property &Type: ElementType read elementType.VariableDeclaration; override;
+    property &Type: ElementType read ElementType.VariableDeclaration; override;
   end;
 
   ConstantDeclaration = public class(LanguageElement)
@@ -394,7 +394,7 @@ type
     property Name: String read fName;
     property ConstType: TypeReference read fconstType;
     property Value: Expression read fValue;
-    property &Type: ElementType read elementType.ConstantDeclaration; override;
+    property &Type: ElementType read ElementType.ConstantDeclaration; override;
   end;
 
   ParameterModifier = public enum(&In, &Out, &Var, &Const);
@@ -989,7 +989,7 @@ constructor ConstantDeclaration(aPosition: PositionPair; aName: String; aType: T
 begin
   inherited constructor(aPosition);
   fName := aName;
-  fConstType := aType;
+  fconstType := aType;
   fValue := aValue;
 end;
 
@@ -1070,7 +1070,7 @@ end;
 
 constructor BinaryExpression(aLeft, aRight: Expression; anOperator: BinaryOperator);
 begin
-  constructor(new PositionPair(aLeft.PositionPair.StartPos,aLeft.PositionPair.StartRow, aLeft.PositionPair.StartCol, aRight.PositionPair.EndPos,aRight.PositionPair.EndRow, aright.PositionPair.EndCol, aLeft.PositionPair.File), aLeft, aRight, anOperator);
+  constructor(new PositionPair(aLeft.PositionPair.StartPos,aLeft.PositionPair.StartRow, aLeft.PositionPair.StartCol, aRight.PositionPair.EndPos,aRight.PositionPair.EndRow, aRight.PositionPair.EndCol, aLeft.PositionPair.File), aLeft, aRight, anOperator);
 end;
 
 constructor ArrayExpression(aPosition: PositionPair; aArguments: Array of Expression);
@@ -1172,7 +1172,7 @@ constructor StaticArrayDeclaration(aPosition: PositionPair; aSubType: TypeRefere
 begin
   inherited constructor(aPosition, aSubType);
   fStartRange := aStartRange;
-  fEndRange := aEndRange;
+  fendRange := aEndRange;
 end;
 
 constructor TypeNameReference(aPosition: PositionPair; aName: String);

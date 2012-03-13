@@ -20,7 +20,7 @@ type
     /// <summary>comment not closed</summary>
     CommentError,
     InvalidEscapeSequence,
-    /// <summary>invalid string</summary>
+    /// <summary>invalid String</summary>
     EOFInString,
     EOFInRegex,
     EnterInRegex);  
@@ -68,7 +68,7 @@ type
     Number,
 
     /// <summary>
-    /// a string
+    /// a String
     /// </summary>
     String,
     SingleQuoteString,
@@ -298,7 +298,7 @@ type
   private
   public
     constructor(aOriginal: String; aToken: TokenKind);
-    Chars: Array of char; readonly;
+    Chars: Array of Char; readonly;
     Token: TokenKind; readonly;
     Original: String; readonly;
   end;
@@ -306,7 +306,7 @@ type
   ITokenizer = public interface
     method SetData(Input: String; Filename: String);
     method Next();
-    method NextAsRegularExpression(out aString, aModifiers: string); // sets the position after the regex
+    method NextAsRegularExpression(out aString, aModifiers: String); // sets the position after the regex
 
     property LastWasEnter: Boolean read;
     property Pos: Integer read;
@@ -355,15 +355,15 @@ type
 
     method SetData(Input: String; Filename: String);
     method Next();
-    method NextAsRegularExpression(out aString, aModifiers: string); // sets the position after the regex
+    method NextAsRegularExpression(out aString, aModifiers: String); // sets the position after the regex
 
     property LastWasEnter: Boolean read fLastWasEnter;
     property Pos: Integer read FPos;
     property Row: Integer read FRow;
     property Col: Integer read FPos - FLastEnterPos;
     property Token: TokenKind read FToken;
-    property TokenStr: String read iif(FTokenStr = nil, string.Empty, new string(FTokenStr));
-    property Position: Position read fPosition;
+    property TokenStr: String read iif(FTokenStr = nil, String.Empty, new String(FTokenStr));
+    property Position: Position read FPosition;
     property EndPosition: Position read FEndPosition;
     property LastEndPosition: Position read FLastEndPosition;
     property PositionPair: PositionPair read new PositionPair(Position, EndPosition);
@@ -456,10 +456,10 @@ begin
         Stop := true;
         FPosition.Col := lStartColumn;
         FPosition.Row := lStartRow;
-        FPosition.Pos := fPos;
-        FEndPosition.Col := (FPos + fLen) - FLastEnterPos;
+        FPosition.Pos := FPos;
+        FEndPosition.Col := (FPos + FLen) - FLastEnterPos;
         FEndPosition.Row := Row;
-        FEndPosition.Pos:= fPos + FLen;
+        FEndPosition.Pos:= FPos + FLen;
       end;
     end;
   end
@@ -471,27 +471,27 @@ begin
   var curroffset: Integer := FPos;
   var lHadUnicodeIdentifier := 0;
   if (FInput[curroffset] in ['$','A'..'Z', 'a'..'z', '_']) or 
-    ((fInput[curroffset] > #127) and (fInput[curroffset] not in [#133, #160,#$200B,#$FEFF,#$2000 .. #$200B, #$202f, #$205f, #$3000, #$2028, #$2029]))
-    or ((fInput[curroffset] = '\') and (fInput[curroffset+1] in ['u', 'U']) and 
-    (fInput[curroffset+2] in ['0'..'9','a'..'f', 'A'..'F']) and
-    (fInput[curroffset+3] in ['0'..'9','a'..'f', 'A'..'F']) and
-    (fInput[curroffset+4] in ['0'..'9','a'..'f', 'A'..'F']) and
-    (fInput[curroffset+5] in ['0'..'9','a'..'f', 'A'..'F']))
+    ((FInput[curroffset] > #127) and (FInput[curroffset] not in [#133, #160,#$200B,#$FEFF,#$2000 .. #$200B, #$202f, #$205f, #$3000, #$2028, #$2029]))
+    or ((FInput[curroffset] = '\') and (FInput[curroffset+1] in ['u', 'U']) and 
+    (FInput[curroffset+2] in ['0'..'9','a'..'f', 'A'..'F']) and
+    (FInput[curroffset+3] in ['0'..'9','a'..'f', 'A'..'F']) and
+    (FInput[curroffset+4] in ['0'..'9','a'..'f', 'A'..'F']) and
+    (FInput[curroffset+5] in ['0'..'9','a'..'f', 'A'..'F']))
     
     then begin
-    if (fInput[curroffset] = '\') then begin
+    if (FInput[curroffset] = '\') then begin
       inc(curroffset, 5); 
       inc(lHadUnicodeIdentifier);
     end;
     inc(curroffset);
 
     while (FInput[curroffset] in ['$','A'..'Z', 'a'..'z', '_', '0'..'9']) or 
-      ((fInput[curroffset] > #127) and (fInput[curroffset] not in [#133, #160,#$200B,#$FEFF,#$2000 .. #$200B, #$202f, #$205f, #$3000,#$2028, #$2029])) or ((fInput[curroffset] = '\') and (fInput[curroffset+1] in ['u', 'U']) and 
-    (fInput[curroffset+2] in ['0'..'9','a'..'f', 'A'..'F']) and
-    (fInput[curroffset+3] in ['0'..'9','a'..'f', 'A'..'F']) and
-    (fInput[curroffset+4] in ['0'..'9','a'..'f', 'A'..'F']) and
-    (fInput[curroffset+5] in ['0'..'9','a'..'f', 'A'..'F'])) do begin
-      if (fInput[curroffset] = '\') then begin
+      ((FInput[curroffset] > #127) and (FInput[curroffset] not in [#133, #160,#$200B,#$FEFF,#$2000 .. #$200B, #$202f, #$205f, #$3000,#$2028, #$2029])) or ((FInput[curroffset] = '\') and (FInput[curroffset+1] in ['u', 'U']) and 
+    (FInput[curroffset+2] in ['0'..'9','a'..'f', 'A'..'F']) and
+    (FInput[curroffset+3] in ['0'..'9','a'..'f', 'A'..'F']) and
+    (FInput[curroffset+4] in ['0'..'9','a'..'f', 'A'..'F']) and
+    (FInput[curroffset+5] in ['0'..'9','a'..'f', 'A'..'F'])) do begin
+      if (FInput[curroffset] = '\') then begin
         inc(curroffset, 5); 
         inc(lHadUnicodeIdentifier);
       end;
@@ -500,16 +500,16 @@ begin
     FLen := curroffset - FPos;
     if lHadUnicodeIdentifier > 0 then begin
       FToken := TokenKind.Identifier;
-      FTokenStr := new Char[fLen - (5 * lHadUnicodeIdentifier)];
+      FTokenStr := new Char[FLen - (5 * lHadUnicodeIdentifier)];
       lHadUnicodeIdentifier := 0;
       var i := 0;
-      while i < FLEn do begin
-        if FInput[fPos+i] = '\' then begin
-          FTokenStr[lHadUnicodeIdentifier] := char(UInt16.Parse(FInput[fPos+i+2] + FInput[fPos+i+3] + FInput[fPos+i+4] + FInput[fPos+i+5], System.Globalization.NumberStyles.HexNumber));
+      while i < FLen do begin
+        if FInput[FPos+i] = '\' then begin
+          FTokenStr[lHadUnicodeIdentifier] := Char(UInt16.Parse(FInput[FPos+i+2] + FInput[FPos+i+3] + FInput[FPos+i+4] + FInput[FPos+i+5], System.Globalization.NumberStyles.HexNumber));
           inc(lHadUnicodeIdentifier);
           inc(i, 6);
         end else begin
-          FTokenStr[lHadUnicodeIdentifier] := fInput[fPos+i];
+          FTokenStr[lHadUnicodeIdentifier] := FInput[FPos+i];
           inc(lHadUnicodeIdentifier);
           inc(i);
         end;
@@ -558,8 +558,8 @@ begin
             else
               FToken := TokenKind.Comment;
           end;
-        end else if fInput[curroffset+1] = '=' then begin 
-          fLen := 2;
+        end else if FInput[curroffset+1] = '=' then begin 
+          FLen := 2;
           FToken := TokenKind.DivideAssign;
         end else begin
           FLen := 1;
@@ -755,8 +755,8 @@ begin
       '%':
         begin
           if FInput[curroffset+1] = '=' then begin
-            fLen := 2;
-            fToken := TokenKind.ModulusAssign;
+            FLen := 2;
+            FToken := TokenKind.ModulusAssign;
           end else begin
             FLen := 1;
             FToken := TokenKind.Modulus;
@@ -804,8 +804,8 @@ begin
       '^':
         begin
           if FInput[curroffset+1] = '=' then begin
-            fLen := 2;
-            fToken := TokenKind.XorAssign;
+            FLen := 2;
+            FToken := TokenKind.XorAssign;
           end else begin
             FLen := 1;
             FToken := TokenKind.Xor;
@@ -814,11 +814,11 @@ begin
       '-':
         begin
           if FInput[curroffset+1] = '-' then begin
-            fLen := 2;
-            fToken := TokenKind.Decrement;
+            FLen := 2;
+            FToken := TokenKind.Decrement;
           end else if FInput[curroffset+1] = '=' then begin
-            fLen := 2;
-            fToken := TokenKind.MinusAssign;
+            FLen := 2;
+            FToken := TokenKind.MinusAssign;
           end else begin
             FLen := 1;
             FToken := TokenKind.Minus;
@@ -837,12 +837,12 @@ begin
       '+':
         begin
           if FInput[curroffset+1] = '+' then begin
-            fLen := 2;
-            fToken := TokenKind.Increment;
+            FLen := 2;
+            FToken := TokenKind.Increment;
           end else 
           if FInput[curroffset+1] = '=' then begin
-            fLen := 2;
-            fToken := TokenKind.PlusAssign;
+            FLen := 2;
+            FToken := TokenKind.PlusAssign;
           end else begin
             FLen := 1;
             FToken := TokenKind.Plus;
@@ -850,11 +850,11 @@ begin
         end;
       '0'..'9', '.': 
         begin
-          if (fInput[curroffset] = '.') and (finput[curroffset+1] not in ['0'..'9']) then begin
+          if (FInput[curroffset] = '.') and (FInput[curroffset+1] not in ['0'..'9']) then begin
             FLen := 1;
             FToken := TokenKind.Dot;
           end else begin
-            if (FInput[curroffset] = '0') and (finput[curroffset+1] in['x','X']) then begin
+            if (FInput[curroffset] = '0') and (FInput[curroffset+1] in['x','X']) then begin
               curroffset := curroffset + 2;
               while FInput[curroffset] in ['0' .. '9', 'A' .. 'F', 'a' ..'f'] do inc(curroffset);
               FToken := TokenKind.HexNumber
@@ -915,7 +915,7 @@ begin
                     exit false;
                   end else inc(curroffset,4);
                 #13: begin
-                  if fInput[curroffset+1] = #10 then inc(curroffset);
+                  if FInput[curroffset+1] = #10 then inc(curroffset);
                 end;
 
                 #10, '''', 'b','t','n','r','v','f','"', #9, '0', '\': ;
@@ -924,7 +924,7 @@ begin
                   //FLen := curroffset - FPos;
                 end;
               end; // case
-            end else if fJSON and( fInput[curroffset] in [#$0 .. #$1f]) then begin
+            end else if fJSON and( FInput[curroffset] in [#$0 .. #$1f]) then begin
               if Error <> nil then Error(self, TokenizerErrorKind.InvalidEscapeSequence, '');
               FLen := curroffset - FPos;
               exit false;
@@ -972,7 +972,7 @@ begin
                     exit false;
                   end else inc(curroffset,4);
                 #13: begin
-                  if fInput[curroffset+1] = #10 then inc(curroffset);
+                  if FInput[curroffset+1] = #10 then inc(curroffset);
                 end;
 
                 #10, 'b','t','n','r','v','f','"', #9, '0', '\', '''': ;
@@ -1076,7 +1076,7 @@ begin
           '"': lRes.Append('"');
           #39: lRes.Append(#39);
           '\': lRes.Append('\');
-          '0': lRes.append(#0);
+          '0': lRes.Append(#0);
           #10: begin
             // do nothing
           end;
@@ -1096,7 +1096,7 @@ begin
   result := lRes.ToString();
 end;
 
-method Tokenizer.NextAsRegularExpression(out aString, aModifiers: string);
+method Tokenizer.NextAsRegularExpression(out aString, aModifiers: String);
 begin
   FPos := FPos + FLen; // should be 1 at this point, the / 
   var curroffset := FPos;
@@ -1145,8 +1145,8 @@ begin
   lResult[3] := FLen;
   lResult[4] := FToken;
   lResult[5] := FTokenStr;
-  lResult[6] := fPosition;
-  lResult[7] := FLastWasEnter;
+  lResult[6] := FPosition;
+  lResult[7] := fLastWasEnter;
   result := lResult;
 end;
 
@@ -1158,9 +1158,9 @@ begin
   FLastEnterPos := Integer(lArr[2]);
   FLen := Integer(lArr[3]);
   FToken := TokenKind(lArr[4]);
-  FTokenStr := array of char(lArr[5]);
-  fPosition := RemObjects.Script.Position(lArr[6]);
-  FLastWasEnter := Boolean(lArr[7]);
+  FTokenStr := array of Char(lArr[5]);
+  FPosition := RemObjects.Script.Position(lArr[6]);
+  fLastWasEnter := Boolean(lArr[7]);
 end;
 
 end.

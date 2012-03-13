@@ -17,10 +17,10 @@ type
     class method PreIncrement(aLeft: Object; aExec: ExecutionContext): Object;
 
     // OR, AND, ?: have side effects in evaluation and are not specified here.
-    class var Method_PostDecrement: System.Reflection.MethodInfo := typeof(Operators).GetMethod('PostDecrement');
-    class var Method_PostIncrement: System.Reflection.MethodInfo := typeof(Operators).GetMethod('PostIncrement');
-    class var Method_PreDecrement: System.Reflection.MethodInfo := typeof(Operators).GetMethod('PreDecrement');
-    class var Method_PreIncrement: System.Reflection.MethodInfo := typeof(Operators).GetMethod('PreIncrement');
+    class var Method_PostDecrement: System.Reflection.MethodInfo := typeOf(Operators).GetMethod('PostDecrement');
+    class var Method_PostIncrement: System.Reflection.MethodInfo := typeOf(Operators).GetMethod('PostIncrement');
+    class var Method_PreDecrement: System.Reflection.MethodInfo := typeOf(Operators).GetMethod('PreDecrement');
+    class var Method_PreIncrement: System.Reflection.MethodInfo := typeOf(Operators).GetMethod('PreIncrement');
   end;
 
 implementation
@@ -78,7 +78,7 @@ begin
   if aLeft is Integer then 
     aLeft := Integer(aLeft) -1
   else
-    aLeft := Utilities.GetObjAsDouble(aLeft, aexec) -1.0;
+    aLeft := Utilities.GetObjAsDouble(aLeft, aExec) -1.0;
   exit Reference.SetValue(lRef, aLeft, aExec);
 end;
 
@@ -94,7 +94,7 @@ begin
   if aLeft is Integer then 
     aLeft := Integer(aLeft) +1
   else
-    aLeft := Utilities.GetObjAsDouble(aLeft, aexec) +1.0;
+    aLeft := Utilities.GetObjAsDouble(aLeft, aExec) +1.0;
   exit Reference.SetValue(lRef, aLeft, aExec);
 end;
 

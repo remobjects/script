@@ -24,12 +24,12 @@ type
     class method _TypeOf(aValue: Object; ec: ExecutionContext): String;
 
     // OR, AND, ?: have side effects in evaluation and are not specified here.
-    class var Method_SameValue: System.Reflection.MethodInfo := typeof(Operators).GetMethod('SameValue');
-    class var Method_Equal: System.Reflection.MethodInfo := typeof(Operators).GetMethod('Equal');
-    class var Method_NotEqual: System.Reflection.MethodInfo := typeof(Operators).GetMethod('NotEqual');
-    class var Method_StrictEqual: System.Reflection.MethodInfo := typeof(Operators).GetMethod('StrictEqual');
-    class var Method_StrictNotEqual: System.Reflection.MethodInfo := typeof(Operators).GetMethod('StrictNotEqual');
-    class var Method_TypeOf: System.Reflection.MethodInfo := typeof(Operators).GetMethod('_TypeOf');
+    class var Method_SameValue: System.Reflection.MethodInfo := typeOf(Operators).GetMethod('SameValue');
+    class var Method_Equal: System.Reflection.MethodInfo := typeOf(Operators).GetMethod('Equal');
+    class var Method_NotEqual: System.Reflection.MethodInfo := typeOf(Operators).GetMethod('NotEqual');
+    class var Method_StrictEqual: System.Reflection.MethodInfo := typeOf(Operators).GetMethod('StrictEqual');
+    class var Method_StrictNotEqual: System.Reflection.MethodInfo := typeOf(Operators).GetMethod('StrictNotEqual');
+    class var Method_TypeOf: System.Reflection.MethodInfo := typeOf(Operators).GetMethod('_TypeOf');
 
     class method &Type(o: Object): SimpleType;
   end;
@@ -128,7 +128,7 @@ end;
 
 class method Operators.SameValue(aLeft, aright: Object; ec: ExecutionContext): Boolean;
 begin
-  exit (aLeft = aRight) or Boolean(StrictEqual(aLeft, aRight, ec));
+  exit (aLeft = aright) or Boolean(StrictEqual(aLeft, aright, ec));
 end;
 
 class method Operators._TypeOf(aValue: Object; ec: ExecutionContext): String;

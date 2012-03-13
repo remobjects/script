@@ -19,8 +19,8 @@ uses
 type
   ScriptDebugEventArgs = public class(EventArgs)
   public
-    constructor(aName: string; aSpan: PositionPair);
-    constructor(aName: string; aSpan: PositionPair; ex: Exception);
+    constructor(aName: String; aSpan: PositionPair);
+    constructor(aName: String; aSpan: PositionPair; ex: Exception);
     property Name: String; readonly;
     property Exception: Exception; readonly;
     property SourceFileName: String read SourceSpan.File;
@@ -45,14 +45,14 @@ type
   ScriptStackFrame = public class
   private
     fThis: Object;
-    fMethod: string;
+    fMethod: String;
     fFrame: EnvironmentRecord;
   assembly
     constructor(aMethod: String; aThis: Object; aFrame: EnvironmentRecord);
   public
     property Frame: EnvironmentRecord read fFrame;
     property This: Object read fThis;
-    property &Method: string read fMethod;
+    property &Method: String read fMethod;
   end;
 
 
@@ -63,14 +63,14 @@ type
     fRunInThread: Boolean;
     fDebug: Boolean;
     //fSetup: ScriptRuntimeSetup;
-    fTracing: boolean; volatile;
+    fTracing: Boolean; volatile;
     fStatus: ScriptStatus;
     fStackItems: System.Collections.ObjectModel.ReadOnlyCollection<ScriptStackFrame>;
     fDebugLastPos: PositionPair;
     fWaitEvent: System.Threading.ManualResetEvent := new System.Threading.ManualResetEvent(true);
-    method DebugLine(aFilename: string; aStartRow, aStartCol, aEndRow, aEndCol: Integer); 
-    method EnterScope(aName: string; athis: Object; aContext: ExecutionContext); // enter method
-    method ExitScope(aName: string; aContext: ExecutionContext); // exit method
+    method DebugLine(aFilename: String; aStartRow, aStartCol, aEndRow, aEndCol: Integer); 
+    method EnterScope(aName: String; athis: Object; aContext: ExecutionContext); // enter method
+    method ExitScope(aName: String; aContext: ExecutionContext); // exit method
     method CaughtException(e: Exception); // triggers on a CATCH before the js code itself
     method UncaughtException(e: Exception); // triggers when an exception escapes the main method
     method Debugger; 
@@ -127,9 +127,9 @@ type
     method HasFunction(aName: String): Boolean; abstract;
     /// <summary>Executes the given function by name. After calling Run the global object
     ///   will contain a list of all functions, these can be called
-    ///   by name. Note this only works after calling Run first.</summary>
-    method RunFunction(aName: String; params args: Array of object): Object; 
-    method RunFunction(aInitialStatus: ScriptStatus; aName: String; params args: Array of object): Object; abstract;
+    ///   by name. Note this only works after calling Run fihrst.</summary>
+    method RunFunction(aName: String; params args: Array of Object): Object; 
+    method RunFunction(aInitialStatus: ScriptStatus; aName: String; params args: Array of Object): Object; abstract;
 
     property Status: ScriptStatus read fStatus protected write set_Status;
     method StepInto;
@@ -156,7 +156,7 @@ type
 
   {$REGION Designtime Attributes}
   {$IFDEF DESIGN}
-  [System.Drawing.ToolboxBitmap(typeof(RemObjects.Script.EcmaScriptComponent), 'Glyphs.EcmaScriptComponent.png')]
+  [System.Drawing.ToolboxBitmap(typeOf(RemObjects.Script.EcmaScriptComponent), 'Glyphs.EcmaScriptComponent.png')]
   {$ENDIF}
   {$ENDREGION}
   EcmaScriptComponent = public class(ScriptComponent)
@@ -175,21 +175,21 @@ type
     property RootContext: ExecutionContext; 
     property JustFunctions: Boolean read fJustFunctions write set_JustFunctions;
     method Clear(aGlobals: Boolean := false); override;
-    method Include(aFileName, aData: string);
+    method Include(aFileName, aData: String);
     property Globals: ScriptScope read fScope; override;
     property GlobalObject: RemObjects.Script.EcmaScript.GlobalObject read fGlobalObject;
     method ExposeType(&type: &Type;  name: String); override;
     method HasFunction(aName: String): Boolean; override;
-    method RunFunction(aInitialStatus: ScriptStatus; aName: String; params args: Array of object): Object; override;
+    method RunFunction(aInitialStatus: ScriptStatus; aName: String; params args: Array of Object): Object; override;
   end;
 
 
   SyntaxErrorException = public class(Exception)
   public
-    constructor(aSource: string; aMessage: String; aSpan: PositionPair; anErrorCode: Int32); 
-    property Message: string; readonly; reintroduce;
-    property Source: string; readonly; reintroduce;
-    property SourceFilename: string; readonly; reintroduce;
+    constructor(aSource: String; aMessage: String; aSpan: PositionPair; anErrorCode: Int32); 
+    property Message: String; readonly; reintroduce;
+    property Source: String; readonly; reintroduce;
+    property SourceFilename: String read Span:File; 
     property Span: PositionPair; readonly;
     property ErrorCode: Int32; readonly;
 
@@ -199,15 +199,15 @@ type
 
 implementation
 
-constructor ScriptDebugEventArgs(aName: string; aSpan: PositionPair);
+constructor ScriptDebugEventArgs(aName: String; aSpan: PositionPair);
 begin
   Name := aName;
   SourceSpan := aSpan;
 end;
 
-constructor ScriptDebugEventArgs(aName: string; aSpan: PositionPair; ex: Exception);
+constructor ScriptDebugEventArgs(aName: String; aSpan: PositionPair; ex: Exception);
 begin
-  constructor(aname, aSpan);
+  constructor(aName, aSpan);
   Exception := ex;
 end;
 
@@ -228,7 +228,7 @@ end;
 method ScriptComponent.StepInto;
 begin
   locking self do begin
-    if STatus = ScriptStatus.Stopped then begin
+    if Status = ScriptStatus.Stopped then begin
       fEntryStatus := ScriptStatus.StepInto;
       fLastFrame := fStackList.Count;
       Run;
@@ -249,7 +249,7 @@ end;
 method ScriptComponent.StepOver;
 begin
   locking self do begin
-    if STatus = ScriptStatus.Stopped then begin
+    if Status = ScriptStatus.Stopped then begin
       fEntryStatus := ScriptStatus.StepInto;
       fLastFrame := fStackList.Count;
       Run;
@@ -269,7 +269,7 @@ end;
 method ScriptComponent.StepOut;
 begin
   locking self do begin
-    if STatus = ScriptStatus.Stopped then begin
+    if Status = ScriptStatus.Stopped then begin
       fEntryStatus := ScriptStatus.StepInto;
       fLastFrame := fStackList.Count;
       Run;
@@ -375,14 +375,14 @@ begin
 end;
 
 
-method ScriptComponent.DebugLine(aFilename: string; aStartRow, aStartCol, aEndRow, aEndCol: Integer);
+method ScriptComponent.DebugLine(aFilename: String; aStartRow, aStartCol, aEndRow, aEndCol: Integer);
 begin
-  fDebugLastPos := new PositionPair(0, aStartRow, aStartCol, 0, aEndRow, aendCol, aFilename);
+  fDebugLastPos := new PositionPair(0, aStartRow, aStartCol, 0, aEndRow, aEndCol, aFilename);
   if Status = ScriptStatus.Stopping then raise new ScriptAbortException();
   if  fTracing then exit;
   fTracing := true;
   try
-    if DebugTracePoint <> nil then DebugTracePoint(self, new ScriptDebugEventArgs(fStackList[fStackItems.Count-1].Method, new PositionPair(0, aSTartRow, aStartCol, 0, aEndRow, aEndCol, aFilename)));
+    if DebugTracePoint <> nil then DebugTracePoint(self, new ScriptDebugEventArgs(fStackList[fStackItems.Count-1].Method, new PositionPair(0, aStartRow, aStartCol, 0, aEndRow, aEndCol, aFilename)));
     if (Status = ScriptStatus.StepInto) or 
           ((Status = ScriptStatus.StepOver) and (fLastFrame = fStackList.Count)) then Status := ScriptStatus.Pausing;
     CheckShouldPause;
@@ -391,9 +391,9 @@ begin
   end;
 end;
 
-method ScriptComponent.EnterScope(aName: string; athis: Object; aContext: ExecutionContext);
+method ScriptComponent.EnterScope(aName: String; athis: Object; aContext: ExecutionContext);
 begin
-  fStackList.Add(new ScriptStackFrame(aName, aThis, aContext.LexicalScope));
+  fStackList.Add(new ScriptStackFrame(aName, athis, aContext.LexicalScope));
   if Status = ScriptStatus.Stopping then raise new ScriptAbortException();
   if  fTracing then exit;
   fTracing := true;
@@ -405,13 +405,13 @@ begin
   end;
 end;
 
-method ScriptComponent.ExitScope(aName: string; aContext: ExecutionContext);
+method ScriptComponent.ExitScope(aName: String; aContext: ExecutionContext);
 begin
   fStackList.RemoveAt(fStackList.Count-1);
   if  fTracing then exit;
   fTracing := true;
   try
-    if (status = ScriptStatus.StepOut) and (fLastFrame < fStackList.Count) then Status := ScriptStatus.Pausing;
+    if (Status = ScriptStatus.StepOut) and (fLastFrame < fStackList.Count) then Status := ScriptStatus.Pausing;
     CheckShouldPause;
   finally
     fTracing := false;
@@ -475,7 +475,7 @@ begin
 
 end;
 
-method ScriptComponent.RunFunction(aName: String; params args: Array of object): Object;
+method ScriptComponent.RunFunction(aName: String; params args: Array of Object): Object;
 begin
   exit RunFunction(ScriptStatus.Running, aName, args);
 end;
@@ -485,18 +485,18 @@ begin
   exit fGlobalObject.Get(aName) is RemObjects.Script.EcmaScript.EcmaScriptBaseFunctionObject;
 end;
 
-method EcmaScriptComponent.RunFunction(aInitialStatus: ScriptStatus; aName: String; params args: Array of object): Object;
+method EcmaScriptComponent.RunFunction(aInitialStatus: ScriptStatus; aName: String; params args: Array of Object): Object;
 begin
   try
     var lItem := fGlobalObject.Get(aName) as RemObjects.Script.EcmaScript.EcmaScriptBaseFunctionObject;
     if lItem = nil then raise new ScriptComponentException(String.Format(RemObjects.Script.Properties.Resources.eNoSuchFunction, aName));
-    if args = nil then Args := [];
+    if args = nil then args := [];
     if aInitialStatus = ScriptStatus.StepInto then begin
       Status := aInitialStatus;
       fLastFrame := fStackList.Count;
     end else
       Status := ScriptStatus.Running;
-    exit lItem.Call(fRoot, Args.Select(a->EcmaScriptScope.DoTryWrap(fGlobalObject, a)).ToArray());
+    exit lItem.Call(fRoot, args.Select(a->EcmaScriptScope.DoTryWrap(fGlobalObject, a)).ToArray());
   finally
     Status := ScriptStatus.Stopped;
   end;
@@ -551,7 +551,7 @@ begin
     fGlobalObject.Debug := self;
   var lRoot := new ObjectEnvironmentRecord(fScope, fGlobalObject, false);
 
-  froot := new ExecutionContext(lRoot, false);
+  fRoot := new ExecutionContext(lRoot, false);
   fGlobalObject.ExecutionContext := fRoot;
   fCompiler := new EcmaScriptCompiler(new EcmaScriptCompilerOptions(EmitDebugCalls := Debug, GlobalObject := fGlobalObject, Context := fRoot.LexicalScope, JustFunctions := fJustFunctions));
   fGlobalObject.Parser := fCompiler;
@@ -566,11 +566,11 @@ begin
 
 end;
 
-method EcmaScriptComponent.Include(aFileName: string; aData: string);
+method EcmaScriptComponent.Include(aFileName: String; aData: String);
 begin
   if String.IsNullOrEmpty(SourceFileName) then SourceFileName := 'incude.js';
   if aData = nil then aData := '';
-  var lCallback := fCompiler.Parse(aFilename, aData);
+  var lCallback := fCompiler.Parse(aFileName, aData);
   lCallback(fRoot, fGlobalObject, []);
 end;
 
@@ -578,10 +578,10 @@ constructor ScriptStackFrame(aMethod: String; aThis: Object; aFrame: Environment
 begin
   fMethod := aMethod;
   fFrame := aFrame;
-  fthis := aThis;
+  fThis := aThis;
 end;
 
-constructor SyntaxErrorException(aSource: string; aMessage: String; aSpan: PositionPair; anErrorCode: Int32);
+constructor SyntaxErrorException(aSource: String; aMessage: String; aSpan: PositionPair; anErrorCode: Int32);
 begin
   inherited constructor(String.Format('{0}({1}, {2}): {4} {3}',
     aSource, aSpan.StartRow, aSpan.StartCol, aMessage,

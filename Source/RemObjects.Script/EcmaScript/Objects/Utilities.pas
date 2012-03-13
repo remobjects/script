@@ -31,25 +31,25 @@ type
     class method UrlEncode(s: String): String;
     class method UrlEncodeComponent(s: String): String;
     class method UrlDecode(s: String; aComponent: Boolean): String;
-    class method GetArg(arg: Array of object; &index: Integer): Object;
-    class method GetArgAsEcmaScriptObject(arg: Array of object; &index: Integer; ec: ExecutionContext): EcmaScriptObject;
-    class method GetArgAsInteger(arg: Array of object; &index: Integer; ec: ExecutionContext; aTreatInfinity: Boolean := false): Integer;
-    class method GetArgAsInt64(arg: Array of object; &index: Integer; ec: ExecutionContext): Int64;
-    class method GetArgAsDouble(arg: Array of object; &index: Integer; ec: ExecutionContext): Double;
-    class method GetArgAsBoolean(arg: Array of object; &index: Integer; ec: ExecutionContext): Boolean;
-    class method GetArgAsString(arg: Array of object; &index: Integer; ec: ExecutionContext): string;
-    class method GetObjAsEcmaScriptObject(arg: object; ec: ExecutionContext): EcmaScriptObject;
-    class method GetObjAsInteger(arg: object; ec: ExecutionContext; aTreatInfinity: Boolean := false): Integer;
-    class method GetObjAsCardinal(arg: object; ec: ExecutionContext): Cardinal;
-    class method GetObjAsInt64(arg: object; ec: ExecutionContext): Int64;
-    class method GetObjAsDouble(arg: object; ec: ExecutionContext): Double;
+    class method GetArg(arg: Array of Object; &index: Integer): Object;
+    class method GetArgAsEcmaScriptObject(arg: Array of Object; &index: Integer; ec: ExecutionContext): EcmaScriptObject;
+    class method GetArgAsInteger(arg: Array of Object; &index: Integer; ec: ExecutionContext; aTreatInfinity: Boolean := false): Integer;
+    class method GetArgAsInt64(arg: Array of Object; &index: Integer; ec: ExecutionContext): Int64;
+    class method GetArgAsDouble(arg: Array of Object; &index: Integer; ec: ExecutionContext): Double;
+    class method GetArgAsBoolean(arg: Array of Object; &index: Integer; ec: ExecutionContext): Boolean;
+    class method GetArgAsString(arg: Array of Object; &index: Integer; ec: ExecutionContext): String;
+    class method GetObjAsEcmaScriptObject(arg: Object; ec: ExecutionContext): EcmaScriptObject;
+    class method GetObjAsInteger(arg: Object; ec: ExecutionContext; aTreatInfinity: Boolean := false): Integer;
+    class method GetObjAsCardinal(arg: Object; ec: ExecutionContext): Cardinal;
+    class method GetObjAsInt64(arg: Object; ec: ExecutionContext): Int64;
+    class method GetObjAsDouble(arg: Object; ec: ExecutionContext): Double;
     class method GetObjAsBoolean(arg: Object; ec: ExecutionContext): Boolean;
-    class method GetObjAsString(arg: object; ec: ExecutionContext): string;
+    class method GetObjAsString(arg: Object; ec: ExecutionContext): String;
 
     class method GetObjectAsPrimitive(ec: ExecutionContext; arg: EcmaScriptObject; aPrimitive: PrimitiveType): Object;
 
-    class var method_GetObjAsBoolean: System.Reflection.MethodInfo := typeof(Utilities).GetMethod('GetObjAsBoolean'); readonly;
-    class var Method_GetObjAsString: System.Reflection.MethodInfo := typeof(UtilitieS).GetMethod('GetObjAsString'); readonly;
+    class var method_GetObjAsBoolean: System.Reflection.MethodInfo := typeOf(Utilities).GetMethod('GetObjAsBoolean'); readonly;
+    class var Method_GetObjAsString: System.Reflection.MethodInfo := typeOf(Utilities).GetMethod('GetObjAsString'); readonly;
 
     class method ToObject(ec: ExecutionContext; o: Object): EcmaScriptObject;
     class method IsPrimitive(arg: Object): Boolean;
@@ -57,7 +57,7 @@ type
     class method IsCallable(o: Object): Boolean;
   end;
 implementation
-class method Utilities.GetArg(arg: Array of object; &index: Integer): Object;
+class method Utilities.GetArg(arg: Array of Object; &index: Integer): Object;
 begin
   if (index < 0) or (index >= arg.Length) Then begin
     result := Undefined.Instance;
@@ -65,13 +65,13 @@ begin
     result := arg[&index];
 end;
 
-class method Utilities.GetArgAsEcmaScriptObject(arg: Array of object; &index: Integer; ec: ExecutionContext): EcmaScriptObject;
+class method Utilities.GetArgAsEcmaScriptObject(arg: Array of Object; &index: Integer; ec: ExecutionContext): EcmaScriptObject;
 begin
   var lValue := GetArg(arg, index);
     result := EcmaScriptObject(lValue);
 end;
 
-class method Utilities.GetArgAsInteger(arg: Array of object; &index: Integer; ec: ExecutionContext; aTreatInfinity: Boolean := false): Integer;
+class method Utilities.GetArgAsInteger(arg: Array of Object; &index: Integer; ec: ExecutionContext; aTreatInfinity: Boolean := false): Integer;
 begin
   var lValue := GetArg(arg, index);
   if (lValue = nil) or (lValue = Undefined.Instance) then begin
@@ -80,7 +80,7 @@ begin
     result := GetObjAsInteger(lValue, ec, aTreatInfinity);
 end;
 
-class method Utilities.GetArgAsInt64(arg: Array of object; &index: Integer; ec: ExecutionContext): Int64;
+class method Utilities.GetArgAsInt64(arg: Array of Object; &index: Integer; ec: ExecutionContext): Int64;
 begin
     var lValue := GetArg(arg, index);
   if (lValue = nil) or (lValue = Undefined.Instance) then begin
@@ -89,13 +89,13 @@ begin
     result := GetObjAsInt64(lValue, ec);
 end;
 
-class method Utilities.GetArgAsDouble(arg: Array of object; &index: Integer; ec: ExecutionContext): Double;
+class method Utilities.GetArgAsDouble(arg: Array of Object; &index: Integer; ec: ExecutionContext): Double;
 begin
   var lValue := GetArg(arg, index);
  result :=  GetObjAsDouble(lValue, ec);
 end;
 
-class method Utilities.GetArgAsBoolean(arg: Array of object; &index: Integer; ec: ExecutionContext): Boolean;
+class method Utilities.GetArgAsBoolean(arg: Array of Object; &index: Integer; ec: ExecutionContext): Boolean;
 begin
     var lValue := GetArg(arg, index);
   if (lValue = nil) or (lValue = Undefined.Instance) then begin
@@ -104,24 +104,24 @@ begin
    result := GetObjAsBoolean(lValue, ec);
 end;
 
-class method Utilities.GetArgAsString(arg: Array of object; &index: Integer; ec: ExecutionContext): string;
+class method Utilities.GetArgAsString(arg: Array of Object; &index: Integer; ec: ExecutionContext): String;
 begin
   var lValue := GetArg(arg, index);
 
   result := GetObjAsString(lValue, ec);
 end;
-class method Utilities.GetObjAsEcmaScriptObject(arg: object; ec: ExecutionContext): EcmaScriptObject;
+class method Utilities.GetObjAsEcmaScriptObject(arg: Object; ec: ExecutionContext): EcmaScriptObject;
 begin
     result := EcmaScriptObject(arg);
 end;
 
-class method Utilities.GetObjAsInteger(arg: object; ec: ExecutionContext; aTreatInfinity: Boolean := false): Integer;
+class method Utilities.GetObjAsInteger(arg: Object; ec: ExecutionContext; aTreatInfinity: Boolean := false): Integer;
 begin
   if arg is EcmaScriptObject then arg := GetObjectAsPrimitive(ec, EcmaScriptObject(arg), PrimitiveType.Number);
   if (arg = nil) then exit 0;
   case &Type.GetTypeCode(arg.GetType) of
-    TypeCode.Boolean: Result := iif(boolean(arg), 1, 0);
-    TypeCode.Byte: result := byte(arg);
+    TypeCode.Boolean: Result := iif(Boolean(arg), 1, 0);
+    TypeCode.Byte: result := Byte(arg);
     TypeCode.Char: result := Integer(Char(arg));
     TypeCode.Decimal: result := Integer(Decimal(arg));
     TypeCode.Double: begin
@@ -141,11 +141,11 @@ begin
     TypeCode.Single: result := Integer(Single(arg));
     TypeCode.String: begin
        arg := String(arg).Trim();
-       if not (if string(arg).StartsWith('0x', StringComparison.InvariantCultureIgnoreCase) then
-         Int32.TryParse(string(arg).Substring(2), System.Globalization.NumberStyles.AllowHexSpecifier, System.Globalization.NumberFormatInfo.InvariantInfo, out result)
+       if not (if String(arg).StartsWith('0x', StringComparison.InvariantCultureIgnoreCase) then
+         Int32.TryParse(String(arg).Substring(2), System.Globalization.NumberStyles.AllowHexSpecifier, System.Globalization.NumberFormatInfo.InvariantInfo, out result)
        else
-          Int32.TryParse(string(arg), out result)) then begin
-        var lWork: Double := Utilities.ParseDouble(string(arg));
+          Int32.TryParse(String(arg), out result)) then begin
+        var lWork: Double := Utilities.ParseDouble(String(arg));
         if Double.IsNaN(lWork) then result := 0
         else
           result := Integer(Cardinal(Math.Sign(lWork) * Math.Floor(Math.Abs(lWork))));
@@ -159,13 +159,13 @@ begin
   end; // case
 end;
 
-class method Utilities.GetObjAsInt64(arg: object; ec: ExecutionContext): Int64;
+class method Utilities.GetObjAsInt64(arg: Object; ec: ExecutionContext): Int64;
 begin
   if arg is EcmaScriptObject then arg := GetObjectAsPrimitive(ec, EcmaScriptObject(arg), PrimitiveType.Number);
   if (arg = nil)  then exit 0;
   case &Type.GetTypeCode(arg.GetType) of
-    TypeCode.Boolean: Result := iif(boolean(arg), 1, 0);
-    TypeCode.Byte: result := byte(arg);
+    TypeCode.Boolean: Result := iif(Boolean(arg), 1, 0);
+    TypeCode.Byte: result := Byte(arg);
     TypeCode.Char: result := Integer(Char(arg));
     TypeCode.Decimal: result := Int64(Decimal(arg));
     TypeCode.Double: result := Int64(Double(arg));
@@ -176,10 +176,10 @@ begin
     TypeCode.Single: result := Int64(Single(arg));
     TypeCode.String: begin
        arg := String(arg).Trim();
-       if not (if string(arg).StartsWith('0x', StringComparison.InvariantCultureIgnoreCase) then
-         Int64.TryParse(string(arg).Substring(2), System.Globalization.NumberStyles.AllowHexSpecifier, System.Globalization.NumberFormatInfo.InvariantInfo, out result)
+       if not (if String(arg).StartsWith('0x', StringComparison.InvariantCultureIgnoreCase) then
+         Int64.TryParse(String(arg).Substring(2), System.Globalization.NumberStyles.AllowHexSpecifier, System.Globalization.NumberFormatInfo.InvariantInfo, out result)
        else
-          Int64.TryParse(string(arg), out result)) then
+          Int64.TryParse(String(arg), out result)) then
         Result := 0;
     end;
     TypeCode.UInt16: result := UInt16(arg);
@@ -190,15 +190,15 @@ begin
   end; // case
 end;
 
-class method Utilities.GetObjAsDouble(arg: object; ec: ExecutionContext): Double;
+class method Utilities.GetObjAsDouble(arg: Object; ec: ExecutionContext): Double;
 begin
   if arg is EcmaScriptObject then arg := GetObjectAsPrimitive(ec, EcmaScriptObject(arg), PrimitiveType.Number);
 
   if (arg = nil)  then exit 0;
   if arg = Undefined.Instance then exit Double.NaN;
   case &Type.GetTypeCode(arg.GetType) of
-    TypeCode.Boolean: Result := iif(boolean(arg), 1, 0);
-    TypeCode.Byte: result := byte(arg);
+    TypeCode.Boolean: Result := iif(Boolean(arg), 1, 0);
+    TypeCode.Byte: result := Byte(arg);
     TypeCode.Char: result := Integer(Char(arg));
     TypeCode.Decimal: result := Double(Decimal(arg));
     TypeCode.Double: result := Double(arg);
@@ -225,8 +225,8 @@ begin
   
   if (arg = nil) or (arg = Undefined.Instance)  then exit false;
   case &Type.GetTypeCode(arg.GetType) of
-    TypeCode.Boolean: Result := boolean(arg);
-    TypeCode.Byte: result := byte(arg) <> 0;
+    TypeCode.Boolean: Result := Boolean(arg);
+    TypeCode.Byte: result := Byte(arg) <> 0;
     TypeCode.Char: result := Char(arg) <> #0;
     TypeCode.Decimal: result := Decimal(arg) <> 0;
     TypeCode.Double: result := if not Double.IsNaN(Double(arg)) then Double(arg) <> 0 else false;
@@ -235,7 +235,7 @@ begin
     TypeCode.Int64: result := Int64(arg) <> 0;
     TypeCode.SByte: result := SByte(arg) <> 0;
     TypeCode.Single: result := Single(arg)  <> 0;
-    TypeCode.String: result := string(arg) <> '';
+    TypeCode.String: result := String(arg) <> '';
     TypeCode.UInt16: result := UInt16(arg) <> 0;
     TypeCode.UInt32: result := UInt32(arg) <> 0;
     TypeCode.UInt64: result := UInt64(arg) <> 0;
@@ -244,15 +244,15 @@ begin
   end; // case
 end;
 
-class method Utilities.GetObjAsString(arg: object; ec: ExecutionContext): string;
+class method Utilities.GetObjAsString(arg: Object; ec: ExecutionContext): String;
 begin
   var lOrg := arg;
   if arg is EcmaScriptObject then arg := GetObjectAsPrimitive(ec, EcmaScriptObject(arg), PrimitiveType.String);
   if arg = Undefined.Instance then exit 'undefined';
   if arg = nil then exit 'null';
   case &Type.GetTypeCode(arg.GetType) of
-    TypeCode.Boolean: Result := iif(boolean(arg), 'true', 'false');
-    TypeCode.Byte: result := byte(arg).ToString;
+    TypeCode.Boolean: Result := iif(Boolean(arg), 'true', 'false');
+    TypeCode.Byte: result := Byte(arg).ToString;
     TypeCode.Char: result := Char(arg).ToString;
     TypeCode.Decimal: result := Decimal(arg).ToString(System.Globalization.NumberFormatInfo.InvariantInfo);
     TypeCode.Double: begin
@@ -288,12 +288,12 @@ begin
   var res := new StringBuilder;
   for i: Integer := 0 to bytes.Length -1 do begin
     case bytes[i] of
-      byte('A')..Byte('Z'), Byte(';'), Byte('/'), Byte('?'), Byte(':'), Byte('@'), Byte('&'), Byte('='), Byte('+'), Byte('$'), Byte(','),
+      Byte('A')..Byte('Z'), Byte(';'), Byte('/'), Byte('?'), Byte(':'), Byte('@'), Byte('&'), Byte('='), Byte('+'), Byte('$'), Byte(','),
       Byte('-'), Byte('_'), Byte('.'), Byte('!'), Byte('~'), Byte('*'), Byte(''''), Byte('('), Byte(')'), 
-      byte('a')..Byte('z'), Byte('#'),
-      byte('0')..Byte('9'),
-      byte('.'), byte('_'), byte('-'), byte('~'):
-        res.Append(char(bytes[i]));
+      Byte('a')..Byte('z'), Byte('#'),
+      Byte('0')..Byte('9'),
+      Byte('.'), Byte('_'), Byte('-'), Byte('~'):
+        res.Append(Char(bytes[i]));
     else
       res.Append('%');
       res.Append(((bytes[i] shr 4) and 15).ToString('X'));
@@ -318,16 +318,16 @@ begin
        var b: Byte;
        if 
        (s[i+1] <> #0) and (s[i+2] <> #0) and 
-       byte.TryParse(s[i+1]+s[i+2], System.Globalization.NumberStyles.AllowHexSpecifier, System.Globalization.NumberFormatInfo.InvariantInfo, out b) then begin
+       Byte.TryParse(s[i+1]+s[i+2], System.Globalization.NumberStyles.AllowHexSpecifier, System.Globalization.NumberFormatInfo.InvariantInfo, out b) then begin
          if not aComponent and(b in [$3b, $2f, $3f, $3a, $40, $26, $3d, $2b, $24, $2c, $23]) then begin
-          ms.append(char('%'));
-          ms.append(s[i+1]);
-          ms.append(s[i+2]);
+          ms.Append(Char('%'));
+          ms.Append(s[i+1]);
+          ms.Append(s[i+2]);
           inc(i, 3);
          end else begin
            inc(i, 3);
            if 0 = (b and $80) then 
-             ms.append(char(b))
+             ms.Append(Char(b))
            else begin
              // 4.d.vii.1
              var n: Integer := 0;
@@ -343,31 +343,31 @@ begin
               if s[i] <> '%' then exit nil;
               if (s[i+1] not in ['0'..'9', 'A'..'F', 'a'..'f']) or
                 (s[i+2] not in ['0'..'9', 'A'..'F', 'a'..'f']) then exit nil;
-              if not byte.TryParse(s[i+1]+s[i+2], System.Globalization.NumberStyles.AllowHexSpecifier, System.Globalization.NumberFormatInfo.InvariantInfo, out b)  then exit nil;
+              if not Byte.TryParse(s[i+1]+s[i+2], System.Globalization.NumberStyles.AllowHexSpecifier, System.Globalization.NumberFormatInfo.InvariantInfo, out b)  then exit nil;
               if $80 <> (b and $c0) then exit nil;
               Octets[j] := b;
               inc(i, 3);
              end;
             var w: Integer := 
             case n of 
-              2: Int32((octets[0] and %00011111) shl 6) or (octets[1] and %00111111);
-              3: Int32((octets[0] and %00001111) shl 12) or ((octets[1] and %00111111) shl 6) or (octets[2] and %00111111);
-              4: Int32((octets[0] and %00000111) shl 18) or ((octets[1] and %00111111) shl 12) or ((octets[2] and %00111111) shl 6) or (octets[3] and %00111111);
+              2: Int32((Octets[0] and %00011111) shl 6) or (Octets[1] and %00111111);
+              3: Int32((Octets[0] and %00001111) shl 12) or ((Octets[1] and %00111111) shl 6) or (Octets[2] and %00111111);
+              4: Int32((Octets[0] and %00000111) shl 18) or ((Octets[1] and %00111111) shl 12) or ((Octets[2] and %00111111) shl 6) or (Octets[3] and %00111111);
             else
               0
             end; // case
             if (w = 0) or (w < $80) 
             or ((w < $800) and (n <> 2)) or
               ((w >= $800) and (w < $10000) and (n <> 3)) or
-              ((w >= $10000) and (w < $110000) and (N <> 4))
+              ((w >= $10000) and (w < $110000) and (n <> 4))
             then exit nil;
             if w in [$D800 .. $DFFF] then exit nil;
             if w <= $FFFF then
-              ms.Append(char(w))
+              ms.Append(Char(w))
             else begin
               w := w - $10000; // reencode to utf16
-              ms.Append(char($D800 + (w shr 10)));
-              ms.Append(char($DC00 + (w and $3ff)));
+              ms.Append(Char($D800 + (w shr 10)));
+              ms.Append(Char($DC00 + (w and $3ff)));
             end;
             (*
               From RFC 3629
@@ -410,12 +410,12 @@ if String.IsNullOrEmpty(s) then exit String.Empty;
   var res := new StringBuilder;
   for i: Integer := 0 to bytes.Length -1 do begin
     case bytes[i] of
-      byte('A')..Byte('Z'),
-      byte('a')..Byte('z'),
-      byte('0')..Byte('9'),
+      Byte('A')..Byte('Z'),
+      Byte('a')..Byte('z'),
+      Byte('0')..Byte('9'),
       Byte('!'), Byte('~'), Byte('*'), Byte(''''), Byte('('), Byte(')'), 
-      byte('.'), byte('_'), byte('-'), byte('~'):
-        res.Append(char(bytes[i]));
+      Byte('.'), Byte('_'), Byte('-'), Byte('~'):
+        res.Append(Char(bytes[i]));
     else
       res.Append('%');
       res.Append(((bytes[i] shr 4) and 15).ToString('X'));
@@ -535,7 +535,7 @@ begin
   if lExp <> -1 then begin
     var lTmp := s.Substring(lExp+1);
     s:= s.Substring(0, lExp);
-    if (lTmp = '') or (lTmp = '+') or (ltmp = '-') then lExp := 0 else 
+    if (lTmp = '') or (lTmp = '+') or (lTmp = '-') then lExp := 0 else 
     if not Int32.TryParse(lTmp, out lExp) then
       exit Double.NaN;
   end else
@@ -653,10 +653,10 @@ begin
     var lIsFractionalPartPresent: Boolean := false;
 
     var multiplier: Int64 := 10;
-    while  ((Math.Abs(s_temp - s_double) > epsilon)  and  (s_length < 19-1))  do  begin
+    while  ((Math.Abs(s_temp - s_double) > EPSILON)  and  (s_length < 19-1))  do  begin
       s_temp := value*multiplier;
       multiplier := multiplier*10;
-      s_double := Math.Floor(s_temp+epsilon);
+      s_double := Math.Floor(s_temp+EPSILON);
       lIsFractionalPartPresent := true;
       dec(n_k_fractional);
       inc(s_length);
@@ -672,7 +672,7 @@ begin
 
   // so we know values for s and (n-k)
   // let's think about k
-  // we split s into chars so we'll immediately know both k and string representation of this number
+  // we split s into chars so we'll immediately know both k and String representation of this number
 
   var s_char_array: array of Char := SplitNumberToCharArray(s);
 
@@ -700,7 +700,7 @@ begin
       lResult.Append(s_char_array[I]);
     lResult.Append('.');
     for  I: Int32  :=  n  to  k-1  do begin
-      if AllZeroesAhead(s_char_array, i) then break;
+      if AllZeroesAhead(s_char_array, I) then break;
       lResult.Append(s_char_array[I]);
     end;
 
@@ -714,7 +714,7 @@ begin
     for  I: Int32  :=  0  to  -n-1  do
       lResult.Append('0');
     for  I: Int32  :=  0  to  k-1  do begin
-      if AllZeroesAhead(s_char_array, i) then break;
+      if AllZeroesAhead(s_char_array, I) then break;
       lResult.Append(s_char_array[I]);
     end;
 
@@ -735,7 +735,7 @@ begin
   lResult.Append(s_char_array[0]);
   lResult.Append('.');
   for  I: Int32  :=  1  to  k-1  do begin
-    if AllZeroesAhead(s_char_array, i) then break;
+    if AllZeroesAhead(s_char_array, I) then break;
     lResult.Append(s_char_array[I]);
   end;
   lResult.Append('e');
@@ -753,13 +753,13 @@ begin
   exit true;
 end;
 
-class method Utilities.GetObjAsCardinal(arg: object; ec: ExecutionContext): Cardinal;
+class method Utilities.GetObjAsCardinal(arg: Object; ec: ExecutionContext): Cardinal;
 begin
     if arg is EcmaScriptObject then arg := GetObjectAsPrimitive(ec, EcmaScriptObject(arg), PrimitiveType.Number);
   if (arg = nil) then exit 0;
   case &Type.GetTypeCode(arg.GetType) of
-    TypeCode.Boolean: Result := iif(boolean(arg), 1, 0);
-    TypeCode.Byte: result := byte(arg);
+    TypeCode.Boolean: Result := iif(Boolean(arg), 1, 0);
+    TypeCode.Byte: result := Byte(arg);
     TypeCode.Char: result := Integer(Char(arg));
     TypeCode.Decimal: result := Integer(Decimal(arg));
     TypeCode.Double: begin
@@ -775,11 +775,11 @@ begin
     TypeCode.Single: result := Integer(Single(arg));
     TypeCode.String: begin
        arg := String(arg).Trim();
-       if not (if string(arg).StartsWith('0x', StringComparison.InvariantCultureIgnoreCase) then
-         UInt32.TryParse(string(arg).Substring(2), System.Globalization.NumberStyles.AllowHexSpecifier, System.Globalization.NumberFormatInfo.InvariantInfo, out result)
+       if not (if String(arg).StartsWith('0x', StringComparison.InvariantCultureIgnoreCase) then
+         UInt32.TryParse(String(arg).Substring(2), System.Globalization.NumberStyles.AllowHexSpecifier, System.Globalization.NumberFormatInfo.InvariantInfo, out result)
        else
-          UInt32.TryParse(string(arg), out result)) then begin
-        var lWork: Double := Utilities.ParseDouble(string(arg));
+          UInt32.TryParse(String(arg), out result)) then begin
+        var lWork: Double := Utilities.ParseDouble(String(arg));
         if Double.IsNaN(lWork) then result := 0
         else
           result := Integer(Cardinal(Math.Sign(lWork) * Math.Floor(Math.Abs(lWork))));

@@ -23,7 +23,7 @@ type
     property Error: ParserErrorKind read fError;
     property Message: String read fMessage;
     method IntToString: String; override;
-    property Code: Integer read integer(fError); override;
+    property Code: Integer read Integer(fError); override;
     property IsError: Boolean read true; override;
   end;
 
@@ -79,7 +79,7 @@ implementation
 method Parser.ParseStatement(aFlags: ParseStatementFlags): SourceElement;
 begin
   if ((ParseStatementFlags.AllowFunction in aFlags) and (fTok.Token = TokenKind.K_function)) or
-  ((ParseStatementFlags.AllowGetSet in aFlags) and (fTok.Token in [TokenKind.K_set, Tokenkind.K_get])) then begin
+  ((ParseStatementFlags.AllowGetSet in aFlags) and (fTok.Token in [TokenKind.K_set, TokenKind.K_get])) then begin
     var lPos := fTok.Position;
     var lMode := FunctionDeclarationType.None;
     if fTok.Token = TokenKind.K_set then begin 
@@ -92,7 +92,7 @@ begin
     end;
 
     fTok.Next;
-    var lName: string := nil;
+    var lName: String := nil;
     if fTok.Token in [TokenKind.K_set, TokenKind.K_get, TokenKind.Identifier] then begin
       lName := fTok.TokenStr;
       fTok.Next;
@@ -130,7 +130,7 @@ begin
     var lItems: List<SourceElement> := new List<SourceElement>;
 
     fTok.Next;
-    while fTok.Token <> Tokenkind.CurlyClose do begin
+    while fTok.Token <> TokenKind.CurlyClose do begin
       if fTok.Token = TokenKind.EOF then begin
         Error(ParserErrorKind.ClosingBraceExpected, '');
         exit nil;
@@ -160,10 +160,10 @@ begin
       TokenKind.CurlyOpen: exit ParseBlockStatement();
       TokenKind.K_var: exit ParseVarStatement(true, true);
       TokenKind.Semicolon: exit ParseEmptyStatement;
-      TokenKind.K_If: exit ParseIfStatement;
+      TokenKind.K_if: exit ParseIfStatement;
       TokenKind.K_do: exit ParseDoStatement;
       TokenKind.K_while: exit ParseWhileStatement;
-      TokenKind.K_For: exit ParseForStatement;
+      TokenKind.K_for: exit ParseForStatement;
       TokenKind.K_continue: exit ParseContinueStatement;
       TokenKind.K_break: exit ParseBreakStatement;
       TokenKind.K_return: exit ParseReturnStatement;
@@ -179,9 +179,9 @@ begin
         if fTok.Token = TokenKind.Comma then begin
           var lItems := new List<SourceElement>;
           lItems.Add(new ExpressionStatement(new PositionPair(lPos, fTok.LastEndPosition), lExpr));
-          while ftok.Token = TokenKind.Comma do begin
+          while fTok.Token = TokenKind.Comma do begin
             fTok.Next();
-            var lSp := FTok.Position;
+            var lSp := fTok.Position;
             lExpr := ParseExpression(true);
             if lExpr = nil then exit;
             lItems.Add(new ExpressionStatement(new PositionPair(lSp, fTok.LastEndPosition), lExpr));
@@ -235,9 +235,9 @@ end;
 method Parser.ParseBlockStatement(): BlockStatement;
 begin
   var lPos := fTok.Position;
-  var lItems := new List<sourceElement>;
+  var lItems := new List<SourceElement>;
   fTok.Next;
-  while fTok.Token <> Tokenkind.CurlyClose do begin
+  while fTok.Token <> TokenKind.CurlyClose do begin
     if fTok.Token = TokenKind.EOF then begin
       Error(ParserErrorKind.ClosingBraceExpected, '');
       exit nil;
@@ -375,7 +375,7 @@ method Parser.ParseContinueStatement: ContinueStatement;
 begin
   var lPos := fTok.Position;
   fTok.Next;
-  var lIdent: string := nil;
+  var lIdent: String := nil;
   if not fTok.LastWasEnter and (fTok.Token in [TokenKind.K_set, TokenKind.K_get, TokenKind.Identifier]) then begin
     lIdent := fTok.TokenStr;
     fTok.Next;
@@ -389,7 +389,7 @@ method Parser.ParseBreakStatement: BreakStatement;
 begin
   var lPos := fTok.Position;
   fTok.Next;
-  var lIdent: string := nil;
+  var lIdent: String := nil;
   if not fTok.LastWasEnter and (fTok.Token in [TokenKind.K_set, TokenKind.K_get, TokenKind.Identifier]) then begin
     lIdent := fTok.TokenStr;
     fTok.Next;
@@ -404,7 +404,7 @@ begin
   var lPos := fTok.Position;
   fTok.Next;
   var lExpr: ExpressionElement := nil;
-  if not fTok.LastWasEnter and (fTok.Token not in [TokenKind.Semicolon, TokenKind.K_else, Tokenkind.K_default, TokenKind.CurlyClose]) then begin
+  if not fTok.LastWasEnter and (fTok.Token not in [TokenKind.Semicolon, TokenKind.K_else, TokenKind.K_default, TokenKind.CurlyClose]) then begin
     lExpr := ParseCommaExpression(true);
     if lExpr = nil then exit nil;
   end;
@@ -651,32 +651,32 @@ method Parser.ParseExpression(aAllowIn: Boolean): ExpressionElement;
 begin
   var lLeft := ParseConditionalExpression(aAllowIn);
   if lLeft = nil then exit nil;
-  while fTok.Token in [Tokenkind.Assign,
-      Tokenkind.PlusAssign, // +=
-    Tokenkind.MinusAssign,// -=
-    Tokenkind.MultiplyAssign, // *=
-    Tokenkind.ModulusAssign, // %=
-    Tokenkind.ShiftLeftAssign, // <<=
-    Tokenkind.ShiftRightSignedAssign,// >>=
-    Tokenkind.ShiftRightUnsignedAssign, // >>>=
-    Tokenkind.AndAssign, // &=
-    Tokenkind.OrAssign, // |=
-    Tokenkind.XorAssign, // ^=
-    Tokenkind.DivideAssign] do begin // /=
+  while fTok.Token in [TokenKind.Assign,
+      TokenKind.PlusAssign, // +=
+    TokenKind.MinusAssign,// -=
+    TokenKind.MultiplyAssign, // *=
+    TokenKind.ModulusAssign, // %=
+    TokenKind.ShiftLeftAssign, // <<=
+    TokenKind.ShiftRightSignedAssign,// >>=
+    TokenKind.ShiftRightUnsignedAssign, // >>>=
+    TokenKind.AndAssign, // &=
+    TokenKind.OrAssign, // |=
+    TokenKind.XorAssign, // ^=
+    TokenKind.DivideAssign] do begin // /=
     var lOp: BinaryOperator;
     case fTok.Token of
-      Tokenkind.Assign: lOp := BinaryOperator.Assign;
-      Tokenkind.PlusAssign: lOp := BinaryOperator.PlusAssign;
-      Tokenkind.MinusAssign: lOp := BinaryOperator.MinusAssign;
-      Tokenkind.MultiplyAssign: lOp := BinaryOperator.MultiplyAssign;
-      Tokenkind.ModulusAssign: lOp := BinaryOperator.ModulusAssign;
-      Tokenkind.ShiftLeftAssign: lOp := BinaryOperator.ShiftLeftAssign;
-      Tokenkind.ShiftRightSignedAssign: lOp := BinaryOperator.ShiftRightSignedAssign;
-      Tokenkind.ShiftRightUnsignedAssign: lOp := BinaryOperator.ShiftRightUnsignedAssign;
-      Tokenkind.AndAssign: lOp := BinaryOperator.AndAssign;
-      Tokenkind.OrAssign: lOp := BinaryOperator.OrAssign;
-      Tokenkind.XorAssign: lOp := BinaryOperator.XorAssign;
-      else lOp := BinaryOperator.DivideAssign; // Tokenkind.DivideAssign
+      TokenKind.Assign: lOp := BinaryOperator.Assign;
+      TokenKind.PlusAssign: lOp := BinaryOperator.PlusAssign;
+      TokenKind.MinusAssign: lOp := BinaryOperator.MinusAssign;
+      TokenKind.MultiplyAssign: lOp := BinaryOperator.MultiplyAssign;
+      TokenKind.ModulusAssign: lOp := BinaryOperator.ModulusAssign;
+      TokenKind.ShiftLeftAssign: lOp := BinaryOperator.ShiftLeftAssign;
+      TokenKind.ShiftRightSignedAssign: lOp := BinaryOperator.ShiftRightSignedAssign;
+      TokenKind.ShiftRightUnsignedAssign: lOp := BinaryOperator.ShiftRightUnsignedAssign;
+      TokenKind.AndAssign: lOp := BinaryOperator.AndAssign;
+      TokenKind.OrAssign: lOp := BinaryOperator.OrAssign;
+      TokenKind.XorAssign: lOp := BinaryOperator.XorAssign;
+      else lOp := BinaryOperator.DivideAssign; // TokenKind.DivideAssign
     end;
     fTok.Next;
     var lRight := ParseExpression(aAllowIn);
@@ -728,7 +728,7 @@ begin
     fTok.Next;
     var lRight := ParseExpression(aAllowIn);
     if lRight = nil then exit nil;
-    lLeft := new ConditionalExpression(lLeft.PositionPair, lLeft, lMiddle, LRight);
+    lLeft := new ConditionalExpression(lLeft.PositionPair, lLeft, lMiddle, lRight);
   end;
 
   result := lLeft;
@@ -779,16 +779,16 @@ method Parser.ParseEqualityExpression(aAllowIn: Boolean): ExpressionElement;
 begin
   var lLeft := ParseRelationalExpression(aAllowIn);
   if lLeft = nil then exit nil;
-  while fTok.Token in [Tokenkind.Equal,
-      Tokenkind.NotEqual,
-    Tokenkind.StrictEqual,
-    Tokenkind.StrictNotEqual] do begin // /=
+  while fTok.Token in [TokenKind.Equal,
+      TokenKind.NotEqual,
+    TokenKind.StrictEqual,
+    TokenKind.StrictNotEqual] do begin // /=
     var lOp: BinaryOperator;
     case fTok.Token of
-      Tokenkind.Equal: lOp := BinaryOperator.Equal;
-      Tokenkind.NotEqual: lOp := BinaryOperator.NotEqual;
-      Tokenkind.StrictEqual: lOp := BinaryOperator.StrictEqual;
-      else lOp := BinaryOperator.StrictNotEqual; //Tokenkind.StrictNotEqual
+      TokenKind.Equal: lOp := BinaryOperator.Equal;
+      TokenKind.NotEqual: lOp := BinaryOperator.NotEqual;
+      TokenKind.StrictEqual: lOp := BinaryOperator.StrictEqual;
+      else lOp := BinaryOperator.StrictNotEqual; //TokenKind.StrictNotEqual
     end;
     fTok.Next;
     var lRight := ParseRelationalExpression(aAllowIn);
@@ -802,19 +802,19 @@ method Parser.ParseRelationalExpression(aAllowIn: Boolean): ExpressionElement;
 begin
   var lLeft := ParseShiftExpression;
   if lLeft = nil then exit nil;
-  while (fTok.Token in [Tokenkind.Less,
-      Tokenkind.Greater,
-    Tokenkind.LessOrEqual,
-    Tokenkind.GreaterOrEqual,
+  while (fTok.Token in [TokenKind.Less,
+      TokenKind.Greater,
+    TokenKind.LessOrEqual,
+    TokenKind.GreaterOrEqual,
     TokenKind.K_instanceof]) or (aAllowIn and (fTok.Token = TokenKind.K_in)) do begin 
     var lOp: BinaryOperator;
     case fTok.Token of
-      Tokenkind.Less: lOp := BinaryOperator.Less;
-      Tokenkind.Greater: lOp := BinaryOperator.Greater;
-      Tokenkind.LessOrEqual: lOp := BinaryOperator.LessOrEqual;
-      Tokenkind.GreaterOrEqual: lOp := BinaryOperator.GreaterOrEqual;
+      TokenKind.Less: lOp := BinaryOperator.Less;
+      TokenKind.Greater: lOp := BinaryOperator.Greater;
+      TokenKind.LessOrEqual: lOp := BinaryOperator.LessOrEqual;
+      TokenKind.GreaterOrEqual: lOp := BinaryOperator.GreaterOrEqual;
       TokenKind.K_instanceof: lOp := BinaryOperator.InstanceOf;
-      else lOp := BinaryOperator.In; //Tokenkind.In
+      else lOp := BinaryOperator.In; //TokenKind.In
     end;
     fTok.Next;
     var lRight := ParseShiftExpression;
@@ -828,14 +828,14 @@ method Parser.ParseShiftExpression: ExpressionElement;
 begin
   var lLeft := ParseAdditiveExpression;
   if lLeft = nil then exit nil;
-  while fTok.Token in [Tokenkind.ShiftLeft,
-      Tokenkind.ShiftRightSigned,
-    Tokenkind.ShiftRightUnsigned] do begin 
+  while fTok.Token in [TokenKind.ShiftLeft,
+      TokenKind.ShiftRightSigned,
+    TokenKind.ShiftRightUnsigned] do begin 
     var lOp: BinaryOperator;
     case fTok.Token of
-      Tokenkind.ShiftLeft: lOp := BinaryOperator.ShiftLeft;
-      Tokenkind.ShiftRightSigned: lOp := BinaryOperator.ShiftRightSigned;
-      else lOp := BinaryOperator.ShiftRightUnsigned; //Tokenkind.ShiftRightUnsigned
+      TokenKind.ShiftLeft: lOp := BinaryOperator.ShiftLeft;
+      TokenKind.ShiftRightSigned: lOp := BinaryOperator.ShiftRightSigned;
+      else lOp := BinaryOperator.ShiftRightUnsigned; //TokenKind.ShiftRightUnsigned
     end;
     fTok.Next;
     var lRight := ParseAdditiveExpression;
@@ -849,8 +849,8 @@ method Parser.ParseAdditiveExpression: ExpressionElement;
 begin
   var lLeft := ParseMultiplicativeExpression;
   if lLeft = nil then exit nil;
-  while fTok.Token in [Tokenkind.Plus,
-      Tokenkind.Minus] do begin 
+  while fTok.Token in [TokenKind.Plus,
+      TokenKind.Minus] do begin 
     var lOp: BinaryOperator;
     if fTok.Token  = TokenKind.Plus then lOp := BinaryOperator.Plus else lOp := BinaryOperator.Minus;
     fTok.Next;
@@ -865,8 +865,8 @@ method Parser.ParseMultiplicativeExpression: ExpressionElement;
 begin
   var lLeft := ParseUnaryExpression;
   if lLeft = nil then exit nil;
-  while fTok.Token in [Tokenkind.Multiply, TokenKind.Divide,
-      Tokenkind.Modulus] do begin 
+  while fTok.Token in [TokenKind.Multiply, TokenKind.Divide,
+      TokenKind.Modulus] do begin 
     var lOp: BinaryOperator;
     case fTok.Token of
       TokenKind.Multiply: lOp := BinaryOperator.Multiply;
@@ -912,7 +912,7 @@ begin
       begin
         var lFunc := ParseStatement(ParseStatementFlags.AllowFunction);
         if lFunc = nil then exit;
-        lVAl := new FunctionExpression(lFunc.PositionPair, lFunc as FunctionDeclarationElement);
+        lVal := new FunctionExpression(lFunc.PositionPair, lFunc as FunctionDeclarationElement);
       end;
     TokenKind.K_this: begin
       lVal := new ThisExpression(fTok.PositionPair);
@@ -930,7 +930,7 @@ begin
       var lArgs: List<ExpressionElement> := new List<ExpressionElement>;
 
       if fTok.Token <> TokenKind.ClosingBracket then begin
-        //if ftok.Token = TokenKind.Comma then begin
+        //if fTok.Token = TokenKind.Comma then begin
           //fTok.Next;
         //end;
         loop begin
@@ -973,7 +973,7 @@ begin
             var lMode: FunctionDeclarationType := FunctionDeclarationType.None;
             if (fTok.Token in [TokenKind.K_set, TokenKind.K_get]) and not LookAheadGetSetWasName then begin
               lName := nil;
-              lMode := if ftok.Token = TokenKind.K_set then FunctionDeclarationType.Set else FunctionDeclarationType.Get;
+              lMode := if fTok.Token = TokenKind.K_set then FunctionDeclarationType.Set else FunctionDeclarationType.Get;
               var lTmp := FunctionDeclarationElement(ParseStatement(ParseStatementFlags.AllowGetSet));
               if lTmp = nil then exit;
               lName := new StringExpression(lTmp.PositionPair, lTmp.Identifier);
@@ -1038,12 +1038,12 @@ begin
       fTok.Next;
     end;
     TokenKind.SingleQuoteString,
-    Tokenkind.String: begin
+    TokenKind.String: begin
       lVal := new StringExpression(fTok.PositionPair, Tokenizer.DecodeString(fTok.TokenStr));
       fTok.Next();
     end;
     TokenKind.Float: begin
-      var lValue := RemObjects.Script.EcmaScript.Utilities.ParseDouble(ftok.TokenStr); 
+      var lValue := RemObjects.Script.EcmaScript.Utilities.ParseDouble(fTok.TokenStr); 
       
       if Double.IsNaN(lValue) then begin
         Error(ParserErrorKind.SyntaxError, '');
@@ -1056,7 +1056,7 @@ begin
     TokenKind.Number:begin
       var lValue: Int64;
       if not Int64.TryParse(fTok.TokenStr, out lValue) then begin
-        var lDValue := RemObjects.Script.EcmaScript.Utilities.ParseDouble(ftok.TokenStr); 
+        var lDValue := RemObjects.Script.EcmaScript.Utilities.ParseDouble(fTok.TokenStr); 
       
         if Double.IsNaN(lValue) then begin
           Error(ParserErrorKind.SyntaxError, '');
@@ -1125,7 +1125,7 @@ begin
   while fTok.Token in [TokenKind.Dot, TokenKind.OpeningBracket, TokenKind.OpeningParenthesis] do begin
     if fTok.Token = TokenKind.Dot then begin
       fTok.Next;
-      if ftok.Token not in [TokenKind.K_set, TokenKind.K_get, TokenKind.Identifier] then begin
+      if fTok.Token not in [TokenKind.K_set, TokenKind.K_get, TokenKind.Identifier] then begin
         Error(ParserErrorKind.IdentifierExpected, '');
         exit nil;
       end;
@@ -1135,12 +1135,12 @@ begin
       fTok.Next;
       var lSub := ParseExpression(true);
       if lSub = nil then exit nil;
-      if ftok.Token <> TokenKind.ClosingBracket then begin
+      if fTok.Token <> TokenKind.ClosingBracket then begin
         Error(ParserErrorKind.ClosingBracketExpected, '');
         exit nil;
       end;
       fTok.Next;
-      lVal := new ArrayAccessExpression(new PositionPair(lval.PositionPair.StartPos, lVal.PositionPair.StartRow, lVal.PositionPair.StartCol, fTok.LastEndPosition.Row, fTok.LastEndPosition.Pos, fTok.LastEndPosition.Col, lVal.PositionPair.File), lVal, lSub);
+      lVal := new ArrayAccessExpression(new PositionPair(lVal.PositionPair.StartPos, lVal.PositionPair.StartRow, lVal.PositionPair.StartCol, fTok.LastEndPosition.Row, fTok.LastEndPosition.Pos, fTok.LastEndPosition.Col, lVal.PositionPair.File), lVal, lSub);
     end else begin // opening parenthesis
       if not aParseParameters then break;
       fTok.Next;
@@ -1182,7 +1182,7 @@ end;
 
 method Parser.fTok_Error(Caller: Tokenizer; Kind: TokenizerErrorKind; Parameter: String);
 begin
-  ftok := Caller;
+  fTok := Caller;
   case Kind of
     TokenizerErrorKind.CommentError: Error(ParserErrorKind.CommentError, '');
     TokenizerErrorKind.EOFInRegex: Error(ParserErrorKind.EOFInRegex, '');
@@ -1202,7 +1202,7 @@ begin
   result := ParseExpression(aAllowIn);
   if fTok.Token = TokenKind.Comma then begin
     var lItems := new List<ExpressionElement>;
-    lItems.ADd(result);
+    lItems.Add(result);
     while fTok.Token = TokenKind.Comma  do begin
       fTok.Next();
       lItems.Add(ParseExpression(aAllowIn));
@@ -1216,10 +1216,10 @@ method Parser.LookAheadGetSetWasName: Boolean;
 begin
   // current token is SET/GEt
   var lSave := fTok.SaveState;
-  ftok.Next;
+  fTok.Next;
   result := fTok.Token = TokenKind.Colon;
 
-  ftok.RestoreState(lSave);
+  fTok.RestoreState(lSave);
 end;
 
 constructor ParserError(aPosition: Position; anError: ParserErrorKind; aMessage: String);

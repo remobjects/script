@@ -30,12 +30,12 @@ type
   private
     fOriginal: Object;
   public
-    class method SafeEcmaScriptToObject(o: Object): string;
+    class method SafeEcmaScriptToObject(o: Object): String;
     class method Wrap(arg: Object): Exception;
     class method Unwrap(arg: Object): Object;
 
-    class var Method_Unwrap: MethodInfo := typeof(ScriptRuntimeException).GetMethod('Unwrap'); readonly;
-    class var Method_Wrap: MethodInfo := typeof(ScriptRuntimeException).GetMethod('Wrap'); readonly;
+    class var Method_Unwrap: MethodInfo := typeOf(ScriptRuntimeException).GetMethod('Unwrap'); readonly;
+    class var Method_Wrap: MethodInfo := typeOf(ScriptRuntimeException).GetMethod('Wrap'); readonly;
 
     constructor(aOriginal: Object);
     property Original: Object read fOriginal;
@@ -48,9 +48,9 @@ type
     constructor (aStart, aEnd: Position);
     constructor (aStartPos, aStartRow, aStartCol, aEndPos, aEndRow, aEndCol: Integer; aFile: String);
 
-    property Start: Position read new Position(StartPos, StartRow, STartCol, File);
+    property Start: Position read new Position(StartPos, StartRow, StartCol, File);
     property &End: Position read new Position(EndPos, EndRow, EndCol, File);
-    property IsValid: Boolean read (StartRow > 0) and not  string.IsNullOrEmpty(File);
+    property IsValid: Boolean read (StartRow > 0) and not  String.IsNullOrEmpty(File);
     property StartRow: Integer;
     property StartCol: Integer;
     property StartPos: Integer;
@@ -73,7 +73,7 @@ type
     property Pos: Integer read fPos write fPos;
     property Column: Integer read Col;
     property Line: Integer read Row;
-    property &Module: string read fModule write fModule;
+    property &Module: String read fModule write fModule;
   end;
   ScriptScope = public class(RemObjects.Script.EcmaScript.DeclarativeEnvironmentRecord)
   private
@@ -110,7 +110,7 @@ constructor PositionPair(aStartPos, aStartRow, aStartCol, aEndPos, aEndRow, aEnd
 begin
   StartRow := aStartRow;
   StartCol := aStartCol;
-  StartPos := aSTartPos;
+  StartPos := aStartPos;
   EndRow := aEndRow;
   EndCol := aEndCol;
   EndPos := aEndPos;
@@ -165,7 +165,7 @@ begin
 
   var lResolver := new NewOverloadResolver(fInstance.Binder, args);
   result := fInstance.Binder.CallMethod(lResolver, lOverloads);
-  if result.Expression.Type = typeof(Void) then
+  if result.Expression.Type = typeOf(Void) then
     result := new DynamicMetaObject(
       LExpr.Block(result.Expression, LExpr.Constant(RemObjects.Script.EcmaScript.Undefined.Instance))
       
@@ -176,7 +176,7 @@ end;
 
 method TypeWrapperMetaObject.BindGetIndex(binder: GetIndexBinder; indexes: array of DynamicMetaObject): DynamicMetaObject;
 begin
-  var lAttr := array of System.ComponentModel.DefaultPropertyAttribute(fInstance.Type.GetCustomAttributes(typeof(System.ComponentModel.DefaultPropertyAttribute), true));
+  var lAttr := array of System.ComponentModel.DefaultPropertyAttribute(fInstance.Type.GetCustomAttributes(typeOf(System.ComponentModel.DefaultPropertyAttribute), true));
   if Length(lAttr) = 0 then raise new ArgumentException(RemObjects.Script.Properties.Resources.eNoSuchFunction);
   result := BindCall('get_'+lAttr[0].Name, false, indexes);
 end;
@@ -191,7 +191,7 @@ begin
     result := new DynamicMetaObject(Expression.Constant(res), BindingRestrictions.Empty)
 	end;
   if assigned(result) and result.Expression.Type.IsValueType then 
-    result := new DynamicMetaObject(Expression.Convert(result.Expression, typeof(Object)), result.Restrictions);
+    result := new DynamicMetaObject(Expression.Convert(result.Expression, typeOf(Object)), result.Restrictions);
 end;
 
 method TypeWrapperMetaObject.BindInvokeMember(binder: InvokeMemberBinder; args: array of DynamicMetaObject): DynamicMetaObject;
@@ -201,7 +201,7 @@ end;
 
 method TypeWrapperMetaObject.BindSetIndex(binder: SetIndexBinder; indexes: array of DynamicMetaObject; value: DynamicMetaObject): DynamicMetaObject;
 begin
-  var lAttr := array of System.ComponentModel.DefaultPropertyAttribute(fInstance.Type.GetCustomAttributes(typeof(System.ComponentModel.DefaultPropertyAttribute), true));
+  var lAttr := array of System.ComponentModel.DefaultPropertyAttribute(fInstance.Type.GetCustomAttributes(typeOf(System.ComponentModel.DefaultPropertyAttribute), true));
   if Length(lAttr) = 0 then raise new ArgumentException(RemObjects.Script.Properties.Resources.eNoSuchFunction);
   result := BindCall( 'set_'+lATtr[0].Name,  Microsoft.Scripting.Utils.ArrayUtils.Append(indexes, value));
 end;
@@ -225,7 +225,7 @@ begin
 
   if lOverloads = nil then begin
     exit new DynamicMetaObject(
-      LExpr.Block(LExpr.Throw(LExpr.New(typeof(Exception).GetConstructor([typeof(String)]), LExpr.Constant('Cannot find member by that name: '+name))), LExpr.Constant(RemObjects.Script.EcmaScript.Undefined.Instance))
+      LExpr.Block(LExpr.Throw(LExpr.New(typeOf(Exception).GetConstructor([typeOf(String)]), LExpr.Constant('Cannot find member by that name: '+name))), LExpr.Constant(RemObjects.Script.EcmaScript.Undefined.Instance))
       
       , BindingRestrictions.Combine([self, result]))
 
@@ -233,7 +233,7 @@ begin
 
   var lResolver := new NewOverloadResolver(fInstance.Binder, indexes);
   result := fInstance.Binder.CallMethod(lResolver, lOverloads);
-  if result.Expression.Type = typeof(Void) then
+  if result.Expression.Type = typeOf(Void) then
     result := new DynamicMetaObject(
       LExpr.Block(result.Expression, LExpr.Constant(RemObjects.Script.EcmaScript.Undefined.Instance))
       
@@ -247,7 +247,7 @@ begin
   result := BindCall('set_'+binder.Name, binder.IgnoreCase, [value]);
 end;
 *)
-class method ScriptRuntimeException.SafeEcmaScriptToObject(o: Object): string;
+class method ScriptRuntimeException.SafeEcmaScriptToObject(o: Object): String;
 begin
   try
     if o = nil then exit 'Error';
@@ -259,7 +259,7 @@ end;
 
 constructor ScriptRuntimeException(aOriginal: Object);
 begin
-  inherited constructor(SafeEcmaSCriptToObject(aOriginal));
+  inherited constructor(SafeEcmaScriptToObject(aOriginal));
   fOriginal := aOriginal;
 end;
 
@@ -292,13 +292,13 @@ end;
 method ScriptScope.GetItems: IEnumerable<KeyValuePair<String, Object>>;
 begin
   for each el in Bag do begin
-    yield new KeyValuePair<string, object>(el.Key, if el.Value.Value <> nil then el.Value:Value else RemObjects.Script.EcmaScript.Undefined.Instance);
+    yield new KeyValuePair<String, Object>(el.Key, if el.Value.Value <> nil then el.Value:Value else RemObjects.Script.EcmaScript.Undefined.Instance);
   end;
 end;
 
 method ScriptScope.GetVariable<T>(name: String): T;
 begin
-  exit GetVariable(Name) as T;
+  exit GetVariable(name) as T;
 end;
 
 method ScriptScope.GetVariable(name: String): Object;
@@ -326,14 +326,14 @@ end;
 
 method ScriptScope.TryGetVariable(name: String; out value: Object): Boolean;
 begin
-  result := bag.ContainsKey(name);
-  if result then Value := GetVariable(Name) else Value := nil;
+  result := Bag.ContainsKey(name);
+  if result then value := GetVariable(name) else value := nil;
 end;
 
 method ScriptScope.TryGetVariable<T>(name: String; out value: T): Boolean;
 begin
-  result := bag.ContainsKey(name);
-  if result then Value := GetVariable<T>(Name) else Value := default(T);
+  result := Bag.ContainsKey(name);
+  if result then value := GetVariable<T>(name) else value := default(T);
 end;
 
 method ScriptScope.SetMutableBinding(aName: String; aValue: Object; aStrict: Boolean);

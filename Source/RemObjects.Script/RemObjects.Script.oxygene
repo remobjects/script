@@ -28,6 +28,7 @@
     <EnableUnmanagedDebugging>True</EnableUnmanagedDebugging>
     <DebugClass />
     <AssertMethodName />
+    <WarnOnCaseMismatch>True</WarnOnCaseMismatch>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DefineConstants>DESIGN</DefineConstants>
@@ -135,4 +136,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\RemObjects Software\Oxygene\RemObjects.Oxygene.targets" />
+  <PropertyGroup>
+    <PreBuildEvent />
+  </PropertyGroup>
 </Project>
