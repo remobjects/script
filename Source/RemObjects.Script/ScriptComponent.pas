@@ -398,6 +398,7 @@ begin
   if  fTracing then exit;
   fTracing := true;
   try
+    if DebugFrameEnter <> nil then DebugFrameEnter(self, new ScriptDebugEventArgs(fStackList[fStackItems.Count-1].Method, new PositionPair()));
     if Status = ScriptStatus.StepInto then Status := ScriptStatus.Pausing;
     CheckShouldPause;
   finally
@@ -407,10 +408,12 @@ end;
 
 method ScriptComponent.ExitScope(aName: String; aContext: ExecutionContext);
 begin
+  var lFrame :=fStackList[fStackList.Count-1];
   fStackList.RemoveAt(fStackList.Count-1);
   if  fTracing then exit;
   fTracing := true;
   try
+    if DebugFrameExit <> nil then DebugFrameExit(self, new ScriptDebugEventArgs(lFrame.Method, new PositionPair()));
     if (Status = ScriptStatus.StepOut) and (fLastFrame < fStackList.Count) then Status := ScriptStatus.Pausing;
     CheckShouldPause;
   finally
