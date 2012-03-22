@@ -119,7 +119,7 @@
     </None>
     <Compile Include="Properties\Settings.Designer.pas" />
     <Compile Include="ScriptComponent.pas">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
   </ItemGroup>
   <ItemGroup>
