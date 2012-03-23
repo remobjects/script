@@ -292,14 +292,14 @@ method GlobalObject.DateGetMonth(aCaller: ExecutionContext;aSelf: Object; params
 begin
   if Double.IsNaN(Utilities.GetObjAsDouble(aSelf, aCaller)) then exit Double.NaN;
   var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime;
-  exit lValue.Month;
+  exit lValue.Month -1;
 end;
 
 method GlobalObject.DateGetUTCMonth(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   if Double.IsNaN(Utilities.GetObjAsDouble(aSelf, aCaller)) then exit Double.NaN;
   var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller));
-  exit lValue.Month;
+  exit lValue.Month -1;
 end;
 
 method GlobalObject.DateGetDate(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
