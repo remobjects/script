@@ -27,6 +27,15 @@ type
     property SourceSpan: PositionPair; readonly;
   end;
 
+  ScriptDebugExitScopeEventArgs = public class(ScriptDebugEventArgs)
+  private
+  public
+    constructor(aName: String; aSpan: PositionPair; aResult: Object; aExcept: Boolean);
+
+    property WasException: Boolean; readonly;
+    property &Result: Object; readonly;
+  end;
+
 
   ScriptComponentException = public class(Exception);
 
@@ -70,7 +79,7 @@ type
     fWaitEvent: System.Threading.ManualResetEvent := new System.Threading.ManualResetEvent(true);
     method DebugLine(aFilename: String; aStartRow, aStartCol, aEndRow, aEndCol: Integer); 
     method EnterScope(aName: String; athis: Object; aContext: ExecutionContext); // enter method
-    method ExitScope(aName: String; aContext: ExecutionContext); // exit method
+    method ExitScope(aName: String; aContext: ExecutionContext; aResult: Object; aExcept: Boolean); // exit method
     method CaughtException(e: Exception); // triggers on a CATCH before the js code itself
     method UncaughtException(e: Exception); // triggers when an exception escapes the main method
     method Debugger; 
@@ -139,7 +148,7 @@ type
     method &Stop;
 
     event DebugFrameEnter: EventHandler<ScriptDebugEventArgs>;
-    event DebugFrameExit: EventHandler<ScriptDebugEventArgs>;
+    event DebugFrameExit: EventHandler<ScriptDebugExitScopeEventArgs>;
     event DebugThreadExit: EventHandler<ScriptDebugEventArgs>;
     event DebugTracePoint: EventHandler<ScriptDebugEventArgs>;
     event DebugDebugger: EventHandler<ScriptDebugEventArgs>;
@@ -198,6 +207,13 @@ type
 
 
 implementation
+
+constructor ScriptDebugExitScopeEventArgs(aName: String; aSpan: PositionPair; aResult: Object; aExcept: Boolean);
+begin
+  inherited constructor(aName, aSpan);
+  &Result := aResult;
+  WasException := aExcept;
+end;
 
 constructor ScriptDebugEventArgs(aName: String; aSpan: PositionPair);
 begin
@@ -406,14 +422,14 @@ begin
   end;
 end;
 
-method ScriptComponent.ExitScope(aName: String; aContext: ExecutionContext);
+method ScriptComponent.ExitScope(aName: String; aContext: ExecutionContext; aResult: Object; aExcept: Boolean);
 begin
   var lFrame :=fStackList[fStackList.Count-1];
   fStackList.RemoveAt(fStackList.Count-1);
   if  fTracing then exit;
   fTracing := true;
   try
-    if DebugFrameExit <> nil then DebugFrameExit(self, new ScriptDebugEventArgs(lFrame.Method, new PositionPair()));
+    if DebugFrameExit <> nil then DebugFrameExit(self, new ScriptDebugExitScopeEventArgs(lFrame.Method, new PositionPair(), aResult, aExcept));
     if (Status = ScriptStatus.StepOut) and (fLastFrame < fStackList.Count) then Status := ScriptStatus.Pausing;
     CheckShouldPause;
   finally

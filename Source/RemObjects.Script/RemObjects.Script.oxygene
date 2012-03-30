@@ -131,9 +131,12 @@
     <Folder Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Glyphs\EcmaScriptComponent.png">
+    <Content Include="EcmaScript\EcmaScriptComponent.png">
       <SubType>Content</SubType>
-    </EmbeddedResource>
+    </Content>
+    <Content Include="Glyphs\EcmaScriptComponent.png">
+      <SubType>Content</SubType>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\RemObjects Software\Oxygene\RemObjects.Oxygene.targets" />
   <PropertyGroup>

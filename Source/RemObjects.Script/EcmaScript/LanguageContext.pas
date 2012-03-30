@@ -94,6 +94,7 @@ type
     fUseStrict: Boolean;
     fStackProtect, fDebug: Boolean;
     fExitLabel: Label;
+    fExcept: LocalBuilder;
     fResultVar: LocalBuilder;
     fExecutionContext: LocalBuilder;
     fILG: ILGenerator;
@@ -375,12 +376,19 @@ begin
       fILG.Emit(OpCodes.Call, ExecutionContext.Method_get_Global);
       fILG.Emit(OpCodes.Call, GlobalObject.Method_IncreaseFrame);
     end;
+    if fDebug then fILG.BeginExceptionBlock; // filter
     fILG.BeginExceptionBlock; // finally
     
     if fDebug and not aEval and (aFunction = nil) then
       fILG.BeginExceptionBlock; // except
     var lOldExitLabel := fExitLabel;
     var lOldResultVar := fResultVar;
+    var lOldExcept := fExcept;
+    if fDebug then begin
+      fExcept := fILG.DeclareLocal(typeOf(Boolean));
+      fILG.Emit(OpCodes.Ldc_I4_0);
+      fILG.Emit(OpCodes.Stloc, fExcept);
+    end;
     fExitLabel := fILG.DefineLabel;
     fResultVar := fILG.DeclareLocal(typeOf(Object));
     fILG.Emit(OpCodes.Call, Undefined.Method_Instance);
@@ -410,6 +418,15 @@ begin
         WriteStatement(aElements[i]);
     end;
 
+    if fDebug then begin // filter
+      fILG.BeginCatchBlock(typeOf(Object));
+      fILG.Emit(OpCodes.Stloc, fResultVar);
+      fILG.Emit(OpCodes.Ldc_I4_1);
+      fILG.Emit(OpCodes.Stloc, fExcept);
+      fILG.Emit(OpCodes.Rethrow);
+      fILG.EndExceptionBlock;
+    end;
+
     fILG.BeginFinallyBlock();
     if fStackProtect then begin
       fILG.Emit(OpCodes.Ldloc, fExecutionContext);
@@ -421,6 +438,8 @@ begin
       WriteDebugStack;
       fILG.Emit(OpCodes.Ldstr, aScopeName);
       fILG.Emit(OpCodes.Ldloc, fExecutionContext);
+      fILG.Emit(OpCodes.Ldloc, fResultVar);
+      fILG.Emit(OpCodes.Ldloc, fExcept);
       fILG.Emit(OpCodes.Callvirt, DebugSink.Method_ExitScope);
     end;
     fILG.EndExceptionBlock();
@@ -442,6 +461,7 @@ begin
     fILG.Emit(OpCodes.Ret);
   
     
+    fExcept := lOldExcept;
     fExitLabel := lOldExitLabel;
     fResultVar := lOldResultVar;
     fILG := lOldILG;
