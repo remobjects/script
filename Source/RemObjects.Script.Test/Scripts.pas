@@ -38,6 +38,10 @@ type
     method SimpleFunctionTest;
     [Fact]
     method AndOrElse;
+
+    [Fact]
+    method MinMax();
+
     [Fact]
     method UnknownCall1;
     [Fact]
@@ -256,6 +260,20 @@ test2
 undefined";
   Assert.Equal(lExpected.Replace(#13#10, #10).Trim([#13, #9, #32, #10]), fresult.Replace(#13#10, #10).Trim([#13, #9, #32, #10]));
 end;
+
+
+method Scripts.MinMax();
+begin
+  self.ExecuteJS(
+      "var x = 1;
+       var y = 2;
+       writeln(Math.min(x,y) + ""--"" + Math.max(x,y));
+      ");
+  var lExpected: String := "1--2"+Environment.NewLine;
+
+  Assert.Equal(lExpected, self.fResult);
+end;
+
 
 method Scripts.TestProto;
 begin

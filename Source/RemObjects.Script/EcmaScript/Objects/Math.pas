@@ -31,8 +31,8 @@ type
     method Mathexp(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method Mathfloor(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method Mathlog(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
-    method Mathmax(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
-    method Mathmin(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+    method MathMax(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
+    method MathMin(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
     method Mathpow(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method Mathrandom(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method Mathround(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
@@ -40,6 +40,7 @@ type
     method Mathsqrt(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method Mathtan(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
   end;
+
 
 implementation
 
@@ -70,8 +71,8 @@ begin
   result.Values.Add('exp', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'exp', @Mathexp, 1)));
   result.Values.Add('floor', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'floor', @Mathfloor, 1)));
   result.Values.Add('log', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'log', @Mathlog, 1)));
-  result.Values.Add('max', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'max',@Mathmax, 2)));
-  result.Values.Add('min', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'min', @Mathmin, 2)));
+  result.Values.Add('max', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'max',@MathMax, 2)));
+  result.Values.Add('min', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'min', @MathMin, 2)));
   result.Values.Add('pow', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'pow', @Mathpow, 1)));
   result.Values.Add('random', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'random', @Mathrandom, 0)));
   result.Values.Add('round', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'round', @Mathround, 1)));
@@ -130,35 +131,55 @@ begin
   exit Math.Log(Utilities.GetArgAsDouble(Args, 0, aCaller));
 end;
 
-method GlobalObject.Mathmax(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+
+method GlobalObject.MathMax(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  if length(Args) = 0 then exit Double.NegativeInfinity;
-  if Args.Length = 1 then exit Args[0];
-  var lMaxValue := Utilities.GetArgAsDouble(Args, 0, aCaller);
-  if Double.IsNaN(lMaxValue) then exit Double.NaN;
-  for i: Integer := 1 to Args.Length -1 do begin
-    var lValue := Utilities.GetArgAsDouble(Args, i, aCaller);
-    if Double.IsNaN(lMaxValue) then exit Double.NaN;
+  if  (length(args) = 0)  then
+    exit  (Double.NegativeInfinity);
+
+  if  (args.Length = 1)  then
+    exit  (args[0]);
+
+  var lMaxValue: Double := Utilities.GetArgAsDouble(args, 0, caller);
+  if  (Double.IsNaN(lMaxValue))  then
+    exit  (Double.NaN);
+
+  for  i: Int32  :=  1  to  args.Length-1  do  begin
+    var lValue: Double := Utilities.GetArgAsDouble(args, i, caller);
+    if  (Double.IsNaN(lValue))  then
+      exit  (Double.NaN);
+
     lMaxValue := Math.Max(lMaxValue, lValue);
   end;
 
-  exit lMaxValue;
+  exit  (lMaxValue);
 end;
 
-method GlobalObject.Mathmin(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
+
+method GlobalObject.MathMin(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  if length(Args) = 0 then exit Double.PositiveInfinity;
-  if Args.Length = 1 then exit Args[0];
-  var lMaxValue := Utilities.GetArgAsDouble(Args, 0, aCaller);
-  if Double.IsNaN(lMaxValue) then exit Double.NaN;
-  for i: Integer := 1 to Args.Length -1 do begin
-    var lValue := Utilities.GetArgAsDouble(Args, i, aCaller);
-    if Double.IsNaN(lMaxValue) then exit Double.NaN;
-    lMaxValue := Math.Max(lMaxValue, lValue);
+  if  (length(args) = 0)  then
+    exit  (Double.PositiveInfinity);
+
+  if  (args.Length = 1)  then
+    exit   (args[0]);
+
+  var lMinValue: Double := Utilities.GetArgAsDouble(args, 0, caller);
+
+  if  (Double.IsNaN(lMinValue))  then
+    exit  (Double.NaN);
+
+  for  i: Int32  :=  1 to  args.Length-1  do  begin
+    var lValue: Double := Utilities.GetArgAsDouble(args, i, caller);
+    if  (Double.IsNaN(lValue))  then
+      exit  (Double.NaN);
+
+    lMinValue := Math.Min(lMinValue, lValue);
   end;
 
-  exit lMaxValue;
+  exit  (lMinValue);
 end;
+
 
 method GlobalObject.Mathpow(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
