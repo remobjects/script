@@ -43,6 +43,9 @@ type
     method MinMax();
 
     [Fact]
+    method DateTimeToJSON();
+
+    [Fact]
     method UnknownCall1;
     [Fact]
     method UnknownCall2;
@@ -401,6 +404,16 @@ begin
   lScriptEngine.Run();
 
   Assert.Equal(aExpectedResult, self.fResult);
+end;
+
+
+method Scripts.DateTimeToJSON();
+begin
+  // This call shouldn't fail
+  self.ExecuteJS(
+      "
+      JSON.stringify(new Date());
+      ");
 end;
 
 
