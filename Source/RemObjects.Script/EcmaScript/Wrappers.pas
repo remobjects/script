@@ -20,9 +20,9 @@ type
   Overloads = public class
   public
     constructor; empty;
-    constructor(aInstance: Object;  aItems: array of MethodBase);
+    constructor(aInstance: Object;  aItems: List<MethodBase>);
     property Instance: Object;
-    property Items: array of MethodBase;
+    property Items: List<MethodBase>;
   end;
 
 
@@ -31,6 +31,12 @@ type
     var fValue: Object;
     var fType: &Type;
     class method ConvertTo(val: Object; aType: &Type): Object;
+    class method FindBestMatchingMethod(aMethods: List<MethodBase>; aParameters: array of Object);
+    class method BetterFunctionMember(aBest, aCurrent: MethodEntry; aParameters: array of Object): Boolean;
+    class method BetterConversionFromExpression(aMine: Object; aBest, aCurrent: &Type): Integer;
+    class method IsMoreSpecific(aBest, aCurrent: &Type): Integer;
+    class method IsInteger(o: &Type): Boolean;
+    class method IsFloat(o: &Type): Boolean;
   public
     constructor(aValue: Object; aType: &Type; aGlobal: GlobalObject);
 
@@ -39,7 +45,7 @@ type
     property &Static: Boolean read fValue = nil;
 
     class method IsCompatibleType(sourceType: &Type;  targetType: &Type): Boolean;
-    class method FindAndCallBestOverload(methods: array of MethodBase;  root: GlobalObject;  methodName: String;  &self: Object;  parameters: array of Object): Object;
+    class method FindAndCallBestOverload(methods: List<MethodBase>;  root: GlobalObject;  methodName: String;  &self: Object;  parameters: array of Object): Object;
 
     method DefineOwnProperty(aName: String; aValue: PropertyValue; aThrow: Boolean): Boolean; override;
     method GetOwnProperty(aName: String): PropertyValue; override;
@@ -149,13 +155,13 @@ end;
 method EcmaScriptObjectWrapper.GetOwnProperty(aName: String): PropertyValue;
 begin
   var lItems := fType.GetMembers(BindingFlags.Public  or  BindingFlags.FlattenHierarchy  or
-                   if  (self.Static)  then  BindingFlags.Static  else  BindingFlags.Instance).Where(a->a.Name = aName).ToArray();
+                   if  (self.Static)  then  BindingFlags.Static  else  BindingFlags.Instance).Where(a->a.Name = aName).ToList();
 
   if  (length(lItems) = 0)  then
     exit inherited;
 
 
-  if  (lItems.Length = 1)  then  begin
+  if  (lItems.Count  = 1)  then  begin
     if  (lItems[0].MemberType = MemberTypes.Field)  then     
       exit  (new PropertyValue(if FieldInfo(lItems[0]).IsInitOnly then PropertyAttributes.None else PropertyAttributes.writable,
                    EcmaScriptScope.DoTryWrap(Root,FieldInfo(lItems[0]).GetValue(fValue))));
@@ -165,9 +171,9 @@ begin
                    if  PropertyInfo(lItems[0]).CanRead  then  EcmaScriptScope.DoTryWrap(Root,PropertyInfo(lItems[0]).GetValue(fValue, []))));
   end;
 
-  if  ((lItems.Length > 0) and (lItems.All(a->a.MemberType = MemberTypes.Method)))  then
+  if  ((lItems.Count > 0) and (lItems.All(a->a.MemberType = MemberTypes.Method)))  then
     exit  (new PropertyValue(PropertyAttributes.None,
-                   new EcmaScriptObjectWrapper(new Overloads(fValue, lItems.Cast<MethodBase>().ToArray), typeOf(Overloads), Root)));
+                   new EcmaScriptObjectWrapper(new Overloads(fValue, lItems.Cast<MethodBase>().ToList), typeOf(Overloads), Root)));
 
   exit  (nil);
 end;
@@ -178,7 +184,7 @@ begin
   if  (typeOf(MulticastDelegate).IsAssignableFrom(fType))  then  begin
     var lMeth := fType.GetMethod('Invoke');
     if  (assigned(lMeth))  then
-      exit  (FindAndCallBestOverload([lMeth], Root, 'Delegate Invoke', fValue, args));
+      exit  (FindAndCallBestOverload(new List<MethodBase>([lMeth]), Root, 'Delegate Invoke', fValue, args));
   end;
 
   if  (typeOf(Overloads) = fType)  then
@@ -193,45 +199,74 @@ begin
   exit  (Call(context, args));
 end;
 
-
-class method EcmaScriptObjectWrapper.FindAndCallBestOverload(methods: array of MethodBase;  root: GlobalObject;  methodName: String;
-                   &self: Object;  parameters: array of Object): Object;
-begin
-  var lMethods := new List<MethodBase>(methods);
-
-  for  i: Int32  :=  0  to  length(parameters)-1  do  begin
-    if  (parameters[i] is EcmaScriptObjectWrapper)  then
-      parameters[i] := EcmaScriptObjectWrapper(parameters[i]).Value; // if these were wrapped before, we should unwrap
+type
+  MethodEntry = class
+  public
+    property &Method: MethodBase;    
+    property ParamsType: &Type; // if it's an is params 
+    property Args: array of ParameterInfo;
   end;
 
-  for  i: Int32  :=  lMethods.Count-1  downto  0  do  begin
-    var lMeth := lMethods[i];
-    var lParams := lMeth.GetParameters();
-    var lParamStart := -1;
-
-    if  (lParams.Length <> length(parameters))  then  begin
-      if  (not ((lParams.Length > 0)  and  (length(lParams[lParams.Length-1].GetCustomAttributes(typeOf(ParamArrayAttribute), false)) > 0)
-                   and  (parameters.Length >= lParams.Length-1)))  then  begin
-        lMethods.RemoveAt(i);
-
-        continue;
-      end;
-
-      lParamStart := lParams.Length -1;
-    end
-    else if  ((lParams.Length > 0)  and  (length(lParams[lParams.Length-1].GetCustomAttributes(typeOf(ParamArrayAttribute), false)) > 0))  then 
-      lParamStart := lParams.Length -1;
-    // Now we'll have to see if the parameter types matches what's in the arguments array
-    for  j: Int32  :=  0  to  length(parameters)-1  do  begin
-      if  (not IsCompatibleType(parameters[j]:GetType(), iif(((lParamStart <> -1)  and  (j >= lParamStart)), lParams[lParams.Length-1].ParameterType.GetElementType(), lParams[j].ParameterType)))  then  begin
-        lMeth := nil;
+class method EcmaScriptObjectWrapper.FindBestMatchingMethod(aMethods: List<MethodBase>; aParameters: array of Object);
+begin
+  var lWork := new List<MethodEntry>();
+  for each el in aMethods do begin
+    var lPars := coalesce(el.GetParameters(), array of ParameterInfo([]));
+    if lPars.Any(b-> b.ParameterType.IsByRef) then continue;
+    var lArrType: &Type := nil;
+    if length(aParameters) <> length(lPars) then begin
+      if (length(aParameters) >= length(lPars)-1) and
+        (length(lPars) > 0) and 
+        (length(lPars[length(lPars)-1].GetCustomAttributes(typeOf(ParamArrayAttribute), true)) >0) then begin
+        lArrType := lPars[length(lPars)-1].ParameterType.GetElementType();
+      end else continue;
+    end else
+      if (length(lPars) > 0) and 
+        (length(lPars[length(lPars)-1].GetCustomAttributes(typeOf(ParamArrayAttribute), true)) >0)
+        and (aParameters[length(aParameters)] is not EcmaScriptArrayObject) then
+      lArrType := lPars[length(lPars)-1].ParameterType.GetElementType();
+    for i: Integer := 0 to aParameters.Length -1 do begin
+      if not IsCompatibleType(aParameters[i]:GetType, if i < lPars.Length then coalesce(lArrType, lPars[i].ParameterType) else lArrType) then begin
+        lPars := nil;
         break;
       end;
     end;
-
-    if  (lMeth = nil)  then
-      lMethods.RemoveAt(i);
+    if lPars = nil then continue;
+    lWork.Add(new MethodEntry(&Method := el, ParamsType := lArrType, Args := lPars));
   end;
+
+  var lResult := -1;
+  for i: Integer := 0 to lWork.Count -1 do begin
+    if lResult = -1 then begin
+      lResult := i;
+      continue
+    end;
+
+    if BetterFunctionMember(lWork[lResult], lWork[i], aParameters) then
+      lResult := i
+  end;
+
+  if lResult <> -1 then begin
+    var n := lWork[lResult];
+    aMethods.Clear;
+    aMethods.Add(n.Method);
+  end;
+end;
+
+class method EcmaScriptObjectWrapper.FindAndCallBestOverload(methods: List<MethodBase>;  root: GlobalObject;  methodName: String;
+                   &self: Object;  parameters: array of Object): Object;
+begin
+  var lMethods := methods;
+
+  for  i: Int32  :=  0  to  length(parameters)-1  do  begin
+    if  (parameters[i] is EcmaScriptObjectWrapper)  then
+      parameters[i] := EcmaScriptObjectWrapper(parameters[i]).Value // if these were wrapped before, we should unwrap
+    else if parameters[i] is EcmaScriptObject then begin
+      parameters[i] := coalesce(EcmaScriptObject(parameters[i]).Value, parameters[i]);
+    end;
+  end;
+
+  FindBestMatchingMethod(lMethods, parameters);
 
   if  (lMethods.Count > 1)  then
     root.RaiseNativeError(NativeErrorType.TypeError,String.Format( RemObjects.Script.Properties.Resources.Ambigious_overloaded_method_0_with_1_parameters, methodName, parameters.Length));
@@ -284,6 +319,8 @@ begin
 
   if  (targetType.IsAssignableFrom(sourceType))  then
     exit  (true);
+  if targetType.IsGenericParameter then
+    exit true;
 
   if  (((sourceType = typeOf(Double))  or  (sourceType = typeOf(Int32)))
                    and  (&Type.GetTypeCode(targetType)  in  [ TypeCode.Byte, TypeCode.Char, TypeCode.DateTime, TypeCode.Decimal,
@@ -324,7 +361,7 @@ begin
   if  (not self.Static)  then
     self.Root.RaiseNativeError(NativeErrorType.ReferenceError, 'Cannot call new on instance');
 
-  exit  (EcmaScriptObjectWrapper.FindAndCallBestOverload(self.fType.GetConstructors(BindingFlags.Public Or BindingFlags.Instance).Cast<MethodBase>.ToArray(),
+  exit  (EcmaScriptObjectWrapper.FindAndCallBestOverload(self.fType.GetConstructors(BindingFlags.Public Or BindingFlags.Instance).Cast<MethodBase>.ToList(),
                    self.Root, '<constructor>', nil, args));
 end;
 
@@ -399,8 +436,85 @@ begin
                                        .Where(a -> 0 = length(a.GetIndexParameters)).Select(a->a.Name));
 end;
 
+class method EcmaScriptObjectWrapper.BetterFunctionMember(aBest, aCurrent: MethodEntry; aParameters: array of Object): Boolean;
+begin
+  var lAtLeastOneBetterConversion := false;
+  for i: System.Int32 := 0 to aParameters.Length -1 do begin
+    var lBestParam := if i >= length(aBest.Args) then aBest.ParamsType else aBest.Args[i].ParameterType;
+    var lCurrentParam := if i >= length(aCurrent.Args) then aCurrent.ParamsType else aCurrent.Args[i].ParameterType;
+    case BetterConversionFromExpression(aParameters[i], lBestParam, lCurrentParam) of
+      1: exit false;
+      -1: lAtLeastOneBetterConversion := true;
+    end;
+  end;
+  if lAtLeastOneBetterConversion then    
+    exit true;
+  if (length(aBest.Method.GetGenericArguments) <> 0) and (length(aCurrent.Method.GetGenericArguments) = 0) then    exit true;
+  if (length(aBest.Method.GetGenericArguments) = 0) and (length(aCurrent.Method.GetGenericArguments) <> 0) then  exit false; // exit if the reverse is true
+  if length(aBest.Args) > length(aCurrent.Args) then exit true;
+  if length(aBest.Args) < length(aCurrent.Args) then exit false;
 
-constructor Overloads(aInstance: Object;  aItems: array of MethodBase);
+  for i: Integer := 0 to length(aParameters) -1 do begin
+    var lBestParam := if i >= length(aBest.Args) then aBest.ParamsType else aBest.Args[i].ParameterType;
+    var lCurrentParam := if i >= length(aCurrent.Args) then aCurrent.ParamsType else aCurrent.Args[i].ParameterType;
+    case IsMoreSpecific(lBestParam, lCurrentParam) of
+      1: exit false;
+      -1: lAtLeastOneBetterConversion := true;
+    end;
+  end;
+  exit lAtLeastOneBetterConversion;
+end;
+
+class method EcmaScriptObjectWrapper.BetterConversionFromExpression(aMine: Object; aBest: &Type; aCurrent: &Type): Integer;
+begin
+  if aBest = aCurrent then
+    exit 0;
+  var lGT := aMine:GetType;
+  if lGT = aBest then exit 1;
+  if lGT = aCurrent then exit -1;
+  if IsCompatibleType(aBest, aCurrent) and not IsCompatibleType(aCurrent, aBest) then exit 1;
+  if IsCompatibleType(aCurrent, aBest) and not IsCompatibleType(aBest, aCurrent) then exit -1;
+
+  if IsCompatibleType(lGT, aBest) and not IsCompatibleType(lGT, aCurrent) then exit 1;
+  if IsCompatibleType(lGT, aCurrent) and not IsCompatibleType(lGT, aBest) then exit -1;
+
+  if (lGT = nil) and (aBest.IsValueType) and (not aCurrent.IsValueType) then exit -1;
+  if (lGT = nil) and (not aBest.IsValueType) and (aCurrent.IsValueType) then exit 1;
+
+  if lGT <> nil then begin
+    if IsFloat(lGT) and IsFloat(aCurrent) and not IsFloat(aBest) then exit -1;
+    if IsFloat(lGT) and not IsFloat(aCurrent) and IsFloat(aBest) then exit 1;
+
+    if IsInteger(lGT) and IsInteger(aCurrent) and not IsInteger(aBest) then exit -1;
+    if IsInteger(lGT) and not IsInteger(aCurrent) and IsInteger(aBest) then exit 1;
+  end;
+
+  exit 0;
+end;
+
+class method EcmaScriptObjectWrapper.IsMoreSpecific(aBest: &Type; aCurrent: &Type): Integer;
+begin
+  if aBest.IsGenericParameter and not aCurrent.IsGenericParameter then exit -1;
+  if not aBest.IsGenericParameter and aCurrent.IsGenericParameter then exit 1;
+
+  exit 0;
+end;
+
+class method EcmaScriptObjectWrapper.IsInteger(o: &Type): Boolean;
+begin
+  exit &Type.GetTypeCode(o) 
+    in [TypeCode.Byte, TypeCode.Int16, TypeCode.Int32, TypeCode.Int64,
+    TypeCode.SByte, TypeCode.UInt16, TypeCode.UInt32, TypeCode.UInt64];
+end;
+
+class method EcmaScriptObjectWrapper.IsFloat(o: &Type): Boolean;
+begin
+  exit &Type.GetTypeCode(o) 
+    in [TypeCode.Decimal, TypeCode.Single, TypeCode.Double];
+end;
+
+
+constructor Overloads(aInstance: Object;  aItems: List<MethodBase>);
 begin
   self.Instance := aInstance;
   self.Items := aItems;
