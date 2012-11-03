@@ -570,7 +570,7 @@ end;
 
 method GlobalObject.DateToISOString(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  exit  (GlobalObject.UnixToDateTime(Utilities.GetObjAsInt64(&self, caller)).ToString('s'));
+  exit  (GlobalObject.UnixToDateTime(Utilities.GetObjAsInt64(&self, caller)).ToString('s', System.Globalization.DateTimeFormatInfo.InvariantInfo));
 end;
 
 
