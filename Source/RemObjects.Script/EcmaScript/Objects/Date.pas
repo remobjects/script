@@ -36,7 +36,7 @@ type
     method DateToLocaleString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method DateToLocaleDateString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method DateToLocaleTimeString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method DateValueOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+    method DateValueOf(caller: ExecutionContext;  instance: Object;  params args: array of Object): Object;
     method DateGetTime(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method DateGetFullYear(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method DateGetYear(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
@@ -269,13 +269,16 @@ begin
   exit UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime.ToString('T', System.Globalization.DateTimeFormatInfo.CurrentInfo);
 end;
 
-method GlobalObject.DateValueOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.DateValueOf(caller: ExecutionContext;  instance: Object;  params args: array of Object): Object;
 begin
-  aSelf := coalesce(EcmaScriptObject(aSelf):Value, aSelf);
-  if aSelf is not Double then
+  var lValue: Object := coalesce(EcmaScriptObject(instance):Value, instance);
+  if (not ((lValue is Double) or (lValue is Int64))) then
     RaiseNativeError(NativeErrorType.TypeError, 'Date.valueOf is not generic');
-  exit aSelf;
+
+  exit Convert.ToDouble(lValue);
 end;
+
 
 method GlobalObject.DateGetTime(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
