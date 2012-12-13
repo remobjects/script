@@ -223,7 +223,7 @@ begin
     end else
       if (length(lPars) > 0) and 
         (length(lPars[length(lPars)-1].GetCustomAttributes(typeOf(ParamArrayAttribute), true)) >0)
-        and (aParameters[length(aParameters)] is not EcmaScriptArrayObject) then
+        and (aParameters[length(aParameters)-1] is not EcmaScriptArrayObject) then
       lArrType := lPars[length(lPars)-1].ParameterType.GetElementType();
     for i: Integer := 0 to aParameters.Length -1 do begin
       if not IsCompatibleType(aParameters[i]:GetType, if i < lPars.Length then coalesce(lArrType, lPars[i].ParameterType) else lArrType) then begin
