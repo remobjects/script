@@ -30,7 +30,8 @@ type
   private
     var fValue: Object;
     var fType: &Type;
-    class method ConvertTo(val: Object; aType: &Type): Object;
+
+    class method ConvertTo(value: Object;  &type: &Type): Object;
     class method FindBestMatchingMethod(aMethods: List<MethodBase>; aParameters: array of Object);
     class method BetterFunctionMember(aBest, aCurrent: MethodEntry; aParameters: array of Object): Boolean;
     class method BetterConversionFromExpression(aMine: Object; aBest, aCurrent: &Type): Integer;
@@ -82,7 +83,7 @@ begin
     TypeCode.Boolean:   exit  (aValue);
     TypeCode.Byte:      exit  (Convert.ToInt32(Byte(aValue)));
     TypeCode.Char:      exit  (Char(aValue).ToString);
-    TypeCode.DateTime:  exit  (GlobalObject.DateTimeToUnix(DateTime(aValue)));
+    TypeCode.DateTime:  exit  (GlobalObject.DateTimeToUnix(DateTime(aValue).ToUniversalTime()));
     TypeCode.Decimal:   exit  (Convert.ToDouble(Decimal(aValue)));
     TypeCode.Double:    exit  (aValue);
     TypeCode.Int16:     exit  (Convert.ToInt32(Int16(aValue)));
@@ -253,16 +254,28 @@ begin
   end;
 end;
 
+
 class method EcmaScriptObjectWrapper.FindAndCallBestOverload(methods: List<MethodBase>;  root: GlobalObject;  methodName: String;
                    &self: Object;  parameters: array of Object): Object;
 begin
   var lMethods := methods;
 
   for  i: Int32  :=  0  to  length(parameters)-1  do  begin
-    if  (parameters[i] is EcmaScriptObjectWrapper)  then
-      parameters[i] := EcmaScriptObjectWrapper(parameters[i]).Value // if these were wrapped before, we should unwrap
-    else if parameters[i] is EcmaScriptObject then begin
-      parameters[i] := coalesce(EcmaScriptObject(parameters[i]).Value, parameters[i]);
+    with matching objectWrapper := EcmaScriptObjectWrapper(parameters[i]) do begin
+      parameters[i] := objectWrapper.Value; // if these were wrapped before, we should unwrap
+      continue;
+    end;
+
+    with matching scriptObject := EcmaScriptObject(parameters[i]) do begin
+      if scriptObject.Class <> 'Date' then begin
+        parameters[i] := coalesce(scriptObject.Value, parameters[i]);
+        continue;
+      end;
+
+      if scriptObject.Value.GetType() = typeOf(DateTime) then
+        parameters[i] := DateTime(scriptObject.Value).ToLocalTime()
+      else
+        parameters[i] := GlobalObject.UnixToDateTime(Convert.ToInt64(scriptObject.Value)).ToLocalTime()
     end;
   end;
 
@@ -335,24 +348,27 @@ begin
 end;
 
 
-class method EcmaScriptObjectWrapper.ConvertTo(val: Object;  aType: &Type): Object;
+class method EcmaScriptObjectWrapper.ConvertTo(value: Object;  &type: &Type): Object;
 begin
-  if  (not assigned(val))  then
-    exit  (nil);
+  if (not assigned(value)) then
+    exit nil;
 
-  if  (aType = typeOf(Object))  then
-    exit  (val);
+  if &type = typeOf(Object) then
+    exit value;
 
-  if  (val = Undefined.Instance)  then
-    exit  (nil);
+  if value = Undefined.Instance then
+    exit nil;
 
-  if  (aType.IsAssignableFrom(val.GetType()))  then
-    exit  (val);
+  if &type.IsAssignableFrom(value.GetType()) then
+    exit value;
 
-  with matching  wrapper := EcmaScriptObjectWrapper(val)  do
-    exit  (ConvertTo(wrapper.Value, aType));
+  if ((value.GetType() = typeOf(Int64)) or (value.GetType() = typeOf(Double))) and (&type = typeOf(DateTime)) then
+    exit GlobalObject.UnixToDateTime(Convert.ToInt64(value)).ToLocalTime();
 
-  exit  (Convert.ChangeType(val, aType, System.Globalization.CultureInfo.InvariantCulture));
+  with matching wrapper := EcmaScriptObjectWrapper(value) do
+    exit ConvertTo(wrapper.Value, &type);
+
+  exit Convert.ChangeType(value, &type, System.Globalization.CultureInfo.InvariantCulture);
 end;
 
 
