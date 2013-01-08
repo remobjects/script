@@ -27,7 +27,7 @@ type
     method DateCall(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method DateCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method CreateDateObject(date: DateTime): Object;
-    method DateParse(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+    method DateParse(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
     method DateUTC(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method DateToString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method DateToUTCString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
@@ -182,10 +182,11 @@ begin
   var lValue: Double;
   if args.Length = 0 then begin
     lValue := DateTimeToUnix(DateTime.UtcNow);
-  end else if args.Length = 1 then begin
+  end
+  else if args.Length = 1 then begin
     if args[0] is EcmaScriptObject then args[0] := EcmaScriptObject(args[0]).Value;
     if args[0] is String then begin
-      exit DateParse(aCaller, args[0]);
+      exit DateParse(aCaller, aSelf, args[0]);
     end else begin
       lValue := Utilities.GetArgAsDouble(args, 0, aCaller);
       if Double.IsInfinity(lValue ) then lValue := Double.NaN;
@@ -195,7 +196,8 @@ begin
         else
           lValue := Math.Floor(lValue);
     end;
-  end else begin
+  end
+  else begin
     var lYear := Utilities.GetArgAsInteger(args, 0, aCaller);
     var lMonth := Utilities.GetArgAsInteger(args, 1, aCaller);
     var lDay := Utilities.GetArgAsInteger(args, 2, aCaller);
@@ -210,11 +212,12 @@ begin
   result := new EcmaScriptObject(self, DatePrototype, &Class := 'Date', Value := lValue);
 end;
 
-method GlobalObject.DateParse(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.DateParse(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  var lValue := DateTime.Parse(Utilities.GetArgAsString(args, 0, aCaller), System.Globalization.DateTimeFormatInfo.InvariantInfo,
-    System.Globalization.DateTimeStyles.AdjustToUniversal);
-  result := new EcmaScriptObject(self, DatePrototype, &Class := 'Date', Value := lValue);
+  var lValue: DateTime := DateTime.Parse(Utilities.GetArgAsString(args, 0, caller), System.Globalization.DateTimeFormatInfo.InvariantInfo).ToUniversalTime();
+
+  exit new EcmaScriptObject(self, DatePrototype, &Class := 'Date', Value := lValue);
 end;
 
 method GlobalObject.DateUTC(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
