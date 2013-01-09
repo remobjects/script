@@ -63,7 +63,7 @@ type
     class var &Constructor: System.Reflection.ConstructorInfo := typeOf(EcmaScriptArrayObject).GetConstructor([typeOf(Integer), typeOf(GlobalObject)]); readonly; 
     class var Method_AddValue: System.Reflection.MethodInfo := typeOf(EcmaScriptArrayObject).GetMethod('AddValue', [typeOf(Object)]); readonly;
 
-    method AddValues(aItems: array of Object): EcmaScriptArrayObject;
+    method AddValues(items: array of Object): EcmaScriptArrayObject;
     method AddValue(aItem: Object);
 
     property Length: Cardinal read get_Length;
@@ -230,12 +230,14 @@ begin
 end;
 
 
-method EcmaScriptArrayObject.AddValues(aItems: array of Object): EcmaScriptArrayObject;
+method EcmaScriptArrayObject.AddValues(items: array of Object): EcmaScriptArrayObject;
 begin
   var lLen := Length;
-  DefineOwnProperty('length', new PropertyValue(PropertyAttributes.writable, lLen + aItems.Length), true);
-  for i: Cardinal := 0 to aItems.Length -1 do
-    DefineOwnProperty((lLen + i).ToString, new PropertyValue(PropertyAttributes.All, aItems[i]), true);
+  DefineOwnProperty('length', new PropertyValue(PropertyAttributes.writable, lLen + items.Length), true);
+
+  for i: Int32 := 0 to items.Length-1 do
+    DefineOwnProperty((lLen + i).ToString(), new PropertyValue(PropertyAttributes.All, items[i]), true);
+
   exit self;
 end;
 
