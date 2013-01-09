@@ -31,7 +31,7 @@ type
     var fValue: Object;
     var fType: &Type;
 
-    class method ConvertTo(value: Object;  &type: &Type): Object;
+    class method ConvertTo(value: Object;  &type: &Type;  useCurrentCulture: Boolean): Object;
     class method FindBestMatchingMethod(aMethods: List<MethodBase>; aParameters: array of Object);
     class method BetterFunctionMember(aBest, aCurrent: MethodEntry; aParameters: array of Object): Boolean;
     class method BetterConversionFromExpression(aMine: Object; aBest, aCurrent: &Type): Integer;
@@ -83,7 +83,7 @@ begin
     TypeCode.Boolean:   exit  (aValue);
     TypeCode.Byte:      exit  (Convert.ToInt32(Byte(aValue)));
     TypeCode.Char:      exit  (Char(aValue).ToString);
-    TypeCode.DateTime:  exit  (GlobalObject.DateTimeToUnix(DateTime(aValue).ToUniversalTime()));
+    TypeCode.DateTime:  exit  (&Global.CreateDateObject(DateTime(aValue).ToUniversalTime()));
     TypeCode.Decimal:   exit  (Convert.ToDouble(Decimal(aValue)));
     TypeCode.Double:    exit  (aValue);
     TypeCode.Int16:     exit  (Convert.ToInt32(Int16(aValue)));
@@ -127,7 +127,7 @@ begin
         exit  (false);
       end;
 
-      FieldInfo(lItems[0]).SetValue(fValue, ConvertTo(aValue.Value, FieldInfo(lItems[0]).FieldType));
+      FieldInfo(lItems[0]).SetValue(fValue, EcmaScriptObjectWrapper.ConvertTo(aValue.Value, FieldInfo(lItems[0]).FieldType, false));
 
       exit  (true);
     end;
@@ -140,7 +140,7 @@ begin
         exit  (false);
       end;
 
-      PropertyInfo(lItems[0]).SetValue(fValue, ConvertTo(aValue.Value, PropertyInfo(lItems[0]).PropertyType), []);
+      PropertyInfo(lItems[0]).SetValue(fValue, EcmaScriptObjectWrapper.ConvertTo(aValue.Value, PropertyInfo(lItems[0]).PropertyType, false), []);
 
       exit  (true);
     end;
@@ -300,10 +300,10 @@ begin
       if  (j = lParamStart)  then
         lReal[j] := Array.CreateInstance(lParams[lParams.Length-1].ParameterType.GetElementType, length(parameters) - lParamStart);
 
-      Array(lReal[lParamStart]).SetValue(ConvertTo(parameters[j], lParams[lParams.Length-1].ParameterType.GetElementType()), j - lParamStart);
+      Array(lReal[lParamStart]).SetValue(EcmaScriptObjectWrapper.ConvertTo(parameters[j], lParams[lParams.Length-1].ParameterType.GetElementType(), true), j - lParamStart);
     end
     else  begin
-      lReal[j] := ConvertTo(parameters[j], lParams[j].ParameterType);
+      lReal[j] := EcmaScriptObjectWrapper.ConvertTo(parameters[j], lParams[j].ParameterType, true);
     end;
   end;
 
@@ -348,7 +348,7 @@ begin
 end;
 
 
-class method EcmaScriptObjectWrapper.ConvertTo(value: Object;  &type: &Type): Object;
+class method EcmaScriptObjectWrapper.ConvertTo(value: Object;  &type: &Type;  useCurrentCulture: Boolean): Object;
 begin
   if (not assigned(value)) then
     exit nil;
@@ -356,17 +356,54 @@ begin
   if &type = typeOf(Object) then
     exit value;
 
+  // Undefined Double is Double.NaN, not just nil
+  if (&type = typeOf(Double)) and  ((value = Undefined.Instance) or (not assigned(value))) then
+    exit Double.NaN;
+
   if value = Undefined.Instance then
     exit nil;
 
   if &type.IsAssignableFrom(value.GetType()) then
     exit value;
 
-  if ((value.GetType() = typeOf(Int64)) or (value.GetType() = typeOf(Double))) and (&type = typeOf(DateTime)) then
+  with matching wrapper := EcmaScriptObjectWrapper(value) do
+    exit ConvertTo(wrapper.Value, &type, useCurrentCulture);
+
+  // Special cases
+  // Double -> DateTime conversion
+  if (&type = typeOf(DateTime)) and ((value.GetType() = typeOf(Int64)) or (value.GetType() = typeOf(Double))) then
     exit GlobalObject.UnixToDateTime(Convert.ToInt64(value)).ToLocalTime();
 
-  with matching wrapper := EcmaScriptObjectWrapper(value) do
-    exit ConvertTo(wrapper.Value, &type);
+  // Implicitly convert Date to its String representation while sending it to .NET code
+  if value.GetType() = typeOf(DateTime) then begin
+    if useCurrentCulture and (&type = typeOf(String)) then
+      exit Convert.ChangeType(value, &type, System.Globalization.CultureInfo.CurrentCulture);
+
+    // Implicit DateTime -> Double conversion
+    if &type = typeOf(Double) then
+      exit GlobalObject.DateTimeToUnix(DateTime(value));
+  end;
+
+  // Special-case Boolean conversions
+  if &type = typeOf(Boolean) then begin
+    // Number.NaN equals to false in JS while .NET converts it to true
+    if (value.GetType() = typeOf(Double)) and Double.IsNaN(Double(value)) then
+      exit false;
+
+    // Arbitrary Strings are converted to Boolean using simple rule - empty string is False, anything else is True
+    if value.GetType() = typeOf(String) then
+      exit not String.IsNullOrEmpty(String(value));
+  end;
+
+  // Arbitrary strings are converted to Double.NaN
+  if (&type = typeOf(Double)) and (value.GetType() = typeOf(String)) then begin
+    var lResult: Double;
+    if Double.TryParse(String(value), out lResult) then
+      exit lResult;
+
+    exit Double.NaN;
+  end;
+
 
   exit Convert.ChangeType(value, &type, System.Globalization.CultureInfo.InvariantCulture);
 end;

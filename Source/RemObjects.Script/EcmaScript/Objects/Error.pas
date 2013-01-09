@@ -163,19 +163,14 @@ end;
 method GlobalObject.RaiseNativeError(e: NativeErrorType; msg: String);
 begin
   case e of
-    NativeErrorType.EvalError: raise new ScriptRuntimeException(EvalErrorCtor(fExecutionContext, nil, msg));
-    NativeErrorType.RangeError: raise new ScriptRuntimeException(RangeErrorCtor(fExecutionContext, nil, msg));
-    NativeErrorType.ReferenceError: 
-      begin
-        raise new ScriptRuntimeException(ReferenceErrorCtor(fExecutionContext, nil, msg));
-      end;
-    NativeErrorType.SyntaxError: raise new ScriptRuntimeException(SyntaxErrorCtor(fExecutionContext, nil, msg));
-    NativeErrorType.TypeError: raise new ScriptRuntimeException(TypeErrorCtor(fExecutionContext, nil, msg));
-    NativeErrorType.URIError: raise new ScriptRuntimeException(URIErrorCtor(fExecutionContext, nil, msg));
-  else
-    raise ErrorCtor(nil, nil, ['Unknown']);
-  end; // case
-  
+    NativeErrorType.EvalError:      raise new ScriptRuntimeException(EvalErrorCtor(fExecutionContext, nil, msg));
+    NativeErrorType.RangeError:     raise new ScriptRuntimeException(RangeErrorCtor(fExecutionContext, nil, msg));
+    NativeErrorType.ReferenceError: raise new ScriptRuntimeException(ReferenceErrorCtor(fExecutionContext, nil, msg));
+    NativeErrorType.SyntaxError:    raise new ScriptRuntimeException(SyntaxErrorCtor(fExecutionContext, nil, msg));
+    NativeErrorType.TypeError:      raise new ScriptRuntimeException(TypeErrorCtor(fExecutionContext, nil, msg));
+    NativeErrorType.URIError:       raise new ScriptRuntimeException(URIErrorCtor(fExecutionContext, nil, msg));
+    else                            raise ErrorCtor(nil, nil, [ 'Unknown' ]);
+  end;
 end;
 
 
