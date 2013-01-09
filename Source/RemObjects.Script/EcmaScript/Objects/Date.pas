@@ -244,7 +244,7 @@ method GlobalObject.DateToString(caller: ExecutionContext;  &self: Object;  para
 begin
   var lSelf: Object := coalesce(EcmaScriptObject(&self):Value, &self);
 
-  exit UnixToDateTime(Utilities.GetObjAsInt64(lSelf, caller)).ToLocalTime().ToString(System.Globalization.DateTimeFormatInfo.InvariantInfo);
+  exit UnixToDateTime(Utilities.GetObjAsInt64(lSelf, caller)).ToLocalTime().ToString(System.Globalization.DateTimeFormatInfo.CurrentInfo);
 end;
 
 
