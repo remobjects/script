@@ -46,8 +46,8 @@
     <XmlDocWarningLevel>WarningOnPublicMembers</XmlDocWarningLevel>
     <XmlDocAllMembers>False</XmlDocAllMembers>
     <Optimize>True</Optimize>
-    <GeneratePDB>False</GeneratePDB>
-    <GenerateMDB>False</GenerateMDB>
+    <GeneratePDB>True</GeneratePDB>
+    <GenerateMDB>True</GenerateMDB>
     <WarnOnCaseMismatch>False</WarnOnCaseMismatch>
     <RunCodeAnalysis>False</RunCodeAnalysis>
     <RequireExplicitLocalInitialization>False</RequireExplicitLocalInitialization>

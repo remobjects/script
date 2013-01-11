@@ -50,6 +50,8 @@
     <CpuType>anycpu</CpuType>
     <XmlDocWarningLevel>WarningOnPublicMembers</XmlDocWarningLevel>
     <FutureHelperClassName />
+    <GeneratePDB>True</GeneratePDB>
+    <GenerateMDB>True</GenerateMDB>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
