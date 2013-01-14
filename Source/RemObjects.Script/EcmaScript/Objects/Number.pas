@@ -23,7 +23,7 @@ type
     method NumberCall(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method NumberCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method NumberToString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method NumberValueOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+    method NumberValueOf(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
     method NumberLocaleString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method NumberToFixed(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method NumberToExponential(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
@@ -103,12 +103,19 @@ begin
   end;
 end;
 
-method GlobalObject.NumberValueOf(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.NumberValueOf(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  var lVal := EcmaScriptObject(aSelf);
-  if (lVal = nil) or (lVal.Class <> 'Number') then RaiseNativeError(NativeErrorType.TypeError, 'number.prototype.valueOf is not generic');
-  exit lVal.Value;
+  if &self.GetType() in [ typeOf(Double), typeOf(Int32), typeOf(Int64), typeOf(UInt32), typeOf(UInt64) ] then
+    exit Convert.ChangeType(&self, typeOf(Double));
+
+  var lValue: EcmaScriptObject := EcmaScriptObject(&self);
+  if (not assigned(lValue)) or (lValue.Class <> 'Number') then
+    RaiseNativeError(NativeErrorType.TypeError, 'Number.prototype.valueOf is not generic');
+
+  exit lValue.Value;
 end;
+
 
 method GlobalObject.NumberLocaleString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
