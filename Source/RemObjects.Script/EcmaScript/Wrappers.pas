@@ -351,12 +351,12 @@ end;
 
 class method EcmaScriptObjectWrapper.ConvertTo(value: Object;  &type: &Type): Object;
 begin
-  if (not assigned(value)) then
-    exit nil;
-
   // Undefined Double is Double.NaN, not just nil
   if (&type = typeOf(Double)) and  ((value = Undefined.Instance) or (not assigned(value))) then
     exit Double.NaN;
+
+  if (not assigned(value)) then
+    exit nil;
 
   if value = Undefined.Instance then
     exit nil;
@@ -389,7 +389,9 @@ begin
   // Special cases
 {$REGION Double -> DateTime }
   // Double -> DateTime conversion
-  if (&type = typeOf(DateTime)) and (value.GetType() in [ typeOf(Double), typeOf(Int32), typeOf(Int64), typeOf(UInt32), typeOf(UInt64) ]) then
+  // type in [ .. ] doesn't compile on Silverlight
+  var lValueType: &Type := value.GetType();
+  if (&type = typeOf(DateTime)) and ((lValueType = typeOf(Int32)) or (lValueType = typeOf(Int64)) or (lValueType = typeOf(UInt32)) or (lValueType = typeOf(UInt64))) then
     exit GlobalObject.UnixToDateTime(Convert.ToInt64(value)).ToLocalTime();
 
   // Implicitly convert Date to its String representation while sending it to .NET code
@@ -435,7 +437,8 @@ begin
 {$ENDREGION}
 
 {$REGION Int32, Int64, UInt32, UInt64}
-  if &type in [ typeOf(Int32), typeOf(Int64), typeOf(UInt32), typeOf(UInt64) ] then begin
+  // &type in [ .. ] doesn't compile on Silverlight
+  if (&type = typeOf(Int32)) or (&type = typeOf(Int64)) or (&type = typeOf(UInt32)) or (&type = typeOf(UInt64)) then begin
     // Convert String to Double first, and then to the target type
     if value.GetType() = typeOf(String) then begin
       var lResult: Double;
@@ -447,7 +450,11 @@ begin
 
     // Throw away fraction part
     if value.GetType() = typeOf(Double) then
+{$IFNDEF SILVERLIGHT}
       exit Convert.ChangeType(Math.Truncate(Double(value)), &type, System.Globalization.CultureInfo.InvariantCulture);
+{$ELSE}
+      exit Convert.ChangeType(Math.Abs(Double(value))*Math.Floor(Math.Abs(Double(value))), &type, System.Globalization.CultureInfo.InvariantCulture);
+{$ENDIF}
   end;
 {$ENDREGION}
 

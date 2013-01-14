@@ -106,8 +106,10 @@ end;
 
 method GlobalObject.NumberValueOf(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  if &self.GetType() in [ typeOf(Double), typeOf(Int32), typeOf(Int64), typeOf(UInt32), typeOf(UInt64) ] then
-    exit Convert.ChangeType(&self, typeOf(Double));
+  // &self.GetType() in [ .. ] doesn't compile on Silverlight
+  var lValueType: &Type := &self.GetType();
+  if (lValueType = typeOf(Int32)) or (lValueType = typeOf(Int64)) or (lValueType = typeOf(UInt32)) or (lValueType = typeOf(UInt64)) then
+    exit Convert.ChangeType(&self, typeOf(Double), System.Globalization.CultureInfo.InvariantCulture);
 
   var lValue: EcmaScriptObject := EcmaScriptObject(&self);
   if (not assigned(lValue)) or (lValue.Class <> 'Number') then
