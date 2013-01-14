@@ -31,7 +31,7 @@ type
     var fValue: Object;
     var fType: &Type;
 
-    class method ConvertTo(value: Object;  &type: &Type;  useCurrentCulture: Boolean): Object;
+    class method ConvertTo(value: Object;  &type: &Type): Object;
     class method FindBestMatchingMethod(aMethods: List<MethodBase>; aParameters: array of Object);
     class method BetterFunctionMember(aBest, aCurrent: MethodEntry; aParameters: array of Object): Boolean;
     class method BetterConversionFromExpression(aMine: Object; aBest, aCurrent: &Type): Integer;
@@ -49,7 +49,7 @@ type
     class method FindAndCallBestOverload(methods: List<MethodBase>;  root: GlobalObject;  methodName: String;  &self: Object;  parameters: array of Object): Object;
 
     method DefineOwnProperty(aName: String; aValue: PropertyValue; aThrow: Boolean): Boolean; override;
-    method GetOwnProperty(aName: String): PropertyValue; override;
+    method GetOwnProperty(name: String;  getPropertyValue: Boolean): PropertyValue; override;
     method Get(aExecutionContext: ExecutionContext; aFlags: Integer; aName: String): Object; override;
     method Put(aExecutionContext: ExecutionContext; aName: String; aValue: Object; aFlags: Integer): Object; override;
     method Construct(context: ExecutionContext; params args: array of Object): Object; override;
@@ -127,7 +127,7 @@ begin
         exit  (false);
       end;
 
-      FieldInfo(lItems[0]).SetValue(fValue, EcmaScriptObjectWrapper.ConvertTo(aValue.Value, FieldInfo(lItems[0]).FieldType, false));
+      FieldInfo(lItems[0]).SetValue(fValue, EcmaScriptObjectWrapper.ConvertTo(aValue.Value, FieldInfo(lItems[0]).FieldType));
 
       exit  (true);
     end;
@@ -140,7 +140,7 @@ begin
         exit  (false);
       end;
 
-      PropertyInfo(lItems[0]).SetValue(fValue, EcmaScriptObjectWrapper.ConvertTo(aValue.Value, PropertyInfo(lItems[0]).PropertyType, false), []);
+      PropertyInfo(lItems[0]).SetValue(fValue, EcmaScriptObjectWrapper.ConvertTo(aValue.Value, PropertyInfo(lItems[0]).PropertyType), []);
 
       exit  (true);
     end;
@@ -153,30 +153,29 @@ begin
 end;
 
 
-method EcmaScriptObjectWrapper.GetOwnProperty(aName: String): PropertyValue;
+method EcmaScriptObjectWrapper.GetOwnProperty(name: String;  getPropertyValue: Boolean): PropertyValue;
 begin
-  var lItems := fType.GetMembers(BindingFlags.Public  or  BindingFlags.FlattenHierarchy  or
-                   if  (self.Static)  then  BindingFlags.Static  else  BindingFlags.Instance).Where(a->a.Name = aName).ToList();
+  var lItems := fType.GetMembers(BindingFlags.Public  or  BindingFlags.FlattenHierarchy  or  iif(self.Static, BindingFlags.Static, BindingFlags.Instance)).Where(a->a.Name = name).ToList();
 
   if  (length(lItems) = 0)  then
     exit inherited;
 
 
   if  (lItems.Count  = 1)  then  begin
-    if  (lItems[0].MemberType = MemberTypes.Field)  then     
-      exit  (new PropertyValue(if FieldInfo(lItems[0]).IsInitOnly then PropertyAttributes.None else PropertyAttributes.writable,
-                   EcmaScriptScope.DoTryWrap(Root,FieldInfo(lItems[0]).GetValue(fValue))));
+    if  (lItems[0].MemberType = MemberTypes.Field)  then
+      exit new PropertyValue(iif(FieldInfo(lItems[0]).IsInitOnly, PropertyAttributes.None, PropertyAttributes.Writable),
+                   iif(getPropertyValue, EcmaScriptScope.DoTryWrap(self.Root,FieldInfo(lItems[0]).GetValue(fValue)), nil));
 
     if  (lItems[0].MemberType = MemberTypes.Property)  then
-      exit  (new PropertyValue(if PropertyInfo(lItems[0]).CanWrite then PropertyAttributes.writable else PropertyAttributes.None,
-                   if  PropertyInfo(lItems[0]).CanRead  then  EcmaScriptScope.DoTryWrap(Root,PropertyInfo(lItems[0]).GetValue(fValue, []))));
+      exit new PropertyValue(iif(PropertyInfo(lItems[0]).CanWrite, PropertyAttributes.Writable, PropertyAttributes.None),
+                   iif(getPropertyValue and PropertyInfo(lItems[0]).CanRead, EcmaScriptScope.DoTryWrap(self.Root,PropertyInfo(lItems[0]).GetValue(fValue, [])), nil));
   end;
 
   if  ((lItems.Count > 0) and (lItems.All(a->a.MemberType = MemberTypes.Method)))  then
-    exit  (new PropertyValue(PropertyAttributes.None,
-                   new EcmaScriptObjectWrapper(new Overloads(fValue, lItems.Cast<MethodBase>().ToList), typeOf(Overloads), Root)));
+    exit new PropertyValue(PropertyAttributes.None,
+                   new EcmaScriptObjectWrapper(new Overloads(fValue, lItems.Cast<MethodBase>().ToList), typeOf(Overloads), Root));
 
-  exit  (nil);
+  exit nil;
 end;
 
 
@@ -261,6 +260,8 @@ begin
   var lMethods := methods;
 
   for  i: Int32  :=  0  to  length(parameters)-1  do  begin
+    // This code is similar to the one used in .ConvertTo
+    // However it cannot be moved there because we have to determine target value types before converting to them
     with matching objectWrapper := EcmaScriptObjectWrapper(parameters[i]) do begin
       parameters[i] := objectWrapper.Value; // if these were wrapped before, we should unwrap
       continue;
@@ -300,10 +301,10 @@ begin
       if  (j = lParamStart)  then
         lReal[j] := Array.CreateInstance(lParams[lParams.Length-1].ParameterType.GetElementType, length(parameters) - lParamStart);
 
-      Array(lReal[lParamStart]).SetValue(EcmaScriptObjectWrapper.ConvertTo(parameters[j], lParams[lParams.Length-1].ParameterType.GetElementType(), true), j - lParamStart);
+      Array(lReal[lParamStart]).SetValue(EcmaScriptObjectWrapper.ConvertTo(parameters[j], lParams[lParams.Length-1].ParameterType.GetElementType()), j - lParamStart);
     end
     else  begin
-      lReal[j] := EcmaScriptObjectWrapper.ConvertTo(parameters[j], lParams[j].ParameterType, true);
+      lReal[j] := EcmaScriptObjectWrapper.ConvertTo(parameters[j], lParams[j].ParameterType);
     end;
   end;
 
@@ -348,13 +349,10 @@ begin
 end;
 
 
-class method EcmaScriptObjectWrapper.ConvertTo(value: Object;  &type: &Type;  useCurrentCulture: Boolean): Object;
+class method EcmaScriptObjectWrapper.ConvertTo(value: Object;  &type: &Type): Object;
 begin
   if (not assigned(value)) then
     exit nil;
-
-  if &type = typeOf(Object) then
-    exit value;
 
   // Undefined Double is Double.NaN, not just nil
   if (&type = typeOf(Double)) and  ((value = Undefined.Instance) or (not assigned(value))) then
@@ -363,27 +361,49 @@ begin
   if value = Undefined.Instance then
     exit nil;
 
+  with matching wrapper := EcmaScriptObjectWrapper(value) do
+    exit ConvertTo(wrapper.Value, &type);
+
+  // Unwrap EcmaScriptObject before conversion
+  with matching wrapper := EcmaScriptObject(value) do begin
+    if wrapper.Class = 'Date' then begin
+      if wrapper.Value.GetType() = typeOf(DateTime) then
+        value := DateTime(wrapper.Value).ToLocalTime()
+      else
+        value := GlobalObject.UnixToDateTime(Convert.ToInt64(wrapper.Value)).ToLocalTime();
+
+      exit ConvertTo(value, &type);
+    end;
+
+    // For arbitrary EcmaScriptObject objects their .toString() method is called
+    if &type = typeOf(String) then
+      exit value.ToString();
+
+    if assigned(wrapper.Value) then
+      exit ConvertTo(wrapper.Value, &type);
+  end;
+
   if &type.IsAssignableFrom(value.GetType()) then
     exit value;
 
-  with matching wrapper := EcmaScriptObjectWrapper(value) do
-    exit ConvertTo(wrapper.Value, &type, useCurrentCulture);
-
   // Special cases
+{$REGION Double -> DateTime }
   // Double -> DateTime conversion
-  if (&type = typeOf(DateTime)) and ((value.GetType() = typeOf(Int64)) or (value.GetType() = typeOf(Double))) then
+  if (&type = typeOf(DateTime)) and (value.GetType() in [ typeOf(Double), typeOf(Int32), typeOf(Int64), typeOf(UInt32), typeOf(UInt64) ]) then
     exit GlobalObject.UnixToDateTime(Convert.ToInt64(value)).ToLocalTime();
 
   // Implicitly convert Date to its String representation while sending it to .NET code
   if value.GetType() = typeOf(DateTime) then begin
-    if useCurrentCulture and (&type = typeOf(String)) then
+    if &type = typeOf(String) then
       exit Convert.ChangeType(value, &type, System.Globalization.CultureInfo.CurrentCulture);
 
     // Implicit DateTime -> Double conversion
     if &type = typeOf(Double) then
       exit GlobalObject.DateTimeToUnix(DateTime(value));
   end;
+{$ENDREGION}
 
+{$REGION Boolean }
   // Special-case Boolean conversions
   if &type = typeOf(Boolean) then begin
     // Number.NaN equals to false in JS while .NET converts it to true
@@ -394,16 +414,42 @@ begin
     if value.GetType() = typeOf(String) then
       exit not String.IsNullOrEmpty(String(value));
   end;
+{$ENDREGION}
 
-  // Arbitrary strings are converted to Double.NaN
-  if (&type = typeOf(Double)) and (value.GetType() = typeOf(String)) then begin
-    var lResult: Double;
-    if Double.TryParse(String(value), out lResult) then
-      exit lResult;
+{$REGION Double }
+  // Special-case Double conversions
+  if &type = typeOf(Double) then begin
+    // Arbitrary strings are converted to Double.NaN
+    if value.GetType() = typeOf(String) then begin
+      var lResult: Double;
+      if Double.TryParse(String(value), out lResult) then
+        exit lResult;
 
-    exit Double.NaN;
+      exit Double.NaN;
+    end;
+
+    // Special rules for Boolean -> Double conversion (JS supports this)
+    if value.GetType() = typeOf(Boolean) then
+      exit iif(Boolean(value),1.0,0.0);
   end;
+{$ENDREGION}
 
+{$REGION Int32, Int64, UInt32, UInt64}
+  if &type in [ typeOf(Int32), typeOf(Int64), typeOf(UInt32), typeOf(UInt64) ] then begin
+    // Convert String to Double first, and then to the target type
+    if value.GetType() = typeOf(String) then begin
+      var lResult: Double;
+      if Double.TryParse(String(value), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out lResult) then
+        exit Convert.ChangeType(lResult, &type, System.Globalization.CultureInfo.InvariantCulture);
+
+      raise new FormatException('Cannot convert provided String value to an Integer value');
+    end;
+
+    // Throw away fraction part
+    if value.GetType() = typeOf(Double) then
+      exit Convert.ChangeType(Math.Truncate(Double(value)), &type, System.Globalization.CultureInfo.InvariantCulture);
+  end;
+{$ENDREGION}
 
   exit Convert.ChangeType(value, &type, System.Globalization.CultureInfo.InvariantCulture);
 end;
