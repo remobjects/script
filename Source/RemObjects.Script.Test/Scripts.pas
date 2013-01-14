@@ -260,7 +260,7 @@ test2
 null
 undefined
 test2
-undefined";
+null";
   Assert.Equal(lExpected.Replace(#13#10, #10).Trim([#13, #9, #32, #10]), fresult.Replace(#13#10, #10).Trim([#13, #9, #32, #10]));
 end;
 
@@ -288,16 +288,18 @@ var lExpected:= 'x = 42';
   Assert.Equal(lExpected.Replace(#13#10, #10).Trim([#13, #9, #32, #10]), fresult.Replace(#13#10, #10).Trim([#13, #9, #32, #10]));
 end;
 
-method Scripts.Arguments;
+
+method Scripts.Arguments();
 begin
   ExecuteJS("var f = function(a,b) {
   writeln(arguments);
 };
 
 f();");
-var lExpected:= '[object Arguments]';
+  var lExpected:= '[object Arguments]';
   Assert.Equal(lExpected.Replace(#13#10, #10).Trim([#13, #9, #32, #10]), fresult.Replace(#13#10, #10).Trim([#13, #9, #32, #10]));
 end;
+
 
 method Scripts.UnicodeIdentifier;
 begin
