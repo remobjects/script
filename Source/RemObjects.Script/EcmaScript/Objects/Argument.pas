@@ -25,7 +25,7 @@ type
     class var &Constructor: System.Reflection.ConstructorInfo := typeOf (EcmaScriptArgumentObject).GetConstructors()[0]; readonly;
 
     method Get(aExecutionContext: ExecutionContext;  aFlags: Int32;  aName: String): Object; override;
-    method GetOwnProperty(aName: String): PropertyValue; override;
+    method GetOwnProperty(name: String;  getPropertyValue: Boolean): PropertyValue; override;
     method DefineOwnProperty(aName: String;  aValue: PropertyValue;  aThrow: Boolean): Boolean; override;
     method Delete(aName: String;  aThrow: Boolean): Boolean; override;
   end;
@@ -72,11 +72,11 @@ begin
 end;
 
 
-method EcmaScriptArgumentObject.GetOwnProperty(aName: String): PropertyValue;
+method EcmaScriptArgumentObject.GetOwnProperty(name: String;  getPropertyValue: Boolean): PropertyValue;
 begin
   var lIndex: Int32;
-  if  (not fStrict and Int32.TryParse(aName, out lIndex)  and  (lIndex < Math.Min(length(fNames), length(fArgs))))  then
-    exit  (new PropertyValue(PropertyAttributes.writable or PropertyAttributes.Configurable, fExecutionScope.LexicalScope.GetBindingValue(fNames[lIndex], false)));
+  if  (not fStrict and Int32.TryParse(name, out lIndex)  and  (lIndex < Math.Min(length(fNames), length(fArgs))))  then
+    exit (new PropertyValue(PropertyAttributes.Writable or PropertyAttributes.Configurable, fExecutionScope.LexicalScope.GetBindingValue(fNames[lIndex], false)));
 
   exit inherited;
 end;
