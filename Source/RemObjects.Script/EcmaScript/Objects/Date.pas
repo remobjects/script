@@ -199,7 +199,7 @@ begin
   end
   else begin
     var lYear := Utilities.GetArgAsInteger(args, 0, aCaller);
-    var lMonth := Utilities.GetArgAsInteger(args, 1, aCaller);
+    var lMonth := Utilities.GetArgAsInteger(args, 1, aCaller) + 1; // Month is 0-based in JS
     var lDay := Utilities.GetArgAsInteger(args, 2, aCaller);
     var lHour := Utilities.GetArgAsInteger(args, 3, aCaller);
     var lMinute := Utilities.GetArgAsInteger(args, 4, aCaller);
