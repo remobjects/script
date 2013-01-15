@@ -945,8 +945,8 @@ begin
           lArgs.Add(lSub);
           if fTok.Token = TokenKind.Comma then begin
             fTok.Next ;
-            if fTok.Token = TokenKind.ClosingBracket then
-              lArgs.RemoveAt(lArgs.Count-1);
+            //if fTok.Token = TokenKind.ClosingBracket then
+              //lArgs.RemoveAt(lArgs.Count-1);
           end else 
           if fTok.Token = TokenKind.ClosingBracket then break else
           begin

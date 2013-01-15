@@ -276,7 +276,7 @@ end;
 
 method EcmaScriptObject.IsDataDescriptor(aProp: PropertyValue): Boolean;
 begin
-  exit (PropertyAttributes.writable in aProp.Attributes) or (PropertyAttributes.HasValue in aProp.Attributes);
+  exit (PropertyAttributes.Writable in aProp.Attributes) or (PropertyAttributes.HasValue in aProp.Attributes);
 end;
 
 method EcmaScriptObject.IsGenericDescriptor(aProp: PropertyValue): Boolean;
@@ -288,7 +288,7 @@ method EcmaScriptObject.FromPropertyDescriptor(aProp: PropertyValue): EcmaScript
 begin
   var lRes := new EcmaScriptObject(Root, Root.ObjectPrototype);
   lRes.Put('value', aProp.Value);
-  lRes.Put('writable', PropertyAttributes.writable in aProp.Attributes);
+  lRes.Put('writable', PropertyAttributes.Writable in aProp.Attributes);
   lRes.Put('enumerable', PropertyAttributes.Enumerable in aProp.Attributes);
   lRes.Put('configurable', PropertyAttributes.Configurable in aProp.Attributes);
   if aProp.Get <> nil then
@@ -310,7 +310,7 @@ begin
  end else   result.Attributes := result.Attributes and not PropertyAttributes.HasValue;
 
  if aProp.HasProperty('writable') then
-    if Utilities.GetObjAsBoolean(aProp.Get('writable'), Root.ExecutionContext) then result.Attributes := result.Attributes or PropertyAttributes.writable;
+    if Utilities.GetObjAsBoolean(aProp.Get('writable'), Root.ExecutionContext) then result.Attributes := result.Attributes or PropertyAttributes.Writable;
   if aProp.HasProperty('get') then begin
     var lGet := aProp.Get('get');
     if lGet <> Undefined.Instance then begin
@@ -363,21 +363,21 @@ begin
         exit false;
       end;
       if IsDataDescriptor(lCurrent) then begin
-        lCurrent.Attributes := lCurrent.Attributes and not PropertyAttributes.writable;
+        lCurrent.Attributes := lCurrent.Attributes and not PropertyAttributes.Writable;
         lCurrent.Set := aValue.Set;
         lCurrent.Get := aValue.Set;
       end else begin
-        lCurrent.Attributes := lCurrent.Attributes and not PropertyAttributes.writable or aValue.Attributes;
+        lCurrent.Attributes := lCurrent.Attributes and not PropertyAttributes.Writable or aValue.Attributes;
         lCurrent.Set := aValue.Set;
         lCurrent.Get := aValue.Set;
       end;
     end else if IsDataDescriptor(aValue) and IsDataDescriptor(lCurrent) then begin
       if PropertyAttributes.Configurable not in lCurrent.Attributes then begin
-        if (PropertyAttributes.writable not in lCurrent.Attributes) and (PropertyAttributes.writable in aValue.Attributes) then begin
+        if (PropertyAttributes.Writable not in lCurrent.Attributes) and (PropertyAttributes.Writable in aValue.Attributes) then begin
           if aThrow then Root.RaiseNativeError(NativeErrorType.TypeError, 'Property '+aName+' not writable');
           exit false;
         end;
-        if (PropertyAttributes.writable not in lCurrent.Attributes) and not Operators.SameValue(aValue.Value, lCurrent.Value, Root.ExecutionContext) then begin
+        if (PropertyAttributes.Writable not in lCurrent.Attributes) and not Operators.SameValue(aValue.Value, lCurrent.Value, Root.ExecutionContext) then begin
           if aThrow then Root.RaiseNativeError(NativeErrorType.TypeError, 'Property '+aName+' not writable');
           exit false;
         end;
@@ -490,7 +490,7 @@ end;
 
 class method PropertyValue.NotDeleteAndReadOnly(aValue: Object): PropertyValue;
 begin
-  result := new PropertyValue(PropertyAttributes.All and not PropertyAttributes.writable and not PropertyAttributes.Configurable, aValue);
+  result := new PropertyValue(PropertyAttributes.All and not PropertyAttributes.Writable and not PropertyAttributes.Configurable, aValue);
 end;
 
 constructor PropertyValue(aAttributes: PropertyAttributes; aGet, aSet: EcmaScriptBaseFunctionObject);

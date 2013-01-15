@@ -502,7 +502,7 @@ begin
   var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0, aCaller);
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'Type(O) is not Object');
   for each el in lWork.Values do
-    el.Value.Attributes := el.Value.Attributes and not (PropertyAttributes.Enumerable or PropertyAttributes.writable);
+    el.Value.Attributes := el.Value.Attributes and not (PropertyAttributes.Enumerable or PropertyAttributes.Writable);
   lWork.Extensible := false;
 
   exit lWork;
@@ -534,7 +534,7 @@ begin
   if lWork.Extensible then exit false;
   for each el in lWork.Values do begin
     if 0 <> Integer(PropertyAttributes.Configurable and el.Value.Attributes) then exit false;
-    if IsDataDescriptor(el.Value) and (0 <> Integer(PropertyAttributes.writable and el.Value.Attributes)) then exit false;
+    if IsDataDescriptor(el.Value) and (0 <> Integer(PropertyAttributes.Writable and el.Value.Attributes)) then exit false;
   end;
   exit true;
 end;

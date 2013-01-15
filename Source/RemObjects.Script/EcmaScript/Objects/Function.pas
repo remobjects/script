@@ -229,14 +229,14 @@ begin
   inherited constructor(aScope, new EcmaScriptObject(aScope, aScope.Root.FunctionPrototype));
   &Class := 'Function';
   var lProto := new EcmaScriptObject(aScope);
-  lProto.DefineOwnProperty('constructor', new PropertyValue(PropertyAttributes.writable or PropertyAttributes.Configurable, self));
+  lProto.DefineOwnProperty('constructor', new PropertyValue(PropertyAttributes.Writable or PropertyAttributes.Configurable, self));
   fOriginalName := aOriginalName;
   fDelegate := aDelegate;
   Values.Add('length', PropertyValue.NotAllFlags(aLength));
   if aNoProto then 
-    DefineOwnProperty('prototype', new PropertyValue(PropertyAttributes.writable, Undefined.Instance))
+    DefineOwnProperty('prototype', new PropertyValue(PropertyAttributes.Writable, Undefined.Instance))
   else
-    DefineOwnProperty('prototype', new PropertyValue(PropertyAttributes.writable, lProto));
+    DefineOwnProperty('prototype', new PropertyValue(PropertyAttributes.Writable, lProto));
   if aStrict then begin
     DefineOwnProperty('caller', new PropertyValue(PropertyAttributes.None, aScope.Thrower, aScope.Thrower));
     DefineOwnProperty('arguments', new PropertyValue(PropertyAttributes.None, aScope.Thrower, aScope.Thrower));
@@ -274,11 +274,11 @@ begin
   &Class := 'Function';
   Scope := aScopeVar;
   var lProto := new EcmaScriptObject(aScope);
-  lProto.DefineOwnProperty('constructor', new PropertyValue(PropertyAttributes.writable or PropertyAttributes.Configurable, self));
+  lProto.DefineOwnProperty('constructor', new PropertyValue(PropertyAttributes.Writable or PropertyAttributes.Configurable, self));
   fOriginalName := aOriginalName;
   fDelegate := aDelegate;
   Values.Add('length', PropertyValue.NotAllFlags(aLength));
-  DefineOwnProperty('prototype', new PropertyValue(PropertyAttributes.writable, lProto));
+  DefineOwnProperty('prototype', new PropertyValue(PropertyAttributes.Writable, lProto));
   if aStrict then begin
     DefineOwnProperty('caller', new PropertyValue(PropertyAttributes.None, aScope.Thrower, aScope.Thrower));
     DefineOwnProperty('arguments', new PropertyValue(PropertyAttributes.None, aScope.Thrower, aScope.Thrower));
@@ -314,7 +314,7 @@ begin
   &Class := 'Function';
   Scope := aFunc.Scope;
   var lProto := new EcmaScriptObject(aGlobal);
-  lProto.DefineOwnProperty('constructor', new PropertyValue(PropertyAttributes.writable or PropertyAttributes.Configurable, self));
+  lProto.DefineOwnProperty('constructor', new PropertyValue(PropertyAttributes.Writable or PropertyAttributes.Configurable, self));
   var lLength := Utilities.GetObjAsInteger(aFunc.Get(nil, 0, 'length'), aGlobal.ExecutionContext);
 
   fOriginal := aFunc;
@@ -328,7 +328,7 @@ begin
     Array.Copy(args, 1, fNewArgs, 0, fNewArgs.Length);
   end;
   Values.Add('length', PropertyValue.NotAllFlags(lLength));
-  DefineOwnProperty('prototype', new PropertyValue(PropertyAttributes.writable, lProto));
+  DefineOwnProperty('prototype', new PropertyValue(PropertyAttributes.Writable, lProto));
   DefineOwnProperty('caller', new PropertyValue(PropertyAttributes.None, aGlobal.Thrower, aGlobal.Thrower));
   DefineOwnProperty('arguments', new PropertyValue(PropertyAttributes.None, aGlobal.Thrower, aGlobal.Thrower));
 end;
@@ -352,7 +352,7 @@ begin
   &Class := 'Function';
   Scope := aScope;
   var lProto := new EcmaScriptObject(aGlobal);
-  lProto.DefineOwnProperty('constructor', new PropertyValue(PropertyAttributes.writable or PropertyAttributes.Configurable, self));
+  lProto.DefineOwnProperty('constructor', new PropertyValue(PropertyAttributes.Writable or PropertyAttributes.Configurable, self));
   var lLength := Utilities.GetObjAsInteger(aFunc.Get(nil, 0, 'length'), aGlobal.ExecutionContext);
 
   
@@ -366,7 +366,7 @@ begin
     Array.Copy(args, 1, fNewArgs, 0, fNewArgs.Length);
   end;
   Values.Add('length', PropertyValue.NotAllFlags(lLength));
-  DefineOwnProperty('prototype', new PropertyValue(PropertyAttributes.writable, lProto));
+  DefineOwnProperty('prototype', new PropertyValue(PropertyAttributes.Writable, lProto));
   DefineOwnProperty('caller', new PropertyValue(PropertyAttributes.None, aGlobal.Thrower, aGlobal.Thrower));
   DefineOwnProperty('arguments', new PropertyValue(PropertyAttributes.None, aGlobal.Thrower, aGlobal.Thrower));
 

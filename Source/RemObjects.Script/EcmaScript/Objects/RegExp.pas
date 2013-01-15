@@ -58,7 +58,7 @@ begin
   RegExpPrototype.Values['global'] := PropertyValue.NotAllFlags(false);
   RegExpPrototype.Values['ignoreCase'] := PropertyValue.NotAllFlags(false);
   RegExpPrototype.Values['multiline'] := PropertyValue.NotAllFlags(false);
-  RegExpPrototype.Values['lastIndex'] := new PropertyValue(PropertyAttributes.writable, Undefined.Instance);
+  RegExpPrototype.Values['lastIndex'] := new PropertyValue(PropertyAttributes.Writable, Undefined.Instance);
 
   result.Values['prototype'] := PropertyValue.NotAllFlags(RegExpPrototype);
 
@@ -147,7 +147,7 @@ begin
   lObj.Values['global'] := PropertyValue.NotAllFlags(lObj.GlobalVal);
   lObj.Values['ignoreCase'] := PropertyValue.NotAllFlags(RegexOptions.IgnoreCase in lOpt);
   lObj.Values['multiline'] := PropertyValue.NotAllFlags(RegexOptions.Multiline in lOpt);
-  lObj.Values['lastIndex'] := new PropertyValue(PropertyAttributes.writable, Undefined.Instance);
+  lObj.Values['lastIndex'] := new PropertyValue(PropertyAttributes.Writable, Undefined.Instance);
   try
   lObj.Recreate(aPattern, lOpt);
   except
@@ -181,7 +181,7 @@ begin
   Values['global'] := PropertyValue.NotAllFlags(fGlobalVal);
   Values['ignoreCase'] := PropertyValue.NotAllFlags(RegexOptions.IgnoreCase in lOpt);
   Values['multiline'] := PropertyValue.NotAllFlags(RegexOptions.Multiline in lOpt);
-  Values['lastIndex'] := new PropertyValue(PropertyAttributes.writable, Undefined.Instance);
+  Values['lastIndex'] := new PropertyValue(PropertyAttributes.Writable, Undefined.Instance);
   try
     fRegex := new Regex(aPattern, lOpt);
   except

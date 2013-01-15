@@ -41,14 +41,14 @@ begin
 
   &Class := 'Arguments';
   fExecutionScope := ex;
-  DefineOwnProperty('length', new PropertyValue(PropertyAttributes.Configurable or PropertyAttributes.writable, length(aArgs)));
+  DefineOwnProperty('length', new PropertyValue(PropertyAttributes.Configurable or PropertyAttributes.Writable, length(aArgs)));
 
   if  (aStrict)  then  begin
     DefineOwnProperty('caller', new PropertyValue(PropertyAttributes.None, ex.Global.Thrower));
     DefineOwnProperty('callee', new PropertyValue(PropertyAttributes.None, ex.Global.Thrower));
   end
   else  begin
-    DefineOwnProperty('callee', new PropertyValue(PropertyAttributes.writable or PropertyAttributes.Configurable, aCaller));
+    DefineOwnProperty('callee', new PropertyValue(PropertyAttributes.Writable or PropertyAttributes.Configurable, aCaller));
   end;
 
   fArgs := aArgs;

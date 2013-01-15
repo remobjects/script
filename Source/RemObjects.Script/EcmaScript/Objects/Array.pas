@@ -132,8 +132,8 @@ constructor EcmaScriptArrayObject(aRoot: GlobalObject; aLength: Object);
 begin
   inherited constructor(aRoot, aRoot.ArrayPrototype);
   &Class := 'Array';
-  inherited DefineOwnProperty('length', new PropertyValue(PropertyAttributes.writable, Integer(0)), false);
-  DefineOwnProperty('length', new PropertyValue(PropertyAttributes.writable, aLength), false)
+  inherited DefineOwnProperty('length', new PropertyValue(PropertyAttributes.Writable, Integer(0)), false);
+  DefineOwnProperty('length', new PropertyValue(PropertyAttributes.Writable, aLength), false)
 end;
 
 
@@ -141,7 +141,7 @@ constructor EcmaScriptArrayObject(aCapacity: Integer; aRoot: GlobalObject);
 begin
   inherited constructor(aRoot, aRoot.ArrayPrototype);
   &Class := 'Array';
-  inherited DefineOwnProperty('length', new PropertyValue(PropertyAttributes.writable, 0), false);
+  inherited DefineOwnProperty('length', new PropertyValue(PropertyAttributes.Writable, 0), false);
 end;
 
 
@@ -171,13 +171,13 @@ begin
     aValue.Value := lLenVal;
     if lNewLen > lOldLen then 
       exit inherited;
-    if not PropertyAttributes.writable not in lOldLenDesc.Attributes then begin
+    if not PropertyAttributes.Writable not in lOldLenDesc.Attributes then begin
       if aThrow then
         Root.RaiseNativeError(NativeErrorType.TypeError, 'Value not writable');
       exit true;
     end;
-    var lNewWritable := PropertyAttributes.writable in aValue.Attributes;
-    aValue.Attributes := aValue.Attributes or PropertyAttributes.writable;
+    var lNewWritable := PropertyAttributes.Writable in aValue.Attributes;
+    aValue.Attributes := aValue.Attributes or PropertyAttributes.Writable;
     if not inherited DefineOwnProperty(aName, aValue, aThrow) then exit false; // set the actual length
     while lNewLen < lOldLen do begin
       lOldLen := lOldLen - 1;
@@ -191,13 +191,13 @@ begin
       end;
     end;
     if not lNewWritable then begin
-      lOldLenDesc.Attributes := lOldLenDesc.Attributes and not PropertyAttributes.writable;
+      lOldLenDesc.Attributes := lOldLenDesc.Attributes and not PropertyAttributes.Writable;
     end;
     exit true;
   end;
   var lIndex: Cardinal;
   if TryGetArrayIndex(aName, out lIndex) then begin
-    if  ((PropertyAttributes.writable not in lOldLenDesc.Attributes) and (lIndex >= lOldLen))  then  begin
+    if  ((PropertyAttributes.Writable not in lOldLenDesc.Attributes) and (lIndex >= lOldLen))  then  begin
       if  (aThrow)  then
         Root.RaiseNativeError(NativeErrorType.TypeError, 'Element out of range of array and length is readonly');
       exit  (true);
@@ -233,7 +233,7 @@ end;
 method EcmaScriptArrayObject.AddValues(items: array of Object): EcmaScriptArrayObject;
 begin
   var lLen := Length;
-  DefineOwnProperty('length', new PropertyValue(PropertyAttributes.writable, lLen + items.Length), true);
+  DefineOwnProperty('length', new PropertyValue(PropertyAttributes.Writable, lLen + items.Length), true);
 
   for i: Int32 := 0 to items.Length-1 do
     DefineOwnProperty((lLen + i).ToString(), new PropertyValue(PropertyAttributes.All, items[i]), true);

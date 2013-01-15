@@ -197,7 +197,7 @@ end;
 method DeclarativeEnvironmentRecord.CreateMutableBinding(aName: String; aDeleteAfter: Boolean);
 begin
   if fBag.ContainsKey(aName) then fGlobal.RaiseNativeError(NativeErrorType.TypeError, 'Duplicate property: '+aName);
-  fBag.Add(aName, new PropertyValue(PropertyAttributes.writable or PropertyAttributes.Configurable, Undefined.Instance));
+  fBag.Add(aName, new PropertyValue(PropertyAttributes.Writable or PropertyAttributes.Configurable, Undefined.Instance));
 end;
 
 method DeclarativeEnvironmentRecord.SetMutableBinding(aName: String; aValue: Object; aStrict: Boolean);
@@ -206,7 +206,7 @@ begin
   if not fBag.TryGetValue(aName, out lVal) then begin
     fGlobal.RaiseNativeError(NativeErrorType.TypeError, 'Unknown property: '+aName);
   end;
-  if PropertyAttributes.writable not in lVal.Attributes then 
+  if PropertyAttributes.Writable not in lVal.Attributes then 
     fGlobal.RaiseNativeError(NativeErrorType.TypeError, 'Property is immutable: '+aName);
   lVal.Value := aValue;
 end;
@@ -224,7 +224,7 @@ method DeclarativeEnvironmentRecord.DeleteBinding(aName: String): Boolean;
 begin
   var lVal: PropertyValue;
   if not fBag.TryGetValue(aName, out lVal) then exit true;
-  if lVal.Attributes <> (PropertyAttributes.Configurable or PropertyAttributes.writable) then exit false;
+  if lVal.Attributes <> (PropertyAttributes.Configurable or PropertyAttributes.Writable) then exit false;
   exit fBag.Remove(aName);
 end;
 
