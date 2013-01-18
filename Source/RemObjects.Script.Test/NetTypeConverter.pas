@@ -5,6 +5,7 @@ interface
 uses
   System.Text,
   Xunit,
+  Xunit.Extensions,
   RemObjects.Script;
 
 type
@@ -68,6 +69,7 @@ type
   public
     constructor();
 
+    property propBoolean: Boolean read write;
     property propDate: DateTime read write;
     property propString: String read write;
 
@@ -97,6 +99,24 @@ type
 
     [Fact]
     method _ToString_IsCalledWhenScriptCalls_toString_();
+
+    [Theory]
+    [InlineData("{}",         true)]
+    [InlineData("0",          false)]
+    [InlineData("-0",         false)]
+    [InlineData("1",          true)]
+    [InlineData("-1",         true)]
+    [InlineData("-0.1",       true)]
+    [InlineData("null",       false)]
+    [InlineData("''",         false)]
+    [InlineData("'true'",     true)]
+    [InlineData("'false'",    true)]
+    [InlineData("true",       true)]
+    [InlineData("false",      false)]
+    [InlineData("'AAAA'",     true)]
+    [InlineData("undefined",  false)]
+    [InlineData("Number.NaN", false)]
+    method JsObjectsAreconvertedToBooleanProperly(script: String;  expectedResult: Boolean);
   end;
 
 
@@ -220,6 +240,34 @@ function testFunction(cc) {
     engine.RunFunction('testFunction', lConsole);
 
     Assert.Equal<String>('true||true||true||true||false||false||false||false||', lConsole.GetStringBuffer());
+  end;
+end;
+
+
+method NetTypeConverter.JsObjectsAreconvertedToBooleanProperly(script: String;  expectedResult: Boolean);
+begin
+// If the Boolean object has no initial value, or if the passed value is one of the following:
+// 0,-0,null,'',false,undefined,NaN
+// the object is set to false. For any other value it is set to true (even with the string 'false')!
+  using engine := new EcmaScriptComponent() do begin
+    engine.Include('test',
+"
+function testFunction1(cc) {
+    var o = " + script + ";
+    cc.propBoolean = new Boolean(o);
+}
+
+function testFunction2(cc) {
+    var o = " + script + ";
+    cc.propBoolean = o;
+}"
+);
+    var lConsole: ScriptTestConsole := new ScriptTestConsole();
+    engine.RunFunction('testFunction1', lConsole);
+    Assert.Equal<Boolean>(expectedResult, lConsole.propBoolean);
+
+    engine.RunFunction('testFunction2', lConsole);
+    Assert.Equal<Boolean>(expectedResult, lConsole.propBoolean);
   end;
 end;
 
