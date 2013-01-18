@@ -29,6 +29,8 @@ type
     method NumberToExponential(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method NumberToPrecision(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
   end;
+
+
   EcmaScriptNumberObject = class(EcmaScriptFunctionObject)
   public
     method Call(context: ExecutionContext; params args: array of Object): Object; override;
@@ -108,6 +110,10 @@ method GlobalObject.NumberValueOf(caller: ExecutionContext;  &self: Object;  par
 begin
   // &self.GetType() in [ .. ] doesn't compile on Silverlight
   var lValueType: &Type := &self.GetType();
+
+  if lValueType = typeOf(Double) then
+    exit Double(&self);
+
   if (lValueType = typeOf(Int32)) or (lValueType = typeOf(Int64)) or (lValueType = typeOf(UInt32)) or (lValueType = typeOf(UInt64)) then
     exit Convert.ChangeType(&self, typeOf(Double), System.Globalization.CultureInfo.InvariantCulture);
 
