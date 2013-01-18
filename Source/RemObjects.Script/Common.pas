@@ -1,15 +1,17 @@
 ﻿{
-
-  Copyright (c) 2009-2010 RemObjects Software. See LICENSE.txt for more details.
-
+  Copyright (c) 2009-2013 RemObjects Software, LLC.
+  See LICENSE.txt for more details.
 }
+
 namespace RemObjects.Script;
 
 interface
 
+{$HIDE W27}
+
 uses
-  System.Reflection,
   System.Collections.Generic,
+  System.Reflection,
   System.Text;
 
 type
@@ -24,11 +26,14 @@ type
     method ToString: String; override;
     property Code: Integer read; abstract;
   end;
+
+
   ScriptException = public class(Exception);
-  //ScriptException = 
+
+
   ScriptRuntimeException = public class(ScriptException)
   private
-    fOriginal: Object;
+    var fOriginal: Object; readonly;
   public
     class method SafeEcmaScriptToObject(o: Object): String;
     class method Wrap(arg: Object): Exception;
@@ -37,10 +42,13 @@ type
     class var Method_Unwrap: MethodInfo := typeOf(ScriptRuntimeException).GetMethod('Unwrap'); readonly;
     class var Method_Wrap: MethodInfo := typeOf(ScriptRuntimeException).GetMethod('Wrap'); readonly;
 
-    constructor(aOriginal: Object);
+    constructor(original: Object);
+
     property Original: Object read fOriginal;
-    method ToString: String; override;
+
+    method ToString(): String; override;
   end;
+
 
   PositionPair = public record
   public
@@ -132,157 +140,55 @@ method ParserMessage.ToString: String;
 begin
   result := String.Format('{0}({1}:{2}): {3}', fPosition.Module, fPosition.Row, fPosition.Col, IntToString);
 end;
-(*
-constructor TypeWrapper(aType: &Type; aBinder: RemObjects.Script.EcmaScript.EcmaScriptLanguageBinder);
-begin
-  fType := aType;
-  fBinder := aBinder
-end;
 
-method TypeWrapper.GetMetaObject(parameter: Expression): DynamicMetaObject;
-begin
-  result := new TypeWrapperMetaObject(parameter, self);
-end;
 
-class operator TypeWrapper.Implicit(aType: TypeWrapper) : &Type;
+{$REGION ScriptRuntimeException }
+constructor ScriptRuntimeException(original: Object);
 begin
-  result := aType:fType;
+  self.fOriginal := original;
+
+  inherited constructor(ScriptRuntimeException.SafeEcmaScriptToObject(original));
 end;
 
 
-constructor TypeWrapperMetaObject(parameter: Expression; aInstance: TypeWrapper);
-begin
-  inherited constructor(parameter, BindingRestrictions.GetTypeRestriction(parameter, aInstance.GetType), aInstance);
-  fInstance := aInstance;
-end;
-
-method TypeWrapperMetaObject.BindCreateInstance(binder: CreateInstanceBinder; args: array of DynamicMetaObject): DynamicMetaObject;
-begin
-  var lOverloads: List<MethodBase> := new List<MethodBase>;
-  for each el in fInstance.Type.GetConstructors(BindingFlags.Public or bindingFlags.Instance) do begin
-    lOverloads.Add(ConstructorInfo(el));
-  end;
-
-  var lResolver := new NewOverloadResolver(fInstance.Binder, args);
-  result := fInstance.Binder.CallMethod(lResolver, lOverloads);
-  if result.Expression.Type = typeOf(Void) then
-    result := new DynamicMetaObject(
-      LExpr.Block(result.Expression, LExpr.Constant(RemObjects.Script.EcmaScript.Undefined.Instance))
-      
-      , BindingRestrictions.Combine([self, result]))
-  else
-    result := new DynamicMetaObject(result.Expression,BindingRestrictions.Combine([self, result]));
-end;
-
-method TypeWrapperMetaObject.BindGetIndex(binder: GetIndexBinder; indexes: array of DynamicMetaObject): DynamicMetaObject;
-begin
-  var lAttr := array of System.ComponentModel.DefaultPropertyAttribute(fInstance.Type.GetCustomAttributes(typeOf(System.ComponentModel.DefaultPropertyAttribute), true));
-  if Length(lAttr) = 0 then raise new ArgumentException(RemObjects.Script.Properties.Resources.eNoSuchFunction);
-  result := BindCall('get_'+lAttr[0].Name, false, indexes);
-end;
-
-method TypeWrapperMetaObject.BindGetMember(binder: GetMemberBinder): DynamicMetaObject;
-begin
-  if Length(fInstance.Type.GetProperties(BindingFlags.Static or BindingFlags.Public) ) > 0 then
-    result := BindCall('get_'+binder.Name, binder.IgnoreCase, [])
-  else begin
-		var res := fInstance.Binder.GetMember(MemberRequestKind.Get, fInstance.Type, binder.Name);
-    
-    result := new DynamicMetaObject(Expression.Constant(res), BindingRestrictions.Empty)
-	end;
-  if assigned(result) and result.Expression.Type.IsValueType then 
-    result := new DynamicMetaObject(Expression.Convert(result.Expression, typeOf(Object)), result.Restrictions);
-end;
-
-method TypeWrapperMetaObject.BindInvokeMember(binder: InvokeMemberBinder; args: array of DynamicMetaObject): DynamicMetaObject;
-begin
-  result := BindCall(binder.Name, binder.IgnoreCase, args);
-end;
-
-method TypeWrapperMetaObject.BindSetIndex(binder: SetIndexBinder; indexes: array of DynamicMetaObject; value: DynamicMetaObject): DynamicMetaObject;
-begin
-  var lAttr := array of System.ComponentModel.DefaultPropertyAttribute(fInstance.Type.GetCustomAttributes(typeOf(System.ComponentModel.DefaultPropertyAttribute), true));
-  if Length(lAttr) = 0 then raise new ArgumentException(RemObjects.Script.Properties.Resources.eNoSuchFunction);
-  result := BindCall( 'set_'+lATtr[0].Name,  Microsoft.Scripting.Utils.ArrayUtils.Append(indexes, value));
-end;
-
-method TypeWrapperMetaObject.GetDynamicMemberNames: IEnumerable<String>;
-begin
-  for each el in fInstance.Type.GetMembers(BindingFlags.Public or BindingFlags.Static) do
-    yield el.Name;
-end;
-
-method TypeWrapperMetaObject.BindCall(name: String; aIgnoreCase: Boolean; indexes: array of DynamicMetaObject): DynamicMetaObject;
-begin
-  var lOverloads: List<MethodBase> := new List<MethodBase>;
-  for each el in fInstance.Type.GetMethods(BindingFlags.Public or bindingFlags.Static or BindingFlags.InvokeMethod) do begin
-    if aIgnoreCase then begin
-      if String.Compare(name, el.Name, StringComparison.InvariantCultureIgnoreCase) = 0 then
-      lOverloads.Add(MethodInfo(el))
-    end else if String.Compare(name, el.Name, StringComparison.InvariantCulture) = 0 then
-      lOverloads.Add(MethodInfo(el));
-  end;
-
-  if lOverloads = nil then begin
-    exit new DynamicMetaObject(
-      LExpr.Block(LExpr.Throw(LExpr.New(typeOf(Exception).GetConstructor([typeOf(String)]), LExpr.Constant('Cannot find member by that name: '+name))), LExpr.Constant(RemObjects.Script.EcmaScript.Undefined.Instance))
-      
-      , BindingRestrictions.Combine([self, result]))
-
-  end;
-
-  var lResolver := new NewOverloadResolver(fInstance.Binder, indexes);
-  result := fInstance.Binder.CallMethod(lResolver, lOverloads);
-  if result.Expression.Type = typeOf(Void) then
-    result := new DynamicMetaObject(
-      LExpr.Block(result.Expression, LExpr.Constant(RemObjects.Script.EcmaScript.Undefined.Instance))
-      
-      , BindingRestrictions.Combine([self, result]))
-  else
-    result := new DynamicMetaObject(result.Expression, BindingRestrictions.Combine([self, result]));
-end;
-
-method TypeWrapperMetaObject.BindSetMember(binder: SetMemberBinder; value: DynamicMetaObject): DynamicMetaObject;
-begin
-  result := BindCall('set_'+binder.Name, binder.IgnoreCase, [value]);
-end;
-*)
 class method ScriptRuntimeException.SafeEcmaScriptToObject(o: Object): String;
 begin
+  if not assigned(o) then
+    exit 'Error';
+
   try
-    if o = nil then exit 'Error';
-    exit o.ToString;
+    exit o.ToString();
   except
     exit 'Error';
   end;
 end;
 
-constructor ScriptRuntimeException(aOriginal: Object);
-begin
-  inherited constructor(SafeEcmaScriptToObject(aOriginal));
-  fOriginal := aOriginal;
-end;
-
-method ScriptRuntimeException.ToString: String;
-begin
-  exit Message;
-end;
 
 class method ScriptRuntimeException.Wrap(arg: Object): Exception;
 begin
-  result := Exception(arg);
-  if assigned(result) then exit;
+  var lResult: Exception := Exception(arg);
+  if assigned(lResult) then
+    exit lResult;
 
   exit new ScriptRuntimeException(arg);
 end;
 
+
 class method ScriptRuntimeException.Unwrap(arg: Object): Object;
 begin
-  if arg is ScriptRuntimeException then begin
+  if arg is ScriptRuntimeException then
     exit ScriptRuntimeException(arg).Original;
-  end;
+
   exit arg;
 end;
+
+
+method ScriptRuntimeException.ToString(): String;
+begin
+  exit self.Message;
+end;
+{$ENDREGION}
+
 
 method ScriptScope.ContainsVariable(name: String): Boolean;
 begin
