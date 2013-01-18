@@ -71,6 +71,7 @@ type
 
     property propBoolean: Boolean read write;
     property propDate: DateTime read write;
+    property propDouble: Double read write;
     property propString: String read write;
 
     method writeString(s: String);
@@ -117,6 +118,15 @@ type
     [InlineData("undefined",  false)]
     [InlineData("Number.NaN", false)]
     method JsObjectsAreconvertedToBooleanProperly(script: String;  expectedResult: Boolean);
+
+    [Fact]
+    method NullToDouble_Equals_0();
+
+    [Fact]
+    method UndefinedToDouble_Equals_NaN();
+
+    [Fact]
+    method Double_valueOf_DoesntFail();
   end;
 
 
@@ -268,6 +278,58 @@ function testFunction2(cc) {
 
     engine.RunFunction('testFunction2', lConsole);
     Assert.Equal<Boolean>(expectedResult, lConsole.propBoolean);
+  end;
+end;
+
+
+method NetTypeConverter.NullToDouble_Equals_0();
+begin
+  using engine := new EcmaScriptComponent() do begin
+    engine.Include('test',
+"
+function testFunction(cc) {
+    cc.propDouble = null;
+}
+");
+    var lConsole: ScriptTestConsole := new ScriptTestConsole();
+    engine.RunFunction('testFunction', lConsole);
+
+    Assert.Equal<Double>(0, lConsole.propDouble);
+  end;
+end;
+
+
+method NetTypeConverter.UndefinedToDouble_Equals_NaN();
+begin
+  using engine := new EcmaScriptComponent() do begin
+    engine.Include('test',
+"
+function testFunction(cc) {
+    cc.propDouble = undefined;
+}
+");
+    var lConsole: ScriptTestConsole := new ScriptTestConsole();
+    engine.RunFunction('testFunction', lConsole);
+
+    Assert.True(Double.IsNaN(lConsole.propDouble));
+  end;
+end;
+
+
+method NetTypeConverter.Double_valueOf_DoesntFail();
+begin
+  using engine := new EcmaScriptComponent() do begin
+    engine.Include('test',
+"
+function testFunction(cc) {
+    cc.propDouble = 1.2;
+    cc.propDouble = cc.propDouble.valueOf() + 0.1;
+}
+");
+    var lConsole: ScriptTestConsole := new ScriptTestConsole();
+    engine.RunFunction('testFunction', lConsole);
+
+    Assert.Equal<Double>(1.3, lConsole.propDouble);
   end;
 end;
 
