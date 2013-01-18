@@ -351,9 +351,15 @@ end;
 
 class method EcmaScriptObjectWrapper.ConvertTo(value: Object;  &type: &Type): Object;
 begin
-  // Undefined Double is Double.NaN, not just nil
-  if (&type = typeOf(Double)) and  ((value = Undefined.Instance) or (not assigned(value))) then
-    exit Double.NaN;
+  // Undefined -> Double is Double.NaN, not just nil
+  // Null -> Double is 0.0, not just nil
+  if &type = typeOf(Double) then begin
+    if value = Undefined.Instance then
+      exit Double.NaN;
+
+    if not assigned(value) then
+      exit 0;
+  end;
 
   if (not assigned(value)) then
     exit nil;
