@@ -1,5 +1,6 @@
 ﻿{
-  Copyright (c) 2009-2011 RemObjects Software. See LICENSE.txt for more details.
+  Copyright (c) 2009-2013 RemObjects Software, LLC.
+  See LICENSE.txt for more details.
 }
 
 namespace RemObjects.Script;
@@ -87,14 +88,15 @@ type
     method set_Status(value: ScriptStatus);
     method set_RunInThread(value: Boolean);
     method CheckShouldPause;
+
   protected
     fLastFrame: Integer;
-    fExceptionResult: Exception;
     fStackList: List<ScriptStackFrame> := new List<ScriptStackFrame>;
     fGlobals: ScriptScope;
     fEntryStatus: ScriptStatus := ScriptStatus.Running;
     method IntRun: Object; abstract;
     method SetDebug(b: Boolean); virtual;
+
   public
     constructor;
     [Category('Script')]
@@ -127,7 +129,7 @@ type
     ///   if you want to use the debugger</summary>
     method Run; 
     property RunResult: Object read fRunResult;
-    property RunException: Exception read fExceptionResult;
+    property RunException: Exception read protected write;
     property DebugLastPos: PositionPair read fDebugLastPos;
 
     /// <summary>Returns if there is a function by that name. After calling Run the global object
@@ -137,8 +139,8 @@ type
     /// <summary>Executes the given function by name. After calling Run the global object
     ///   will contain a list of all functions, these can be called
     ///   by name. Note this only works after calling Run fihrst.</summary>
-    method RunFunction(aName: String; params args: Array of Object): Object; 
-    method RunFunction(aInitialStatus: ScriptStatus; aName: String; params args: Array of Object): Object; abstract;
+    method RunFunction(name: String;  params args: array of Object): Object; 
+    method RunFunction(initialStatus: ScriptStatus;  name: String;  params args: array of Object): Object; abstract;
 
     property Status: ScriptStatus read fStatus protected write set_Status;
     method StepInto;
@@ -189,7 +191,7 @@ type
     property GlobalObject: RemObjects.Script.EcmaScript.GlobalObject read fGlobalObject;
     method ExposeType(&type: &Type;  name: String); override;
     method HasFunction(aName: String): Boolean; override;
-    method RunFunction(aInitialStatus: ScriptStatus; aName: String; params args: Array of Object): Object; override;
+    method RunFunction(initialStatus: ScriptStatus;  name: String;  params args: array of Object): Object; override;
   end;
 
 
@@ -334,7 +336,7 @@ end;
 
 
 
-method ScriptComponent.Run;
+method ScriptComponent.Run();
 begin
   if fRunInThread then begin
     locking self do begin
@@ -348,13 +350,13 @@ begin
       end else if Status <> ScriptStatus.Stopped then raise new ScriptComponentException(RemObjects.Script.Properties.Resources.eAlreadyRunning);
       Status := ScriptStatus.Running;
     end;
-      fExceptionResult := nil;
-      fWorkThread := new System.Threading.Thread(method begin
+    self.RunException := nil;
+    fWorkThread := new System.Threading.Thread(method begin
         try
           fRunResult := IntRun;
         except
           on e: Exception do
-            fExceptionResult := e;
+            self.RunException := e;
         end;
       end);
       try
@@ -494,34 +496,62 @@ begin
 
 end;
 
-method ScriptComponent.RunFunction(aName: String; params args: Array of Object): Object;
+
+method ScriptComponent.RunFunction(name: String;  params args: array of Object): Object;
 begin
-  exit RunFunction(ScriptStatus.Running, aName, args);
+  exit self.RunFunction(ScriptStatus.Running, name, args);
 end;
+
 
 method EcmaScriptComponent.HasFunction(aName: String): Boolean;
 begin
   exit fGlobalObject.Get(aName) is RemObjects.Script.EcmaScript.EcmaScriptBaseFunctionObject;
 end;
 
-method EcmaScriptComponent.RunFunction(aInitialStatus: ScriptStatus; aName: String; params args: Array of Object): Object;
+
+method EcmaScriptComponent.RunFunction(initialStatus: ScriptStatus;  name: String;  params args: array of Object): Object;
 begin
   try
-    var lItem := fGlobalObject.Get(aName) as RemObjects.Script.EcmaScript.EcmaScriptBaseFunctionObject;
-    if lItem = nil then raise new ScriptComponentException(String.Format(RemObjects.Script.Properties.Resources.eNoSuchFunction, aName));
-    if args = nil then args := [];
-    if aInitialStatus = ScriptStatus.StepInto then begin
-      Status := aInitialStatus;
+    var lItem := fGlobalObject.Get(name) as RemObjects.Script.EcmaScript.EcmaScriptBaseFunctionObject;
+
+    if not assigned(lItem) then
+      raise new ScriptComponentException(String.Format(RemObjects.Script.Properties.Resources.eNoSuchFunction, name));
+
+    if args = nil then
+      args := [];
+
+    if initialStatus = ScriptStatus.StepInto then begin
+      self.Status := initialStatus;
       fLastFrame := fStackList.Count;
-    end else
-      Status := ScriptStatus.Running;
+    end
+    else begin
+      self.Status := ScriptStatus.Running;
+    end;
+
     exit lItem.Call(fRoot, args.Select(a->EcmaScriptScope.DoTryWrap(fGlobalObject, a)).ToArray());
+
+  except
+    on e: ScriptRuntimeException where assigned(EcmaScriptObjectWrapper(e.Original)) do begin
+      if EcmaScriptObjectWrapper(e.Original).Value is Exception then
+        self.RunException := Exception(EcmaScriptObjectWrapper(e.Original).Value)
+      else
+       self.RunException := e;
+
+      raise;
+    end;
+
+    on e: ScriptRuntimeException where assigned(EcmaScriptObject(e.Original)) do begin
+      self.RunException := new ScriptRuntimeException(EcmaScriptObject(e.Original).ToString());
+
+      raise;
+    end;
   finally
     Status := ScriptStatus.Stopped;
   end;
 end;
 
-method EcmaScriptComponent.IntRun: Object;
+
+method EcmaScriptComponent.IntRun(): Object;
 begin
   Status := fEntryStatus; 
   fEntryStatus := ScriptStatus.Running;
@@ -532,8 +562,16 @@ begin
     var lCallback := fCompiler.Parse(SourceFileName, Source);
     result := lCallback(fRoot, fGlobalObject, []);
   except
-    on e: ScriptRuntimeException where EcmaScriptObjectWrapper(e.Original):Value is Exception do 
-      fExceptionResult := Exception(EcmaScriptObjectWrapper(e.Original).Value);
+    on e: ScriptRuntimeException where assigned(EcmaScriptObjectWrapper(e.Original)) do begin
+      if EcmaScriptObjectWrapper(e.Original).Value is Exception then
+        self.RunException := Exception(EcmaScriptObjectWrapper(e.Original).Value)
+      else
+       self.RunException := e;
+    end;
+    on e: ScriptRuntimeException where assigned(EcmaScriptObject(e.Original)) do begin
+      self.RunException := new ScriptRuntimeException(EcmaScriptObject(e.Original).ToString());
+      raise;
+    end;
     on e: ScriptAbortException do
       exit Undefined.Instance;
   finally
