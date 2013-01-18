@@ -415,6 +415,9 @@ begin
     // Arbitrary Strings are converted to Boolean using simple rule - empty string is False, anything else is True
     if value.GetType() = typeOf(String) then
       exit not String.IsNullOrEmpty(String(value));
+
+    if (value is EcmaScriptObject) then
+      exit true;
   end;
 
   // In JS Boolean .toString is always lowercased, while .NET returs 'True' or 'False'
