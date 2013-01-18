@@ -69,6 +69,7 @@ type
     constructor();
 
     property propDate: DateTime read write;
+    property propString: String read write;
 
     method writeString(s: String);
 
@@ -90,6 +91,9 @@ type
 
     [Fact]
     method DatePropertyAcceptsNumber();
+
+    [Fact]
+    method BooleanValuesAreConvertedToStringProperly();
 
     [Fact]
     method _ToString_IsCalledWhenScriptCalls_toString_();
@@ -185,6 +189,37 @@ function testFunction(cc) {
     engine.RunFunction('testFunction', lConsole);
 
     Assert.Equal<String>('Custom .ToString call result||Custom .ToString call result||', lConsole.GetStringBuffer());
+  end;
+end;
+
+
+method NetTypeConverter.BooleanValuesAreConvertedToStringProperly();
+begin
+  using engine := new EcmaScriptComponent() do begin
+    engine.Include('test',
+"
+function testFunction(cc) {
+    cc.propString = true;// lead to 'True'
+    cc.writeString(cc.propString);
+    cc.writeString(true);// lead to 'True'
+
+    cc.propString = new Boolean(true);// lead to 'true'
+    cc.writeString(cc.propString);
+    cc.writeString(new Boolean(true));// lead to dirfferent presentation in string format 'True' when up one is 'true'
+
+    cc.propString = false;// lead to 'False'
+    cc.writeString(cc.propString);
+    cc.writeString(false);// lead to 'False'
+
+    cc.propString = new Boolean(false);// lead to 'false'
+    cc.writeString(cc.propString);
+    cc.writeString(new Boolean(false));// lead to dirfferent presentation in string format 'False' when up one is 'false'
+}
+");
+    var lConsole: ScriptTestConsole := new ScriptTestConsole();
+    engine.RunFunction('testFunction', lConsole);
+
+    Assert.Equal<String>('true||true||true||true||false||false||false||false||', lConsole.GetStringBuffer());
   end;
 end;
 
