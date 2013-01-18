@@ -416,6 +416,10 @@ begin
     if value.GetType() = typeOf(String) then
       exit not String.IsNullOrEmpty(String(value));
   end;
+
+  // In JS Boolean .toString is always lowercased, while .NET returs 'True' or 'False'
+  if (value.GetType() = typeOf(Boolean)) and (&type = typeOf(String)) then
+    exit iif(Boolean(value), 'true', 'false');
 {$ENDREGION}
 
 {$REGION Double }
