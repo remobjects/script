@@ -3,12 +3,14 @@
 interface
 
 uses
+  System.Text,
   Xunit,
   RemObjects.Script;
 
 type
   ScriptTestConsole = class
   private
+    var fStringBuffer: StringBuilder;
     //var     bag: Dictionary<System.Object, System.Object> := new Dictionary<System.Object, System.Object>();
 //
   //public
@@ -64,7 +66,14 @@ type
 //
     //method ThrowException;
   public
+    constructor();
+
     property propDate: DateTime read write;
+
+    method writeString(s: String);
+
+    method ToString(): String; override;
+    method GetStringBuffer(): String;
   end;
 
 
@@ -81,6 +90,9 @@ type
 
     [Fact]
     method DatePropertyAcceptsNumber();
+
+    [Fact]
+    method _ToString_IsCalledWhenScriptCalls_toString_();
   end;
 
 
@@ -156,10 +168,52 @@ function testFunction(cc) {
 end;
 
 
-//constructor RemObjectsConsole;
-//begin
-//
-//end;
+method NetTypeConverter._ToString_IsCalledWhenScriptCalls_toString_();
+begin
+  using engine := new EcmaScriptComponent() do begin
+    engine.Include('test',
+"
+function testFunction(cc) {
+    // Result should be the same!
+    var ts0 = cc.toString();
+    var ts1 = cc.ToString();
+    cc.writeString(ts0);
+    cc.writeString(ts1);
+}
+");
+    var lConsole: ScriptTestConsole := new ScriptTestConsole();
+    engine.RunFunction('testFunction', lConsole);
+
+    Assert.Equal<String>('Custom .ToString call result||Custom .ToString call result||', lConsole.GetStringBuffer());
+  end;
+end;
+
+
+constructor ScriptTestConsole();
+begin
+  self.fStringBuffer := new StringBuilder();
+end;
+
+
+method ScriptTestConsole.writeString(s: String);
+begin
+  self.fStringBuffer.Append(s);
+  self.fStringBuffer.Append('||');
+end;
+
+
+method ScriptTestConsole.GetStringBuffer(): String;
+begin
+  exit self.fStringBuffer.ToString();
+end;
+
+
+method ScriptTestConsole.ToString(): String;
+begin
+  exit 'Custom .ToString call result';
+end;
+
+
 //
 //method RemObjectsConsole.set_propDouble(value: System.Double); begin
   //Console.WriteLine('propDouble:{0}', value)
