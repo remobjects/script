@@ -58,7 +58,11 @@ type
     [InlineData('writeln(JSType.Foo());',                     'JSType', 'Bar')]
     [InlineData('var x = new SimpleCLRType(); writeln(x.A);', '',       '42')]
     method ExposeType(aScript: String;  aTypeName: String;  aExpectedResult: String);
+
+    [Fact]
+    method RunFunction_Exception_IsNotLost();
   end;
+
 
   LDA = public class
   private
@@ -416,6 +420,24 @@ begin
       "
       JSON.stringify(new Date());
       ");
+end;
+
+
+method Scripts.RunFunction_Exception_IsNotLost();
+begin
+  var lScriptEngine := new RemObjects.Script.EcmaScriptComponent();
+  lScriptEngine.Debug := false;
+  lScriptEngine.RunInThread := false;
+
+  var lWasExceptionRaised: Boolean := false;
+  try
+    lScriptEngine.RunFunction('eval', "throw new Error('test error...');");
+  except
+    lWasExceptionRaised := true;
+  end;
+
+  Assert.True(lWasExceptionRaised, 'Exception was not raised in the .NET code');
+  Assert.NotNull(lScriptEngine.RunException);
 end;
 
 
