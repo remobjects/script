@@ -34,14 +34,14 @@ type
   public
     constructor; empty;
     constructor(aScope: EnvironmentRecord; aStrict: Boolean);
-    
+
     method &With(aVal: Object): ExecutionContext;
-    class method Catch(aVal: Object; ex: ExecutionContext; aName: String): ExecutionContext;
+    class method Catch(value: Object;  context: ExecutionContext;  name: String): ExecutionContext;
 
     property Strict: Boolean;
     property LexicalScope: EnvironmentRecord;
     property VariableScope: EnvironmentRecord;
-    
+
     property Global: GlobalObject read get_Global;
 
     method StoreParameter(Args: array of Object; index: Integer; name: String; aStrict: Boolean);
@@ -403,12 +403,20 @@ begin
   exit new ExecutionContext(new ObjectEnvironmentRecord(LexicalScope, Utilities.ToObject(self, aVal), true), false);
 end;
 
-class method ExecutionContext.Catch(aVal: Object; ex: ExecutionContext; aName: String): ExecutionContext;
+
+class method ExecutionContext.Catch(value: Object;  context: ExecutionContext;  name: String): ExecutionContext;
 begin
-  result := new ExecutionContext(new DeclarativeEnvironmentRecord(ex.LexicalScope, ex.Global), ex.Strict);
-  result.LexicalScope.CreateMutableBinding(aName, false);
-  result.LexicalScope.SetMutableBinding(aName, aVal, false);
+  var lResult: ExecutionContext := new ExecutionContext(new DeclarativeEnvironmentRecord(context.LexicalScope, context.Global), context.Strict);
+  lResult.LexicalScope.CreateMutableBinding(name, false);
+
+  if (value is EcmaScriptObjectWrapper) and (EcmaScriptObjectWrapper(value).Value is Exception) then
+    lResult.LexicalScope.SetMutableBinding(name, lResult.Global.ErrorCtor(lResult, nil, Exception(EcmaScriptObjectWrapper(value).Value).Message), false)
+  else
+    lResult.LexicalScope.SetMutableBinding(name, value, false);
+
+  exit lResult;
 end;
+
 
 method ExecutionContext.get_Global: GlobalObject;
 begin
