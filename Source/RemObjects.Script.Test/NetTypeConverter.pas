@@ -75,6 +75,7 @@ type
     property propString: String read write;
 
     method writeString(s: String);
+    method throwException();
 
     method ToString(): String; override;
     method GetStringBuffer(): String;
@@ -127,6 +128,9 @@ type
 
     [Fact]
     method Double_valueOf_DoesntFail();
+
+    [Fact]
+    method ExceptionMessage_Is_Not_Empty();
   end;
 
 
@@ -334,6 +338,32 @@ function testFunction(cc) {
 end;
 
 
+method NetTypeConverter.ExceptionMessage_Is_Not_Empty();
+begin
+  using engine := new EcmaScriptComponent() do begin
+    engine.Include('test',
+"
+function testFunction(cc) {
+    try
+    {
+        cc.throwException();
+    }
+    catch(e)
+    {
+        cc.writeString(e.message);//is empty???, when .Net exception no message property exists, may be is need native .Net exception
+    }}
+");
+    var lConsole: ScriptTestConsole := new ScriptTestConsole();
+    try
+      engine.RunFunction('testFunction', lConsole);
+    except
+    end;
+
+    Assert.Equal<String>('Test Message||', lConsole.GetStringBuffer());
+  end;
+end;
+
+
 constructor ScriptTestConsole();
 begin
   self.fStringBuffer := new StringBuilder();
@@ -356,6 +386,12 @@ end;
 method ScriptTestConsole.ToString(): String;
 begin
   exit 'Custom .ToString call result';
+end;
+
+
+method ScriptTestConsole.throwException();
+begin
+  raise new Exception('Test Message');
 end;
 
 
