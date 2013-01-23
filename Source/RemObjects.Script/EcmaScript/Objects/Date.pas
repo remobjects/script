@@ -17,11 +17,11 @@ uses
 type
   GlobalObject = public partial class(EcmaScriptObject)
   private
-    class var Epoch: Int64 := new DateTime(1970, 1, 1).Ticks; readonly;
+    class var Epoch: Double := new DateTime(1970, 1, 1).Ticks; readonly;
 
   public
-    class method DateTimeToUnix(date: DateTime): Int64;
-    class method UnixToDateTime(date: Int64): DateTime;
+    class method DateTimeToUnix(date: DateTime): Double;
+    class method UnixToDateTime(date: Double): DateTime;
 
     method CreateDate: EcmaScriptObject;
     method DateCall(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
@@ -89,21 +89,33 @@ type
 implementation
 
 
-class method GlobalObject.DateTimeToUnix(date: DateTime): Int64;
+class method GlobalObject.DateTimeToUnix(date: DateTime): Double;
 begin
-  exit  ((date.Ticks - GlobalObject.Epoch)/10000000);
+  exit (date.Ticks - GlobalObject.Epoch)/10000000.00;
 end;
 
 
-class method GlobalObject.UnixToDateTime(date: Int64): DateTime;
+class method GlobalObject.UnixToDateTime(date: Double): DateTime;
 begin
-  date := (date * 10000000) + GlobalObject.Epoch;
+  date := Math.Round(date*1000.00, 0);
+  date := (date * 10000.00) + GlobalObject.Epoch;
   if  (date > DateTime.MaxValue.Ticks)  then
     date := DateTime.MaxValue.Ticks
   else if  (date < DateTime.MinValue.Ticks)  then
     date := DateTime.MinValue.Ticks;
 
-  exit  (new DateTime(date));
+  var lTicks: Int64 := 0;
+
+  // This oddly looking convesion is needed to
+  //1. Properly handle dates prior to 1970
+  //2. Remove sub-millisecond noise that sneaks into result due to the Double precison loss
+  date := Math.Round(date/1000.00,0);
+  if date < 0 then
+    lTicks := Convert.ToInt64(Math.Ceiling(date))*1000
+  else
+    lTicks := Convert.ToInt64(Math.Floor(date))*1000;
+
+  exit new DateTime(lTicks);
 end;
 
 
@@ -177,6 +189,7 @@ begin
   Result := DateCtor(nil, []):ToString();
 end;
 
+
 method GlobalObject.DateCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   var lValue: Double;
@@ -184,17 +197,22 @@ begin
     lValue := DateTimeToUnix(DateTime.UtcNow);
   end
   else if args.Length = 1 then begin
-    if args[0] is EcmaScriptObject then args[0] := EcmaScriptObject(args[0]).Value;
+    if args[0] is EcmaScriptObject then
+      args[0] := EcmaScriptObject(args[0]).Value;
     if args[0] is String then begin
       exit DateParse(aCaller, aSelf, args[0]);
-    end else begin
+    end
+    else begin
       lValue := Utilities.GetArgAsDouble(args, 0, aCaller);
-      if Double.IsInfinity(lValue ) then lValue := Double.NaN;
-      if not Double.IsNaN(lValue) then
+      if Double.IsInfinity(lValue ) then
+        lValue := Double.NaN;
+
+      if not Double.IsNaN(lValue) then begin
         if lValue < 0 then
           lValue := Math.Ceiling(lValue)
         else
           lValue := Math.Floor(lValue);
+      end;
     end;
   end
   else begin
@@ -205,11 +223,16 @@ begin
     var lMinute := Utilities.GetArgAsInteger(args, 4, aCaller);
     var lSec := Utilities.GetArgAsInteger(args, 5, aCaller);
     var lMSec := Utilities.GetArgAsInteger(args, 6, aCaller);
-    if lDay = 0 then lDay := 1;
-    lValue := DateTimeToUnix(new DateTime(lYear, lMonth, lDay, lHour, lMinute, lSec, lMSec).ToUniversalTime);
+    if lDay = 0 then
+      lDay := 1;
+
+    lValue := DateTimeToUnix(new DateTime(lYear, lMonth, lDay, lHour, lMinute, lSec, lMSec).ToUniversalTime());
   end;
-  if Double.IsInfinity(lValue) then lValue := Double.NaN;
-  result := new EcmaScriptObject(self, DatePrototype, &Class := 'Date', Value := lValue);
+
+  if Double.IsInfinity(lValue) then
+    lValue := Double.NaN;
+
+  exit new EcmaScriptObject(self, DatePrototype, &Class := 'Date', Value := lValue);
 end;
 
 
@@ -244,38 +267,38 @@ method GlobalObject.DateToString(caller: ExecutionContext;  &self: Object;  para
 begin
   var lSelf: Object := coalesce(EcmaScriptObject(&self):Value, &self);
 
-  exit UnixToDateTime(Utilities.GetObjAsInt64(lSelf, caller)).ToLocalTime().ToString(System.Globalization.DateTimeFormatInfo.CurrentInfo);
+  exit UnixToDateTime(Utilities.GetObjAsDouble(lSelf, caller)).ToLocalTime().ToString(System.Globalization.DateTimeFormatInfo.CurrentInfo);
 end;
 
 
 method GlobalObject.DateToUTCString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  exit UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToString(System.Globalization.DateTimeFormatInfo.InvariantInfo);
+  exit UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToString(System.Globalization.DateTimeFormatInfo.InvariantInfo);
 end;
 
 method GlobalObject.DateToDateString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  exit UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime.ToString('d', System.Globalization.DateTimeFormatInfo.InvariantInfo);
+  exit UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime.ToString('d', System.Globalization.DateTimeFormatInfo.InvariantInfo);
 end;
 
 method GlobalObject.DateToTimeString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  exit UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime.ToString('T', System.Globalization.DateTimeFormatInfo.InvariantInfo);
+  exit UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime.ToString('T', System.Globalization.DateTimeFormatInfo.InvariantInfo);
 end;
 
 method GlobalObject.DateToLocaleString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  exit UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime.ToString(System.Globalization.DateTimeFormatInfo.CurrentInfo);
+  exit UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime.ToString(System.Globalization.DateTimeFormatInfo.CurrentInfo);
 end;
 
 method GlobalObject.DateToLocaleDateString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  exit UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime.ToString('d', System.Globalization.DateTimeFormatInfo.CurrentInfo);
+  exit UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime.ToString('d', System.Globalization.DateTimeFormatInfo.CurrentInfo);
 end;
 
 method GlobalObject.DateToLocaleTimeString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  exit UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime.ToString('T', System.Globalization.DateTimeFormatInfo.CurrentInfo);
+  exit UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime.ToString('T', System.Globalization.DateTimeFormatInfo.CurrentInfo);
 end;
 
 
@@ -297,21 +320,21 @@ end;
 method GlobalObject.DateGetFullYear(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   if Double.IsNaN(Utilities.GetObjAsDouble(aSelf, aCaller)) then exit Double.NaN;
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime;
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime;
   exit lValue.Year;
 end;
 
 method GlobalObject.DateGetUTCFullYear(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   if Double.IsNaN(Utilities.GetObjAsDouble(aSelf, aCaller)) then exit Double.NaN;
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller));
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller));
   exit lValue.Year;
 end;
 
 method GlobalObject.DateGetMonth(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   if Double.IsNaN(Utilities.GetObjAsDouble(aSelf, aCaller)) then exit Double.NaN;
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime;
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime;
   exit lValue.Month -1;
 end;
 
@@ -321,7 +344,7 @@ begin
   if Double.IsNaN(Utilities.GetObjAsDouble(&self, caller)) then
     exit Double.NaN;
 
-  var lValue: DateTime := UnixToDateTime(Utilities.GetObjAsInt64(&self, caller));
+  var lValue: DateTime := UnixToDateTime(Utilities.GetObjAsDouble(&self, caller));
 
   exit lValue.Month-1;
 end;
@@ -330,91 +353,91 @@ end;
 method GlobalObject.DateGetDate(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   if Double.IsNaN(Utilities.GetObjAsDouble(aSelf, aCaller)) then exit Double.NaN;
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime;
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime;
   exit lValue.Day;
 end;
 
 method GlobalObject.DateGetUTCDate(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   if Double.IsNaN(Utilities.GetObjAsDouble(aSelf, aCaller)) then exit Double.NaN;
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller));
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller));
   exit lValue.Day;
 end;
 
 method GlobalObject.DateGetDay(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
 if Double.IsNaN(Utilities.GetObjAsDouble(aSelf, aCaller)) then exit Double.NaN;
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime;
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime;
   exit lValue.DayOfWeek;
 end;
 
 method GlobalObject.DateGetUTCDay(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   if Double.IsNaN(Utilities.GetObjAsDouble(aSelf, aCaller)) then exit Double.NaN;
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller));
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller));
   exit lValue.DayOfWeek;
 end;
 
 method GlobalObject.DateGetHours(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   if Double.IsNaN(Utilities.GetObjAsDouble(aSelf, aCaller)) then exit Double.NaN;
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime;
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime;
   exit lValue.Hour;
 end;
 
 method GlobalObject.DateGetUTCHours(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   if Double.IsNaN(Utilities.GetObjAsDouble(aSelf, aCaller)) then exit Double.NaN;
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller));
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller));
   exit lValue.Hour;
 end;
 
 method GlobalObject.DateGetMinutes(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   if Double.IsNaN(Utilities.GetObjAsDouble(aSelf, aCaller)) then exit Double.NaN;
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime;
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime;
   exit lValue.Minute;
 end;
 
 method GlobalObject.DateGetUTCMinutes(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
 if Double.IsNaN(Utilities.GetObjAsDouble(aSelf, aCaller)) then exit Double.NaN;
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller));
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller));
   exit lValue.Minute;
 end;
 
 method GlobalObject.DateGetSeconds(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
 if Double.IsNaN(Utilities.GetObjAsDouble(aSelf, aCaller)) then exit Double.NaN;
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime;
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime;
   exit lValue.Second;
 end;
 
 method GlobalObject.DateGetUTCSeconds(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   if Double.IsNaN(Utilities.GetObjAsDouble(aSelf, aCaller)) then exit Double.NaN;
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller));
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller));
   exit lValue.Second;
 end;
 
 method GlobalObject.DateGetMilliseconds(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   if Double.IsNaN(Utilities.GetObjAsDouble(aSelf, aCaller)) then exit Double.NaN;
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime;
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime;
   exit lValue.Millisecond;
 end;
 
 method GlobalObject.DateGetUTCMilliseconds(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   if Double.IsNaN(Utilities.GetObjAsDouble(aSelf, aCaller)) then exit Double.NaN;
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller));
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller));
   exit lValue.Millisecond;
 end;
 
 method GlobalObject.DateGetTimezoneOffset(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   if Double.IsNaN(Utilities.GetObjAsDouble(aSelf, aCaller)) then exit Double.NaN;
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller));
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller));
   exit (lValue.ToUniversalTime - lValue).TotalMinutes;
 end;
 
@@ -425,21 +448,21 @@ end;
 
 method GlobalObject.DateSetMilliseconds(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime;
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime;
   lValue := new DateTime(lValue.Year, lValue.Month, lValue.Day, lValue.Hour, lValue.Minute, lValue.Second, Utilities.GetArgAsInt64(args, 0, aCaller));
   (aSelf as EcmaScriptObject).Value := DateTimeToUnix(lValue.ToUniversalTime);
 end;
 
 method GlobalObject.DateSetUTCMilliseconds(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller));
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller));
   lValue := new DateTime(lValue.Year, lValue.Month, lValue.Day, lValue.Hour, lValue.Minute, lValue.Second, Utilities.GetArgAsInt64(args, 0, aCaller));
   (aSelf as EcmaScriptObject).Value := DateTimeToUnix(lValue);
 end;
 
 method GlobalObject.DateSetSeconds(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime;
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime;
   lValue := new DateTime(lValue.Year, lValue.Month, lValue.Day, lValue.Hour, lValue.Minute, 
     Utilities.GetArgAsInteger(args, 0, aCaller),
     iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller), lValue.Millisecond));
@@ -448,7 +471,7 @@ end;
 
 method GlobalObject.DateSetUTCSeconds(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller));
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller));
   lValue := new DateTime(lValue.Year, lValue.Month, lValue.Day, lValue.Hour, lValue.Minute, 
     Utilities.GetArgAsInteger(args, 0, aCaller),
     iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller), lValue.Millisecond));
@@ -457,7 +480,7 @@ end;
 
 method GlobalObject.DateSetMinutes(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime;
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime;
   lValue := new DateTime(lValue.Year, lValue.Month, lValue.Day, lValue.Hour, 
     Utilities.GetArgAsInteger(args, 0, aCaller),
     iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller), lValue.Second),
@@ -467,7 +490,7 @@ end;
 
 method GlobalObject.DateSetUTCMinutes(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller));
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller));
   lValue := new DateTime(lValue.Year, lValue.Month, lValue.Day, lValue.Hour, 
     Utilities.GetArgAsInteger(args, 0, aCaller),
     iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller), lValue.Second),
@@ -477,7 +500,7 @@ end;
 
 method GlobalObject.DateSetHours(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime;
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime;
   lValue := new DateTime(lValue.Year, lValue.Month, lValue.Day, 
     Utilities.GetArgAsInteger(args, 0, aCaller),
     iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller), lValue.Minute),
@@ -488,7 +511,7 @@ end;
 
 method GlobalObject.DateSetUTCHours(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller));
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller));
   lValue := new DateTime(lValue.Year, lValue.Month, lValue.Day, 
     Utilities.GetArgAsInteger(args, 0, aCaller),
     iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller), lValue.Minute),
@@ -499,7 +522,7 @@ end;
 
 method GlobalObject.DateSetDate(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime;
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime;
   lValue := new DateTime(lValue.Year, lValue.Month,
     Utilities.GetArgAsInteger(args, 0, aCaller),
     lValue.Hour,
@@ -511,7 +534,7 @@ end;
 
 method GlobalObject.DateSetUTCDate(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller));
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller));
   lValue := new DateTime(lValue.Year, lValue.Month,
     Utilities.GetArgAsInteger(args, 0, aCaller),
     lValue.Hour,
@@ -523,7 +546,7 @@ end;
 
 method GlobalObject.DateSetMonth(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime;
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime;
   lValue := new DateTime(lValue.Year, 
     Utilities.GetArgAsInteger(args, 0, aCaller),
     iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller), 0),
@@ -537,7 +560,7 @@ end;
 
 method GlobalObject.DateSetUTCMonth(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller));
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller));
   lValue := new DateTime(lValue.Year, 
     Utilities.GetArgAsInteger(args, 0, aCaller),
     iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller), 0),
@@ -550,7 +573,7 @@ end;
 
 method GlobalObject.DateSetFullYear(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime;
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime;
   lValue := new DateTime(Utilities.GetArgAsInteger(args, 0, aCaller), 
     iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller), 0),
     iif(args.Length > 2, Utilities.GetArgAsInteger(args, 2, aCaller), 0),
@@ -563,7 +586,7 @@ end;
 
 method GlobalObject.DateSetUTCFullYear(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller));
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller));
   lValue := new DateTime(Utilities.GetArgAsInteger(args, 0, aCaller), 
     iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller), 0),
     iif(args.Length > 2, Utilities.GetArgAsInteger(args, 2, aCaller), 0),
@@ -587,7 +610,7 @@ end;
 
 method GlobalObject.DateToISOString(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  exit  (GlobalObject.UnixToDateTime(Utilities.GetObjAsInt64(&self, caller)).ToString('s', System.Globalization.DateTimeFormatInfo.InvariantInfo));
+  exit  (GlobalObject.UnixToDateTime(Utilities.GetObjAsDouble(&self, caller)).ToString('s', System.Globalization.DateTimeFormatInfo.InvariantInfo));
 end;
 
 
@@ -605,7 +628,7 @@ end;
 method GlobalObject.DateGetYear(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   if Double.IsNaN(Utilities.GetObjAsDouble(aSelf, aCaller)) then exit Double.NaN;
-  var lValue := UnixToDateTime(Utilities.GetObjAsInt64(aSelf, aCaller)).ToLocalTime;
+  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime;
   exit lValue.Year mod 100;
 end;
 

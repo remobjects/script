@@ -276,7 +276,7 @@ begin
       if scriptObject.Value.GetType() = typeOf(DateTime) then
         parameters[i] := DateTime(scriptObject.Value).ToLocalTime()
       else
-        parameters[i] := GlobalObject.UnixToDateTime(Convert.ToInt64(scriptObject.Value)).ToLocalTime()
+        parameters[i] := GlobalObject.UnixToDateTime(Convert.ToDouble(scriptObject.Value)).ToLocalTime()
     end;
   end;
 
@@ -351,9 +351,15 @@ end;
 
 class method EcmaScriptObjectWrapper.ConvertTo(value: Object;  &type: &Type): Object;
 begin
-  // Undefined Double is Double.NaN, not just nil
-  if (&type = typeOf(Double)) and  ((value = Undefined.Instance) or (not assigned(value))) then
-    exit Double.NaN;
+  // Undefined -> Double is Double.NaN, not just nil
+  // Null -> Double is 0.0, not just nil
+  if &type = typeOf(Double) then begin
+    if value = Undefined.Instance then
+      exit Double.NaN;
+
+    if not assigned(value) then
+      exit 0;
+  end;
 
   if (not assigned(value)) then
     exit nil;
@@ -370,7 +376,7 @@ begin
       if wrapper.Value.GetType() = typeOf(DateTime) then
         value := DateTime(wrapper.Value).ToLocalTime()
       else
-        value := GlobalObject.UnixToDateTime(Convert.ToInt64(wrapper.Value)).ToLocalTime();
+        value := GlobalObject.UnixToDateTime(Convert.ToDouble(wrapper.Value)).ToLocalTime();
 
       exit ConvertTo(value, &type);
     end;
@@ -391,8 +397,8 @@ begin
   // Double -> DateTime conversion
   // type in [ .. ] doesn't compile on Silverlight
   var lValueType: &Type := value.GetType();
-  if (&type = typeOf(DateTime)) and ((lValueType = typeOf(Int32)) or (lValueType = typeOf(Int64)) or (lValueType = typeOf(UInt32)) or (lValueType = typeOf(UInt64))) then
-    exit GlobalObject.UnixToDateTime(Convert.ToInt64(value)).ToLocalTime();
+  if (&type = typeOf(DateTime)) and ((lValueType = typeOf(Double)) or (lValueType = typeOf(Int32)) or (lValueType = typeOf(Int64)) or (lValueType = typeOf(UInt32)) or (lValueType = typeOf(UInt64))) then
+    exit GlobalObject.UnixToDateTime(Convert.ToDouble(value)).ToLocalTime();
 
   // Implicitly convert Date to its String representation while sending it to .NET code
   if value.GetType() = typeOf(DateTime) then begin
@@ -415,7 +421,14 @@ begin
     // Arbitrary Strings are converted to Boolean using simple rule - empty string is False, anything else is True
     if value.GetType() = typeOf(String) then
       exit not String.IsNullOrEmpty(String(value));
+
+    if (value is EcmaScriptObject) then
+      exit true;
   end;
+
+  // In JS Boolean .toString is always lowercased, while .NET returs 'True' or 'False'
+  if (value.GetType() = typeOf(Boolean)) and (&type = typeOf(String)) then
+    exit iif(Boolean(value), 'true', 'false');
 {$ENDREGION}
 
 {$REGION Double }

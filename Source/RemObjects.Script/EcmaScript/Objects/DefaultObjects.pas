@@ -70,7 +70,7 @@ type
     property Thrower: EcmaScriptFunctionObject;
     property NativePrototype: EcmaScriptObject;
     property NotStrictGlobalEvalFunc: EcmaScriptFunctionObject;
-    method NativeToString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+    method NativeToString(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
     method eval(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method NotStrictGlobalEval(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method InnerEval(aCaller: ExecutionContext; aStrict: Boolean; aSelf: Object; params args: Array of Object): Object;
@@ -685,12 +685,16 @@ begin
   exit fExecutionContext;
 end;
 
-method GlobalObject.NativeToString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.NativeToString(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  var lEl := EcmaScriptObjectWrapper(aSelf);
-  if lEl = nil then RaiseNativeError(NativeErrorType.ReferenceError, 'native toString() is not generic');
-  exit lEl.Type.ToString;
+  var lObject: EcmaScriptObjectWrapper := EcmaScriptObjectWrapper(&self);
+  if not assigned(lObject) then
+    self.RaiseNativeError(NativeErrorType.ReferenceError, 'native toString() is not generic');
+
+  exit lObject.Value:ToString();
 end;
+
 
 method Undefined.ToString: String;
 begin
