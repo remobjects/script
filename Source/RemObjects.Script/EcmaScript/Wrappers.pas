@@ -358,7 +358,7 @@ begin
   if (not assigned(value)) then
     exit nil;
 
-  if value = Undefined.Instance then
+  if (value = Undefined.Instance) and (&type = typeof(Object)) then
     exit nil;
 
   with matching wrapper := EcmaScriptObjectWrapper(value) do
