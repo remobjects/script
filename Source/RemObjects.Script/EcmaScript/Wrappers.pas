@@ -258,9 +258,8 @@ class method EcmaScriptObjectWrapper.FindAndCallBestOverload(methods: List<Metho
                    &self: Object;  parameters: array of Object): Object;
 begin
   var lMethods := methods;
-  var lParameter : ParameterInfo;
 
-  for  i: Int32  :=  0  to  length(parameters)-1  do  begin
+  for i: Int32 := 0 to length(parameters)-1 do begin
     // This code is similar to the one used in .ConvertTo
     // However it cannot be moved there because we have to determine target value types before converting to them
     with matching objectWrapper := EcmaScriptObjectWrapper(parameters[i]) do begin
@@ -297,36 +296,32 @@ begin
   if  ((lParams.Length > 0)  and  (length(lParams[lParams.Length-1].GetCustomAttributes(typeOf(ParamArrayAttribute), false)) > 0)) then 
     lParamStart := lParams.Length -1;
 
-  for  j: Int32  :=  0  to  length(parameters)-1  do  begin
-    if  ((lParamStart <> -1)  and  (j >= lParamStart))  then  begin
-      if  (j = lParamStart)  then
+  for j: Int32 := 0 to length(parameters)-1 do begin
+    if (lParamStart <> -1) and (j >= lParamStart) then begin
+      if j = lParamStart then
         lReal[j] := Array.CreateInstance(lParams[lParams.Length-1].ParameterType.GetElementType, length(parameters) - lParamStart);
 
       Array(lReal[lParamStart]).SetValue(EcmaScriptObjectWrapper.ConvertTo(parameters[j], lParams[lParams.Length-1].ParameterType.GetElementType()), j - lParamStart);
     end
-    else  begin
+    else begin
       lReal[j] := EcmaScriptObjectWrapper.ConvertTo(parameters[j], lParams[j].ParameterType);
     end;
   end;
 
-  for  j: Int32  :=  length(parameters)  to lReal.Length -1 do  begin
-    lParameter := lParams[j];
-    if  ((lParamStart <> -1)  and  (j >= lParamStart))  then  begin
+  for j: Int32 := length(parameters) to lReal.Length -1 do  begin
+    var lParameter: ParameterInfo := lParams[j];
+    if (lParamStart <> -1) and (j >= lParamStart) then begin
       lReal[j] := Array.CreateInstance(lParams[lParams.Length-1].ParameterType.GetElementType, 0);// call method with empty array
       break;// create empty array and exit no more parameters
     end
-    else  begin
-      if (ParameterAttributes.HasDefault = (lParameter.Attributes and ParameterAttributes.HasDefault)) then
-      begin
+    else begin
+      if ParameterAttributes.HasDefault = (lParameter.Attributes and ParameterAttributes.HasDefault) then begin
         lReal[j] := lParameter.RawDefaultValue;
       end
-        else 
-          begin
-            if (System.Type.GetTypeCode(lParameter.ParameterType) = TypeCode.Object) then
-            begin
-              lReal[j] := Undefined.Instance;
-            end;
-          end;
+      else begin
+        if System.Type.GetTypeCode(lParameter.ParameterType) = TypeCode.Object then
+          lReal[j] := Undefined.Instance;
+      end;
     end;
   end;
 
@@ -386,13 +381,8 @@ begin
   if (not assigned(value)) then
     exit nil;
 
-  if (value = Undefined.Instance) then
-  begin
-    if (&type = typeOf(Object)) then
-        exit value
-    else
-        exit nil
-  end;
+  if value = Undefined.Instance then
+    exit iif(&type = typeOf(Object), Undefined.Instance, nil);
 
   with matching wrapper := EcmaScriptObjectWrapper(value) do
     exit ConvertTo(wrapper.Value, &type);
