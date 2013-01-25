@@ -264,7 +264,7 @@ test2
 null
 undefined
 test2
-null";
+undefined";
   Assert.Equal(lExpected.Replace(#13#10, #10).Trim([#13, #9, #32, #10]), fresult.Replace(#13#10, #10).Trim([#13, #9, #32, #10]));
 end;
 

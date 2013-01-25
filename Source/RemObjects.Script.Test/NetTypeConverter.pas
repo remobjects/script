@@ -69,12 +69,14 @@ type
   public
     constructor();
 
+    property propObject: Object read write;
     property propBoolean: Boolean read write;
     property propDate: DateTime read write;
     property propDouble: Double read write;
     property propString: String read write;
 
     method writeString(s: String);
+    method writeObject(o: Object);
     method throwException();
 
     method ToString(): String; override;
@@ -131,6 +133,9 @@ type
 
     [Fact]
     method ExceptionMessage_Is_Not_Empty();
+
+    [Fact]
+    method UnefinedToObject_Equals_Undefined();
   end;
 
 
@@ -364,6 +369,23 @@ function testFunction(cc) {
 end;
 
 
+method NetTypeConverter.UnefinedToObject_Equals_Undefined();
+begin
+  using engine := new EcmaScriptComponent() do begin
+    engine.Include('test',
+"
+function testFunction(cc) {
+    cc.writeObject(undefined);
+}
+");
+    var lConsole: ScriptTestConsole := new ScriptTestConsole();
+    engine.RunFunction('testFunction', lConsole);
+
+    Assert.Equal<Object>(RemObjects.Script.EcmaScript.Undefined.Instance, lConsole.propObject);
+  end;
+end;
+
+
 constructor ScriptTestConsole();
 begin
   self.fStringBuffer := new StringBuilder();
@@ -374,6 +396,12 @@ method ScriptTestConsole.writeString(s: String);
 begin
   self.fStringBuffer.Append(s);
   self.fStringBuffer.Append('||');
+end;
+
+
+method ScriptTestConsole.writeObject(o: Object);
+begin
+  self.propObject := o;
 end;
 
 
