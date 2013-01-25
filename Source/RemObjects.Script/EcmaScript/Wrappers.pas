@@ -258,6 +258,7 @@ class method EcmaScriptObjectWrapper.FindAndCallBestOverload(methods: List<Metho
                    &self: Object;  parameters: array of Object): Object;
 begin
   var lMethods := methods;
+  var lParameter : ParameterInfo;
 
   for  i: Int32  :=  0  to  length(parameters)-1  do  begin
     // This code is similar to the one used in .ConvertTo
@@ -305,6 +306,27 @@ begin
     end
     else  begin
       lReal[j] := EcmaScriptObjectWrapper.ConvertTo(parameters[j], lParams[j].ParameterType);
+    end;
+  end;
+
+  for  j: Int32  :=  length(parameters)  to lReal.Length -1 do  begin
+    lParameter := lParams[j];
+    if  ((lParamStart <> -1)  and  (j >= lParamStart))  then  begin
+      lReal[j] := Array.CreateInstance(lParams[lParams.Length-1].ParameterType.GetElementType, 0);// call method with empty array
+      break;// create empty array and exit no more parameters
+    end
+    else  begin
+      if (ParameterAttributes.HasDefault = (lParameter.Attributes and ParameterAttributes.HasDefault)) then
+      begin
+        lReal[j] := lParameter.RawDefaultValue;
+      end
+        else 
+          begin
+            if (System.Type.GetTypeCode(lParameter.ParameterType) = TypeCode.Object) then
+            begin
+              lReal[j] := Undefined.Instance;
+            end;
+          end;
     end;
   end;
 
@@ -364,8 +386,13 @@ begin
   if (not assigned(value)) then
     exit nil;
 
-  if (value = Undefined.Instance) and (&type = typeof(Object)) then
-    exit nil;
+  if (value = Undefined.Instance) then
+  begin
+    if (&type = typeOf(Object)) then
+        exit value
+    else
+        exit nil
+  end;
 
   with matching wrapper := EcmaScriptObjectWrapper(value) do
     exit ConvertTo(wrapper.Value, &type);
