@@ -1,8 +1,8 @@
 ﻿{
-
-  Copyright (c) 2009-2010 RemObjects Software. See LICENSE.txt for more details.
-
+  Copyright (c) 2009-2013 RemObjects Software, LLC.
+  See LICENSE.txt for more details.
 }
+
 namespace RemObjects.Script.EcmaScript;
 
 interface
@@ -27,18 +27,22 @@ type
     class var Method_Instance: System.Reflection.MethodInfo := typeOf(Undefined).GetMethod('get_Instance'); readonly;
   end;
 
+
   GlobalObject = public partial class(EcmaScriptObject)
   private
-    fExecutionContext: ExecutionContext;
-    fDebug: IDebugSink;
+    var fExecutionContext: ExecutionContext;
+    var fDebug: IDebugSink;
+
     method get_ExecutionContext: ExecutionContext;
     method get_Debug: IDebugSink;
+
   assembly
     fParser: EcmaScriptCompiler;
     fDelegates: List<InternalFunctionDelegate> := new List<InternalFunctionDelegate>;
+
   public
-    constructor (aParser: EcmaScriptCompiler);
-		constructor;
+    constructor(aParser: EcmaScriptCompiler);
+    constructor();
 
     property ExecutionContext: ExecutionContext read get_ExecutionContext write fExecutionContext;
 
@@ -73,7 +77,14 @@ type
     method NativeToString(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
     method eval(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method NotStrictGlobalEval(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method InnerEval(aCaller: ExecutionContext; aStrict: Boolean; aSelf: Object; params args: Array of Object): Object;
+
+    method InnerExecutionContext(caller: ExecutionContext;  strict: Boolean): ExecutionContext;
+    method InnerCompile(strict: Boolean;  script: String): InternalDelegate;
+    method InnerEval(caller: ExecutionContext;  strict: Boolean;  &self: Object;  params args: array of Object): Object;
+    method InnerEval(caller: ExecutionContext;  strict: Boolean;  &self: Object;  evalDelegate: InternalDelegate): Object;
+    method InnerEval(strict: Boolean;  params args: array of Object): Object;
+    method InnerEval(strict: Boolean;  evalDelegate: InternalDelegate): Object;
+
     method parseInt(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method parseFloat(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method isNaN(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
@@ -84,7 +95,7 @@ type
     method decodeURI(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method encodeURIComponent(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method decodeURIComponent(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    
+
     // Proto:
     method ObjectToString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method ObjectToLocaleString(aCaller: ExecutionContext; aSelf: Object; params args: Array of Object): Object;
@@ -107,15 +118,16 @@ type
     method ObjectisFrozen(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method ObjectisExtensible(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method ObjectKeys(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    
+
     method CreateObject: EcmaScriptObject;
     method ToString: String; override;
   end;
+
+
   EcmaScriptEvalFunctionObject = class(EcmaScriptFunctionObject);
 
 
   EcmaScriptObjectObject = class(EcmaScriptBaseFunctionObject)
-  private
   public
     constructor(aOwner: GlobalObject; aName: String);
 
@@ -181,37 +193,77 @@ begin
 end;
 
 
-method GlobalObject.InnerEval(aCaller: ExecutionContext; aStrict: Boolean; aSelf: Object; params args: Array of Object): Object;
+method GlobalObject.InnerExecutionContext(caller: ExecutionContext;  strict: Boolean): ExecutionContext;
 begin
-  if (args.Length < 0) or (args[0] is not String) then exit if args.Length= 0 then Undefined.Instance else args[0];
-  var lScript := String(args[0]);
+  if caller.Strict or strict then
+    exit new ExecutionContext(new DeclarativeEnvironmentRecord(caller.LexicalScope, self), true);
 
-  var lEx := aCaller;
-  if aCaller.Strict or aStrict then begin
-    lEx := new ExecutionContext(new DeclarativeEnvironmentRecord(aCaller.LexicalScope, self), aCaller.Strict);
-  end;
-  
-  var lTokenizer := new Tokenizer;
-  var lParser := new Parser;
+  exit caller;
+end;
+
+
+method GlobalObject.InnerCompile(strict: Boolean;  script: String): InternalDelegate;
+begin
+  if String.IsNullOrEmpty(script) then
+    exit nil;
+
+  var lTokenizer: Tokenizer := new Tokenizer();
+  var lParser: Parser := new Parser();
   lTokenizer.Error += lParser.fTok_Error;
-  lTokenizer.SetData(lScript, '<eval>');
+  lTokenizer.SetData(script, '<eval>');
   lTokenizer.Error -= lParser.fTok_Error;
-  
+
   try
-    var lElement := lParser.Parse(lTokenizer);
+    var lElement: ProgramElement := lParser.Parse(lTokenizer);
     for each el in lParser.Messages do begin
       if el.IsError then 
-        RaiseNativeError(NativeErrorType.SyntaxError, el.IntToString());
+        RaiseNativeError(NativeErrorType.SyntaxError, el.ToString());// this will reveal real error
     end;
-    var lEval: InternalDelegate := InternalDelegate(fParser.EvalParse(aCaller.Strict, lScript));
-    exit lEval(lEx, aSelf, []);
+
+    exit InternalDelegate(fParser.EvalParse(strict, script));
   except
-    on e: ScriptParsingException do begin
+    on e: ScriptParsingException do
       RaiseNativeError(NativeErrorType.SyntaxError, e.Message);
-    end;
   end;
-  
 end;
+
+
+method GlobalObject.InnerEval(caller: ExecutionContext;  strict: Boolean;  &self: Object;  params args: array of Object): Object;
+begin
+  if (args.Length < 0) or (args[0] is not String) then
+    exit iif(args.Length=0,Undefined.Instance,args[0]);
+
+  var lScript: String := String(args[0]);
+
+  var lContext: ExecutionContext := self.InnerExecutionContext(caller, strict);
+  var lEval: InternalDelegate := self.InnerCompile(lContext.Strict, lScript);
+
+  exit lEval(lContext, &self, []);
+end;
+
+
+method GlobalObject.InnerEval(caller: ExecutionContext;  strict: Boolean;  &self: Object;  evalDelegate: InternalDelegate): Object;
+begin
+  if not assigned(evalDelegate) then
+    exit Undefined.Instance;
+
+  var lContext: ExecutionContext := self.InnerExecutionContext(caller, strict);
+
+  exit evalDelegate(lContext, &self, []);
+end;
+
+
+method GlobalObject.InnerEval(strict: Boolean;  params args: array of Object): Object;
+begin
+  exit InnerEval(self.ExecutionContext, strict, self, args);
+end;
+
+
+method GlobalObject.InnerEval(strict: Boolean;  evalDelegate: InternalDelegate): Object;
+begin
+  exit InnerEval(self.ExecutionContext, strict, self, evalDelegate);
+end;
+
 
 method GlobalObject.parseInt(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin

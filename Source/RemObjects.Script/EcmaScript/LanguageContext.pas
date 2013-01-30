@@ -1,8 +1,8 @@
 ﻿{
-
-  Copyright (c) 2009-2010 RemObjects Software. See LICENSE.txt for more details.
-
+  Copyright (c) 2009-2013 RemObjects Software, LLC.
+  See LICENSE.txt for more details.
 }
+
 namespace RemObjects.Script.EcmaScript;
 
 interface
@@ -17,11 +17,13 @@ uses
   RemObjects.Script.EcmaScript.Internal;
 
 type
-  
-  InternalDelegate = public delegate (aScope: ExecutionContext; aSelf: Object; params args: Array of Object): Object;
+  InternalDelegate = public delegate(scope: ExecutionContext;  &self: Object;  params args: array of Object): Object;
+
+
   InternalFunctionDelegate = public delegate(aScope: ExecutionContext; aSelf: Object; params args: array of Object; aFunc: EcmaScriptInternalFunctionObject): Object;
-  EcmaScriptErrorKind = public enum
-  (
+
+
+  EcmaScriptErrorKind = public enum (
     FatalErrorWhileCompiling,
     OpeningParenthesisExpected,
     ClosingParenthesisExpected,
@@ -53,8 +55,9 @@ type
     UnknownLabelTarget,
     DuplicateLabel
   );
+
+
   ScriptParsingException = public class(ScriptException)
-  private
   public
     class method ErrorToString(anError: EcmaScriptErrorKind; aMsg: String): String;
     constructor (aFilename: String; aPosition: PositionPair; anError: EcmaScriptErrorKind; aMsg: String := '');
@@ -63,10 +66,11 @@ type
     property Msg: String; readonly;
   end;
 
+
   EcmaScriptException = public ScriptParsingException;
-  
+
+
   EcmaScriptCompilerOptions = public class
-  private
   public
     constructor; empty;
     property StackOverflowProtect: Boolean := true;
@@ -76,14 +80,15 @@ type
     property GlobalObject: GlobalObject;
   end;
 
+
   FinallyInfo = public class
-  private
   public
     property FinallyLabel: Label;
     property FinallyState: LocalBuilder;
     method AddUnique(aLabel: Label): Integer;
     property JumpTable: List<Label> := new List<Label>; readonly;
   end;
+
 
   EcmaScriptCompiler = public class
   assembly
@@ -129,22 +134,22 @@ type
   public
     constructor(aOptions: EcmaScriptCompilerOptions);
 
-
     property GlobalObject: GlobalObject read fGlobal;
-    
+
     method EvalParse(aStrict: Boolean; aData: String): InternalDelegate;
     method Parse(aFilename, aData: String): InternalDelegate;
     method Parse(aFunction: FunctionDeclarationElement; aEval: Boolean; aScopeName: String; aElements: List<SourceElement>): Object;
     property JustFunctions: Boolean read fJustFunctions write fJustFunctions;
   end;
 
-  DynamicMethods = public static class
-  private
-  public
 
+  DynamicMethods = public static class
+  public
   end;
 
+
   CodeDelegate = public delegate (aScope: ExecutionContext; Args: array of Object): Object;
+
 
 implementation
 

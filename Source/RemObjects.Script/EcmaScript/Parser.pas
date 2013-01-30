@@ -1,31 +1,42 @@
 ﻿{
-
-  Copyright (c) 2009-2010 RemObjects Software. See LICENSE.txt for more details.
-
+  Copyright (c) 2009-2013 RemObjects Software, LLC.
+  See LICENSE.txt for more details.
 }
+
 namespace RemObjects.Script.EcmaScript.Internal;
 
 interface
+
 uses
   RemObjects.Script,
   RemObjects.Script.Properties,
   System.Collections.ObjectModel,
   System.Collections.Generic;
 
+{$HIDE W27}
+
 type
   ParserErrorKind = RemObjects.Script.EcmaScript.EcmaScriptErrorKind;
+
+
   ParserError = public class(ParserMessage)
   private
-    fMessage: String;
-    fError: ParserErrorKind;
+    var fMessage: String; readonly;
+    var fError: ParserErrorKind; readonly;
+
+    method get_Message(): String;
   public
-    constructor(aPosition: Position; anError: ParserErrorKind; aMessage: String);
+    constructor(position: Position;  error: ParserErrorKind;  message: String);
+
+    property Code: Int32 read Int32(fError); override;
     property Error: ParserErrorKind read fError;
-    property Message: String read fMessage;
-    method IntToString: String; override;
-    property Code: Integer read Integer(fError); override;
+    property Message: String read get_Message;
     property IsError: Boolean read true; override;
+
+    method IntToString(): String; override;
+    method ToString(): String; override;
   end;
+
 
   ParseStatementFlags nested in Parser = assembly flags (None = 0, AllowFunction = 1, AllowGetSet = 2);
   Parser = public class
@@ -1222,36 +1233,54 @@ begin
   fTok.RestoreState(lSave);
 end;
 
-constructor ParserError(aPosition: Position; anError: ParserErrorKind; aMessage: String);
+
+constructor ParserError(position: Position;  error: ParserErrorKind;  message: String);
 begin
-  inherited constructor(aPosition);
-  fError := anError;
-  fMessage := aMessage;
+  inherited constructor(position);
+  fError := error;
+  fMessage := message;
 end;
 
-method ParserError.IntToString: String;
+
+method ParserError.get_Message(): String;
+begin
+  if String.IsNullOrEmpty(fMessage)  then
+    exit inherited ToString();
+
+  exit fMessage + " " + inherited ToString();
+end;
+
+
+method ParserError.ToString(): String;
+begin
+  exit self.Message;
+end;
+
+
+method ParserError.IntToString(): String;
 begin
   case fError of
-    ParserErrorKind.OpeningParenthesisExpected:  result := Resources.eOpeningParenthesisExpected;
-    ParserErrorKind.OpeningBraceExpected: result := Resources.eOpeningBraceExpected;
-    ParserErrorKind.ClosingParenthesisExpected: result := Resources.eClosingParenthesisExpected;
-    ParserErrorKind.IdentifierExpected: result := Resources.eIdentifierExpected;
-    ParserErrorKind.ClosingBraceExpected: result := Resources.eClosingBraceExpected;
-    ParserErrorKind.WhileExpected: result := Resources.eWhileExpected;
-    ParserErrorKind.SemicolonExpected: result := Resources.eSemicolonExpected;
-    ParserErrorKind.ColonExpected: result := Resources.eColonExpected;
-    ParserErrorKind.CatchOrFinallyExpected: result := Resources.eCatchOrFinallyExpected;
-    ParserErrorKind.ClosingBracketExpected: result := Resources.eClosingBracketExpected;
-    ParserErrorKind.SyntaxError: Result := Resources.eSyntaxError;
-    ParserErrorKind.CommentError: Result := Resources.eCommentError;
-    ParserErrorKind.EOFInRegex: Result := Resources.eEOFInRegex;
-    ParserErrorKind.EOFInString: Result := Resources.eEOFInString;
-    ParserErrorKind.InvalidEscapeSequence: Result := Resources.eInvalidEscapeSequence;
-    ParserErrorKind.UnknownCharacter: Result := Resources.eUnknownCharacter;
-    ParserErrorKind.OnlyOneVariableAllowed: result := Resources.eOnlyOneVariableAllowed;
-  else
-    result := 'Unknown error';
+    ParserErrorKind.OpeningParenthesisExpected:  exit Resources.eOpeningParenthesisExpected;
+    ParserErrorKind.OpeningBraceExpected:        exit Resources.eOpeningBraceExpected;
+    ParserErrorKind.ClosingParenthesisExpected:  exit Resources.eClosingParenthesisExpected;
+    ParserErrorKind.IdentifierExpected:          exit Resources.eIdentifierExpected;
+    ParserErrorKind.ClosingBraceExpected:        exit Resources.eClosingBraceExpected;
+    ParserErrorKind.WhileExpected:               exit Resources.eWhileExpected;
+    ParserErrorKind.SemicolonExpected:           exit Resources.eSemicolonExpected;
+    ParserErrorKind.ColonExpected:               exit Resources.eColonExpected;
+    ParserErrorKind.CatchOrFinallyExpected:      exit Resources.eCatchOrFinallyExpected;
+    ParserErrorKind.ClosingBracketExpected:      exit Resources.eClosingBracketExpected;
+    ParserErrorKind.SyntaxError:                 exit Resources.eSyntaxError;
+    ParserErrorKind.CommentError:                exit Resources.eCommentError;
+    ParserErrorKind.EOFInRegex:                  exit Resources.eEOFInRegex;
+    ParserErrorKind.EOFInString:                 exit Resources.eEOFInString;
+    ParserErrorKind.InvalidEscapeSequence:       exit Resources.eInvalidEscapeSequence;
+    ParserErrorKind.UnknownCharacter:            exit Resources.eUnknownCharacter;
+    ParserErrorKind.OnlyOneVariableAllowed:      exit Resources.eOnlyOneVariableAllowed;
   end; // case
+
+  exit 'Unknown error';
 end;
+
 
 end.
