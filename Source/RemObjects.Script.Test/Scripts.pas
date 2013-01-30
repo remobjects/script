@@ -339,11 +339,11 @@ writeln(Error.prototype.name);
 writeln(Error.prototype.message);
 writeln(Error.prototype.toString());");
 var lExpected :="Infinity
-SyntaxError: Syntax error
+SyntaxError: <eval>(1:2): Syntax error
 object
 true
 true
-Syntax error
+<eval>(1:2): Syntax error
 Error: test
 test
 Error
