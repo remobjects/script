@@ -512,7 +512,7 @@ end;
 method EcmaScriptComponent.RunFunction(initialStatus: ScriptStatus;  name: String;  params args: array of Object): Object;
 begin
   try
-    var lItem := fGlobalObject.Get(name) as RemObjects.Script.EcmaScript.EcmaScriptBaseFunctionObject;
+    var lItem := RemObjects.Script.EcmaScript.EcmaScriptBaseFunctionObject(fGlobalObject.Get(name));
 
     if not assigned(lItem) then
       raise new ScriptComponentException(String.Format(RemObjects.Script.Properties.Resources.eNoSuchFunction, name));
