@@ -32,9 +32,10 @@ type
     method StringMatch(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
     method StringReplace(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
     method StringSearch(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
-    method StringSlice(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
-    method StringSplit(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
-    method StringSubString(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
+    method StringSlice(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
+    method StringSplit(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
+    method StringSubString(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
+    method StringSubStr(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
     method StringToLowerCase(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
     method StringToUpperCase(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
     method StringToLocaleLowerCase(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
@@ -76,19 +77,19 @@ begin
   StringPrototype.Values.Add('concat', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'concat', @StringConcat, 1)));
   StringPrototype.Values.Add('indexOf', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'indexOf', @StringIndexOf, 1)));
   StringPrototype.Values.Add('lastIndexOf', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'lastIndexOf', @StringLastIndexOf, 1)));
-  
+
   StringPrototype.Values.Add('match', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'match', @StringMatch, 1))); // depends on regex support
   StringPrototype.Values.Add('replace', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'replace', @StringReplace, 2)));
   StringPrototype.Values.Add('search', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'search', @StringSearch, 1))); // depends on regex support
   StringPrototype.Values.Add('slice', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'slice', @StringSlice, 2)));
   StringPrototype.Values.Add('split', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'split', @StringSplit, 2)));
   StringPrototype.Values.Add('substring', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'substring', @StringSubString, 2)));
-  StringPrototype.Values.Add('substr', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'substr', @StringSubString, 2)));
+  StringPrototype.Values.Add('substr', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'substr', @StringSubStr, 2)));
   StringPrototype.Values.Add('toLowerCase', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toLowerCase', @StringToLowerCase, 0)));
   StringPrototype.Values.Add('toUpperCase', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toUpperCase', @StringToUpperCase, 0)));
   StringPrototype.Values.Add('toLocaleLowerCase', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toLocaleLowerCase', @StringToLocaleLowerCase, 0)));
   StringPrototype.Values.Add('toLocaleUpperCase', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toLocaleUpperCase', @StringToLocaleUpperCase, 0)));
-  
+
   StringPrototype.Values.Add('localeCompare', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'localeCompare', @StringLocaleCompare, 1)));
   StringPrototype.Values.Add('trim', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'trim', @StringTrim, 0)));
 end;
@@ -242,43 +243,52 @@ begin
 end;
 
 
-method GlobalObject.StringSlice(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
+method GlobalObject.StringSlice(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  var lSelf := coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
+  var lSelf: String := coalesce(Utilities.GetObjAsString(&self, caller), String.Empty);
 
-  if  (lSelf = nil)  then
-    exit  (Undefined.Instance);
+  if not assigned(lSelf) then
+    exit Undefined.Instance;
 
-  var lStart := Utilities.GetArgAsInteger(args, 0, aCaller);
-  var lObj := Utilities.GetArg(args, 1);
-  var lEnd := iif((lObj = nil) or (lObj = Undefined.Instance), Int32.MaxValue, Utilities.GetObjAsInteger(lObj, aCaller));
+  var lStart: Int32 := Utilities.GetArgAsInteger(args, 0, caller);
+  var lObj: Object := Utilities.GetArg(args, 1);
+  var lEnd: Int32 := iif((lObj = nil) or (lObj = Undefined.Instance), Int32.MaxValue, Utilities.GetObjAsInteger(lObj, caller));
 
-  if  (lStart < 0)  then  begin
+  if lStart < 0 then  begin
     lStart := lSelf.Length + lStart;
-    if  (lStart < 0)  then 
+    if lStart < 0 then 
       lStart := 0;
   end;
 
   if lEnd < 0 then begin 
     lEnd := lSelf.Length + lEnd;
-    if lEnd < 0 then lEnd := 0;
+    if lEnd < 0 then
+      lEnd := 0;
   end;
-  if lEnd < lStart then lEnd := lStart;
-  if lStart > lSelf.Length then lStart := lSelf.Length;
-  if lEnd > lSelf.Length then lEnd := lSelf.Length;
+
+  if lEnd < lStart then
+    lEnd := lStart;
+
+  if lStart > lSelf.Length then
+    lStart := lSelf.Length;
+
+  if lEnd > lSelf.Length then
+    lEnd := lSelf.Length;
+
   exit lSelf.Substring(lStart, lEnd - lStart);
 end;
 
 
-method GlobalObject.StringSplit(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
+method GlobalObject.StringSplit(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  var lSelf := coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
-  var lNeedle := coalesce(Utilities.GetArgAsString(args, 0, aCaller), String.Empty);
-  var lMax := Utilities.GetArgAsInteger(args, 1, aCaller);
+  var lSelf: String := coalesce(Utilities.GetObjAsString(&self, caller), String.Empty);
+  var lNeedle: String := coalesce(Utilities.GetArgAsString(args, 0, caller), String.Empty);
+  var lMax: Int32 := Utilities.GetArgAsInteger(args, 1, caller);
 
   if  (lMax <= 0)  then
     lMax := Int32.MaxValue;
-{$IFDEF SILVERLIGHT} 
+
+{$IFDEF SILVERLIGHT}
   var lValues := lSelf.Split([lNeedle], StringSplitOptions.None);
   if lValues.length > lMax then begin
     result := new EcmaScriptArrayObject(self, 0);
@@ -294,9 +304,72 @@ begin
 end;
 
 
-method GlobalObject.StringSubString(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
+method GlobalObject.StringSubString(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  exit  (StringSlice(aCaller, aSelf, args));
+  var lSelf: String := coalesce(Utilities.GetObjAsString(&self, caller), String.Empty);
+
+  if not assigned(lSelf) then
+    exit Undefined.Instance;
+
+  if lSelf.Length = 0 then
+    exit String.Empty;
+
+  var lStart: Int32 := Utilities.GetArgAsInteger(args, 0, caller);
+  var lObj: Object := Utilities.GetArg(args, 1);
+  var lEnd: Int32 := iif((lObj = nil) or (lObj = Undefined.Instance), Int32.MaxValue, Utilities.GetObjAsInteger(lObj, caller));
+
+  if lStart < 0 then
+    lStart := 0;
+
+  if lEnd < 0 then
+    lEnd := 0;
+
+  if lStart = lEnd then
+    exit String.Empty;
+
+  if lEnd < lStart then begin // swap indeces
+    var bufEnd: Int32 := lEnd;
+    lEnd := lStart;
+    lStart := bufEnd;
+  end;
+
+  if lStart > (lSelf.Length-1) then
+    exit String.Empty;
+
+  if lEnd > lSelf.Length then
+    lEnd := lSelf.Length;
+
+  exit lSelf.Substring(lStart, lEnd-lStart);
+end;
+
+
+method GlobalObject.StringSubStr(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
+begin
+  var lSelf: String := coalesce(Utilities.GetObjAsString(&self, caller), String.Empty);
+
+  if not assigned(lSelf) then
+    exit Undefined.Instance;
+
+  if lSelf.Length = 0 then
+    exit String.Empty;
+
+  var lStart: Int32 := Utilities.GetArgAsInteger(args, 0, caller);
+  var lObj: Object := Utilities.GetArg(args, 1);
+  var lEnd: Int32 := iif((lObj = nil) or (lObj = Undefined.Instance), Int32.MaxValue, Utilities.GetObjAsInteger(lObj, caller));
+
+  if lEnd <= 0 then
+    exit String.Empty;
+
+  if lStart < 0 then begin
+    lStart := lSelf.Length + lStart;
+    if lStart < 0 then 
+      lStart := 0;
+  end;
+
+  if lSelf.Length <= lStart then
+    exit String.Empty;
+
+  exit lSelf.Substring(lStart, Math.Min(lEnd, lSelf.Length-lStart));
 end;
 
 

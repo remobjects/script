@@ -61,6 +61,15 @@ type
 
     [Fact]
     method RunFunction_Exception_IsNotLost();
+
+    [Fact]
+    method StingSlice();
+
+    [Fact]
+    method StingSubstring();
+
+    [Fact]
+    method StingSubStr();
   end;
 
 
@@ -438,6 +447,83 @@ begin
 
   Assert.True(lWasExceptionRaised, 'Exception was not raised in the .NET code');
   Assert.NotNull(lScriptEngine.RunException);
+end;
+
+
+method Scripts.StingSlice();
+begin
+  // Samples were taken from the https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/String/slice specification
+  ExecuteJS(
+"var str1 = ""1234567890ABCDEFGH"";
+writeln(str1.slice(4, -2));
+writeln(str1.slice(-3));
+writeln(str1.slice(-3, -1));
+writeln(str1.slice(0, -1));
+");
+
+var lExpected:= "567890ABCDEF
+FGH
+FG
+1234567890ABCDEFG
+";
+
+  Assert.Equal(lExpected, fResult);
+end;
+
+
+method Scripts.StingSubstring();
+begin
+  // Samples were taken from the https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/String/substring specification
+  ExecuteJS(
+"var anyString = ""1234567"";
+
+writeln(anyString.substring(0,3));
+writeln(anyString.substring(3,0));
+ 
+writeln(anyString.substring(4,7));
+writeln(anyString.substring(7,4));
+
+writeln(anyString.substring(0,6));
+
+writeln(anyString.substring(0,7));
+writeln(anyString.substring(0,10))
+");
+
+var lExpected:= "123
+123
+567
+567
+123456
+1234567
+1234567
+";
+
+  Assert.Equal(lExpected, fResult);
+end;
+
+
+method Scripts.StingSubStr();
+begin
+  // Samples were taken from the https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/String/substr specification
+  ExecuteJS(
+"var str = ""1234567890"";
+writeln(str.substr(1,2));
+writeln(str.substr(-3,2));
+writeln(str.substr(-3));
+writeln(str.substr(1));
+writeln(str.substr(-20,2));
+writeln(str.substr(20,2));
+");
+
+var lExpected:= "23
+89
+890
+234567890
+12
+
+";
+
+  Assert.Equal(lExpected, fResult);
 end;
 
 
