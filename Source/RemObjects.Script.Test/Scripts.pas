@@ -9,12 +9,7 @@ uses
   System.Text;
 
 type
-  MyDelegate = method(params args: Array of object): Object;  
-
-  Scripts = public class
-  assembly
-    fResult: String;
-    method ExecuteJS(s: String): Object;
+  Scripts = public class(ScriptTest)
   public
     [Fact]
     method Error;
@@ -43,20 +38,16 @@ type
     method MinMax();
 
     [Fact]
-    method DateTimeToJSON();
-
-    [Fact]
     method UnknownCall1;
     [Fact]
     method UnknownCall2;
-    [Fact]
-    method NativeMethodCall;
 
     [Theory]
     [InlineData('var x = new JSType(); writeln(x.A);',        'JSType', '42')]
     [InlineData('var x = new JSType(); writeln(x.B);',        'JSType', 'Foo')]
     [InlineData('writeln(JSType.Foo());',                     'JSType', 'Bar')]
     [InlineData('var x = new SimpleCLRType(); writeln(x.A);', '',       '42')]
+    [InlineData('writeln(lda.Bar());',                        '',       'LDA.CALL CALLED')]
     method ExposeType(aScript: String;  aTypeName: String;  aExpectedResult: String);
 
     [Fact]
@@ -73,14 +64,6 @@ type
   end;
 
 
-  LDA = public class
-  private
-    fScripts: Scripts;
-  public
-    constructor(aScripts: Scripts);
-    method Call;
-  end;
-
   SimpleCLRType = class
   public
     constructor();
@@ -89,6 +72,7 @@ type
     property B: String read write;
 
     class method Foo(): String;
+    method Bar(): String;
   end;
 
 
@@ -146,21 +130,6 @@ test
   Assert.Equal(lExpected.Replace(#13#10, #10), fresult.Replace(#13#10, #10));
 end;
 
-method Scripts.ExecuteJS(s: String): Object;
-begin
-  var lComp := new RemObjects.Script.EcmaScriptComponent;
-  lComp.Debug := false;
-  lComp.RunInThread := false;
-  lComp.Source := s;
-  fResult := '';
-  var lDel: MyDelegate :=  method (params args: Array of object): Object begin
-    for each el in args do fResult := fResult + RemObjects.Script.EcmaScript.Utilities.GetObjAsString(el, lComp.GlobalObject.ExecutionContext) + #13#10;
-  end;
-  lComp.Globals.SetVariable("writeln", lDel);
-  lComp.Globals.SetVariable('lda', new RemObjects.Script.EcmaScript.EcmaScriptObjectWrapper(new LDA(self), typeof(LDA), lComp.GlobalObject));
-  lComp.Run();
-  exit lComp.RunResult;
-end;
 
 method Scripts.SimpleEvalTest;
 begin
@@ -389,14 +358,6 @@ begin
   end;
 end;
 
-method Scripts.NativeMethodCall;
-begin
-  ExecuteJS("
-    lda.Call();
-  ");
-Assert.Equal(fResult, 'LDA.CALL CALLED'#13#10);
-end;
-
 
 method Scripts.ExposeType(aScript: String;  aTypeName: String;  aExpectedResult: String);
 begin
@@ -407,28 +368,19 @@ begin
   lScriptEngine.Source := aScript;
   self.fResult := String.Empty;
 
-  var lWriteLn: MyDelegate :=
-                   method (params args: array of Object): Object
-                   begin
-                     for each  el  in  args  do
-                       self.fResult := self.fResult + RemObjects.Script.EcmaScript.Utilities.GetObjAsString(el, lScriptEngine.GlobalObject.ExecutionContext);
-                   end;
+  var lWriteLn: ScriptDelegate :=
+      method (params args: array of Object): Object
+      begin
+        for each  el  in  args  do
+          self.fResult := self.fResult + RemObjects.Script.EcmaScript.Utilities.GetObjAsString(el, lScriptEngine.GlobalObject.ExecutionContext);
+      end;
   lScriptEngine.Globals.SetVariable("writeln", lWriteLn);
 
   lScriptEngine.ExposeType(typeOf(SimpleCLRType), aTypeName);
+  lScriptEngine.Globals.SetVariable('lda', new RemObjects.Script.EcmaScript.EcmaScriptObjectWrapper(new SimpleCLRType(), typeof(SimpleCLRType), lScriptEngine.GlobalObject));
   lScriptEngine.Run();
 
   Assert.Equal(aExpectedResult, self.fResult);
-end;
-
-
-method Scripts.DateTimeToJSON();
-begin
-  // This call shouldn't fail
-  self.ExecuteJS(
-      "
-      JSON.stringify(new Date());
-      ");
 end;
 
 
@@ -527,18 +479,6 @@ var lExpected:= "23
 end;
 
 
-constructor LDA(aScripts: Scripts);
-begin
-  fScripts := aScripts;
-end;
-
-
-method LDA.Call;
-begin
-  fScripts.fResult := fScripts.fResult + 'LDA.CALL CALLED'#13#10;
-end;
-
-
 constructor SimpleCLRType();
 begin
   self.A := 42;
@@ -548,7 +488,13 @@ end;
 
 class method SimpleCLRType.Foo(): String;
 begin
-  exit  ('Bar');
+  exit 'Bar';
+end;
+
+
+method SimpleCLRType.Bar(): String;
+begin
+  exit 'LDA.CALL CALLED';
 end;
 
 

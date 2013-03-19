@@ -102,6 +102,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="es5conform.pas" />
+    <Compile Include="DateTest.pas" />
     <Compile Include="NetTypeConverter.pas" />
     <Compile Include="Properties\AssemblyInfo.pas" />
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -114,6 +115,7 @@
     <Compile Include="Properties\Settings.Designer.pas" />
     <Compile Include="Scripts.pas" />
     <Compile Include="Sputnik.pas" />
+    <Compile Include="ScriptTest.pas" />
     <Compile Include="Tokenizer.pas" />
     <Compile Include="Tokenizer_DecodeString.pas" />
   </ItemGroup>

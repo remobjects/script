@@ -1,8 +1,7 @@
 {
-
-  Copyright (c) 2009-2010 RemObjects Software. See LICENSE.txt for more details.
-
+  Copyright (c) 2009-2013 RemObjects Software, LLC. See LICENSE.txt for more details.
 }
+
 namespace RemObjects.Script.EcmaScript;
 
 interface
@@ -25,7 +24,7 @@ type
 
     method CreateDate: EcmaScriptObject;
     method DateCall(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method DateCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+    method DateCtor(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
     method CreateDateObject(date: DateTime): Object;
     method DateParse(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
     method DateUTC(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
@@ -55,24 +54,24 @@ type
     method DateGetUTCSeconds(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method DateGetMilliseconds(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method DateGetUTCMilliseconds(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-
     method DateGetTimezoneOffset(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+    method DateSetTime(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
+    method DateSetMilliseconds(caller: ExecutionContext;  &self: Object; params args: array of Object): Object;
+    method DateSetUTCMilliseconds(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 
-    method DateSetTime(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method DateSetMilliseconds(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method DateSetUTCMilliseconds(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method DateSetSeconds(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method DateSetUTCSeconds(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method DateSetMinutes(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method DateSetUTCMinutes(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method DateSetHours(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method DateSetUTCHours(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method DateSetDate(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method DateSetUTCDate(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method DateSetMonth(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method DateSetUTCMonth(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method DateSetFullYear(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    method DateSetUTCFullYear(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+    method DateSetSeconds(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
+    method DateSetUTCSeconds(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
+    method DateSetMinutes(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
+    method DateSetUTCMinutes(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
+    method DateSetHours(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
+    method DateSetUTCHours(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
+    method DateSetDate(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
+    method DateSetUTCDate(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
+    method DateSetMonth(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
+    method DateSetUTCMonth(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
+    method DateSetFullYear(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
+    method DateSetUTCFullYear(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
+
     method DateNow(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method DateToISOString(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
     method DateToJSON(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
@@ -134,6 +133,7 @@ begin
   DatePrototype.Values.Add('constructor', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'Date', @DateCtor, 7, &Class := 'Date')));
   DatePrototype.Prototype := ObjectPrototype;
   result.Values['prototype'] := PropertyValue.NotAllFlags(DatePrototype);
+
   DatePrototype.Values.Add('toString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toString', @DateToString, 0)));
   DatePrototype.Values.Add('toISOString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toISOString', @DateToISOString, 0)));
   DatePrototype.Values.Add('toJSON', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toJSON', @DateToJSON, 1)));
@@ -163,9 +163,7 @@ begin
   DatePrototype.Values.Add('getUTCSeconds', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'getUTCSeconds', @DateGetUTCSeconds, 0)));
   DatePrototype.Values.Add('getMilliseconds', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'getMilliseconds', @DateGetMilliseconds, 0)));
   DatePrototype.Values.Add('getUTCMilliseconds', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'getUTCMilliseconds', @DateGetUTCMilliseconds, 0)));
-
   DatePrototype.Values.Add('getTimezoneOffset', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'getTimezoneOffset', @DateGetTimezoneOffset, 0)));
-
   DatePrototype.Values.Add('setTime', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'setTime', @DateSetTime, 1)));
   DatePrototype.Values.Add('setMilliseconds', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'setMilliseconds', @DateSetMilliseconds, 1)));
   DatePrototype.Values.Add('setUTCMilliseconds', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'setUTCMilliseconds' , @DateSetUTCMilliseconds, 1)));
@@ -179,8 +177,8 @@ begin
   DatePrototype.Values.Add('setUTCDate', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'setUTCDate', @DateSetUTCDate, 1)));
   DatePrototype.Values.Add('setMonth', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'setMonth', @DateSetMonth, 2)));
   DatePrototype.Values.Add('setUTCMonth', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'setUTCMonth', @DateSetUTCMonth, 2)));
-  DatePrototype.Values.Add('setFullYear', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'setFullYear', @DateSetFullYear, 3)));
   DatePrototype.Values.Add('setYear', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'setYear', @DateSetFullYear, 1)));
+  DatePrototype.Values.Add('setFullYear', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'setFullYear', @DateSetFullYear, 3)));
   DatePrototype.Values.Add('setUTCFullYear', PropertyValue.NotAllFlags(new EcmaScriptFunctionObject(self, 'setUTCFullYear', @DateSetUTCFullYear, 1)));
 end;
 
@@ -190,7 +188,7 @@ begin
 end;
 
 
-method GlobalObject.DateCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+method GlobalObject.DateCtor(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
   var lValue: Double;
   if args.Length = 0 then begin
@@ -200,10 +198,10 @@ begin
     if args[0] is EcmaScriptObject then
       args[0] := EcmaScriptObject(args[0]).Value;
     if args[0] is String then begin
-      exit DateParse(aCaller, aSelf, args[0]);
+      exit DateParse(caller, &self, args[0]);
     end
     else begin
-      lValue := Utilities.GetArgAsDouble(args, 0, aCaller);
+      lValue := Utilities.GetArgAsDouble(args, 0, caller);
       if Double.IsInfinity(lValue ) then
         lValue := Double.NaN;
 
@@ -216,17 +214,15 @@ begin
     end;
   end
   else begin
-    var lYear := Utilities.GetArgAsInteger(args, 0, aCaller);
-    var lMonth := Utilities.GetArgAsInteger(args, 1, aCaller) + 1; // Month is 0-based in JS
-    var lDay := Utilities.GetArgAsInteger(args, 2, aCaller);
-    var lHour := Utilities.GetArgAsInteger(args, 3, aCaller);
-    var lMinute := Utilities.GetArgAsInteger(args, 4, aCaller);
-    var lSec := Utilities.GetArgAsInteger(args, 5, aCaller);
-    var lMSec := Utilities.GetArgAsInteger(args, 6, aCaller);
-    if lDay = 0 then
-      lDay := 1;
+    var lYear := Utilities.GetArgAsInteger(args, 0, caller);
+    var lMonth: Int32 := Utilities.GetArgAsInteger(args, 1, caller); // Month is 0-based in JS
+    var lDay := Utilities.GetArgAsInteger(args, 2, caller);
+    var lHour := Utilities.GetArgAsInteger(args, 3, caller);
+    var lMinute := Utilities.GetArgAsInteger(args, 4, caller);
+    var lSec := Utilities.GetArgAsInteger(args, 5, caller);
+    var lMSec := Utilities.GetArgAsInteger(args, 6, caller);
 
-    lValue := DateTimeToUnix(new DateTime(lYear, lMonth, lDay, lHour, lMinute, lSec, lMSec).ToUniversalTime());
+    lValue := DateTimeToUnix(new DateTime(lYear, 1, 1, lHour, lMinute, lSec, lMSec).AddMonths(lMonth).AddDays(lDay-1).ToUniversalTime());
   end;
 
   if Double.IsInfinity(lValue) then
@@ -441,166 +437,211 @@ begin
   exit (lValue.ToUniversalTime - lValue).TotalMinutes;
 end;
 
-method GlobalObject.DateSetTime(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
 begin
   (aSelf as EcmaScriptObject).Value := Utilities.GetArgAsInt64(args, 0, aCaller);
 end;
 
-method GlobalObject.DateSetMilliseconds(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.DateSetMilliseconds(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime;
-  lValue := new DateTime(lValue.Year, lValue.Month, lValue.Day, lValue.Hour, lValue.Minute, lValue.Second, Utilities.GetArgAsInt64(args, 0, aCaller));
-  (aSelf as EcmaScriptObject).Value := DateTimeToUnix(lValue.ToUniversalTime);
+  var lValue: DateTime := UnixToDateTime(Utilities.GetObjAsDouble(&self, caller)).ToLocalTime();
+  lValue := new DateTime(lValue.Year, lValue.Month, lValue.Day, lValue.Hour, lValue.Minute, lValue.Second, 0).AddMilliseconds(Utilities.GetArgAsInt64(args, 0, caller));
+
+  (&self as EcmaScriptObject).Value := DateTimeToUnix(lValue.ToUniversalTime());
+
+  exit (&self as EcmaScriptObject).Value;
 end;
 
-method GlobalObject.DateSetUTCMilliseconds(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.DateSetUTCMilliseconds(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller));
-  lValue := new DateTime(lValue.Year, lValue.Month, lValue.Day, lValue.Hour, lValue.Minute, lValue.Second, Utilities.GetArgAsInt64(args, 0, aCaller));
-  (aSelf as EcmaScriptObject).Value := DateTimeToUnix(lValue);
+  var lValue: DateTime := UnixToDateTime(Utilities.GetObjAsDouble(&self, caller));
+  lValue := new DateTime(lValue.Year, lValue.Month, lValue.Day, lValue.Hour, lValue.Minute, lValue.Second, 0).AddMilliseconds(Utilities.GetArgAsInt64(args, 0, caller));
+
+  (&self as EcmaScriptObject).Value := DateTimeToUnix(lValue);
+
+  exit (&self as EcmaScriptObject).Value;
 end;
 
-method GlobalObject.DateSetSeconds(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.DateSetSeconds(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime;
-  lValue := new DateTime(lValue.Year, lValue.Month, lValue.Day, lValue.Hour, lValue.Minute, 
-    Utilities.GetArgAsInteger(args, 0, aCaller),
-    iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller), lValue.Millisecond));
-  (aSelf as EcmaScriptObject).Value := DateTimeToUnix(lValue.ToUniversalTime);
+  var lValue: DateTime := UnixToDateTime(Utilities.GetObjAsDouble(&self, caller)).ToLocalTime();
+
+  var lSeconds: Int32 := Utilities.GetArgAsInteger(args, 0, caller);
+  var lMilliseconds: Int32 := iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, caller), lValue.Millisecond);
+  lValue := new DateTime(lValue.Year, lValue.Month, lValue.Day, lValue.Hour, lValue.Minute, 0, 0).AddSeconds(lSeconds).AddMilliseconds(lMilliseconds);
+
+  (&self as EcmaScriptObject).Value := DateTimeToUnix(lValue.ToUniversalTime());
+
+  exit (&self as EcmaScriptObject).Value;
 end;
 
-method GlobalObject.DateSetUTCSeconds(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.DateSetUTCSeconds(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller));
-  lValue := new DateTime(lValue.Year, lValue.Month, lValue.Day, lValue.Hour, lValue.Minute, 
-    Utilities.GetArgAsInteger(args, 0, aCaller),
-    iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller), lValue.Millisecond));
-  (aSelf as EcmaScriptObject).Value := DateTimeToUnix(lValue);
+  var lValue: DateTime := UnixToDateTime(Utilities.GetObjAsDouble(&self, caller));
+
+  var lSeconds: Int32 := Utilities.GetArgAsInteger(args, 0, caller);
+  var lMilliseconds: Int32 := iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, caller), lValue.Millisecond);
+  lValue := new DateTime(lValue.Year, lValue.Month, lValue.Day, lValue.Hour, lValue.Minute, 0, 0).AddSeconds(lSeconds).AddMilliseconds(lMilliseconds);
+
+  (&self as EcmaScriptObject).Value := DateTimeToUnix(lValue);
+
+  exit (&self as EcmaScriptObject).Value;
 end;
 
-method GlobalObject.DateSetMinutes(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.DateSetMinutes(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime;
-  lValue := new DateTime(lValue.Year, lValue.Month, lValue.Day, lValue.Hour, 
-    Utilities.GetArgAsInteger(args, 0, aCaller),
-    iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller), lValue.Second),
-    iif(args.Length > 2, Utilities.GetArgAsInteger(args, 2, aCaller), lValue.Millisecond));
-  (aSelf as EcmaScriptObject).Value := DateTimeToUnix(lValue.ToUniversalTime);
+  var lValue: DateTime := UnixToDateTime(Utilities.GetObjAsDouble(&self, caller)).ToLocalTime();
+
+  var lMinutes: Int32 := Utilities.GetArgAsInteger(args, 0, caller);
+  var lSeconds: Int32 := iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, caller), lValue.Second);
+  var lMilliseconds: Int32 := iif(args.Length > 2, Utilities.GetArgAsInteger(args, 2, caller), lValue.Millisecond);
+  lValue := new DateTime(lValue.Year, lValue.Month, lValue.Day, lValue.Hour, 0, 0, 0).AddMinutes(lMinutes).AddSeconds(lSeconds).AddMilliseconds(lMilliseconds);
+
+  (&self as EcmaScriptObject).Value := DateTimeToUnix(lValue.ToUniversalTime());
+
+  exit (&self as EcmaScriptObject).Value;
 end;
 
-method GlobalObject.DateSetUTCMinutes(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.DateSetUTCMinutes(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller));
-  lValue := new DateTime(lValue.Year, lValue.Month, lValue.Day, lValue.Hour, 
-    Utilities.GetArgAsInteger(args, 0, aCaller),
-    iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller), lValue.Second),
-    iif(args.Length > 2, Utilities.GetArgAsInteger(args, 2, aCaller), lValue.Millisecond));
-  (aSelf as EcmaScriptObject).Value := DateTimeToUnix(lValue);
+  var lValue: DateTime := UnixToDateTime(Utilities.GetObjAsDouble(&self, caller));
+
+  var lMinutes: Int32 := Utilities.GetArgAsInteger(args, 0, caller);
+  var lSeconds: Int32 := iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, caller), lValue.Second);
+  var lMilliseconds: Int32 := iif(args.Length > 2, Utilities.GetArgAsInteger(args, 2, caller), lValue.Millisecond);
+  lValue := new DateTime(lValue.Year, lValue.Month, lValue.Day, lValue.Hour, 0, 0, 0).AddMinutes(lMinutes).AddSeconds(lSeconds).AddMilliseconds(lMilliseconds);
+
+  (&self as EcmaScriptObject).Value := DateTimeToUnix(lValue);
+
+  exit (&self as EcmaScriptObject).Value;
 end;
 
-method GlobalObject.DateSetHours(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.DateSetHours(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime;
-  lValue := new DateTime(lValue.Year, lValue.Month, lValue.Day, 
-    Utilities.GetArgAsInteger(args, 0, aCaller),
-    iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller), lValue.Minute),
-    iif(args.Length > 2, Utilities.GetArgAsInteger(args, 2, aCaller), lValue.Second),
-    iif(args.Length > 3, Utilities.GetArgAsInteger(args, 3, aCaller), lValue.Millisecond));
-  (aSelf as EcmaScriptObject).Value := DateTimeToUnix(lValue.ToUniversalTime);
+  var lValue: DateTime := UnixToDateTime(Utilities.GetObjAsDouble(&self, caller)).ToLocalTime();
+
+  var lHours: Int32 := Utilities.GetArgAsInteger(args, 0, caller);
+  var lMinutes: Int32 := iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, caller), lValue.Minute);
+  var lSeconds: Int32 := iif(args.Length > 2, Utilities.GetArgAsInteger(args, 2, caller), lValue.Second);
+  var lMilliseconds: Int32 := iif(args.Length > 3, Utilities.GetArgAsInteger(args, 3, caller), lValue.Millisecond);
+  lValue := new DateTime(lValue.Year, lValue.Month, lValue.Day, 0, 0, 0, 0).AddHours(lHours).AddMinutes(lMinutes).AddSeconds(lSeconds).AddMilliseconds(lMilliseconds);
+
+  (&self as EcmaScriptObject).Value := DateTimeToUnix(lValue.ToUniversalTime());
+
+  exit (&self as EcmaScriptObject).Value;
 end;
 
-method GlobalObject.DateSetUTCHours(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.DateSetUTCHours(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller));
-  lValue := new DateTime(lValue.Year, lValue.Month, lValue.Day, 
-    Utilities.GetArgAsInteger(args, 0, aCaller),
-    iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller), lValue.Minute),
-    iif(args.Length > 2, Utilities.GetArgAsInteger(args, 2, aCaller), lValue.Second),
-    iif(args.Length > 3, Utilities.GetArgAsInteger(args, 3, aCaller), lValue.Millisecond));
-  (aSelf as EcmaScriptObject).Value := DateTimeToUnix(lValue);
+  var lValue: DateTime := UnixToDateTime(Utilities.GetObjAsDouble(&self, caller));
+
+  var lHours: Int32 := Utilities.GetArgAsInteger(args, 0, caller);
+  var lMinutes: Int32 := iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, caller), lValue.Minute);
+  var lSeconds: Int32 := iif(args.Length > 2, Utilities.GetArgAsInteger(args, 2, caller), lValue.Second);
+  var lMilliseconds: Int32 := iif(args.Length > 3, Utilities.GetArgAsInteger(args, 3, caller), lValue.Millisecond);
+  lValue := new DateTime(lValue.Year, lValue.Month, lValue.Day, 0, 0, 0, 0).AddHours(lHours).AddMinutes(lMinutes).AddSeconds(lSeconds).AddMilliseconds(lMilliseconds);
+
+  (&self as EcmaScriptObject).Value := DateTimeToUnix(lValue);
+
+  exit (&self as EcmaScriptObject).Value;
 end;
 
-method GlobalObject.DateSetDate(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.DateSetDate(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime;
-  lValue := new DateTime(lValue.Year, lValue.Month,
-    Utilities.GetArgAsInteger(args, 0, aCaller),
-    lValue.Hour,
-    lValue.Minute,
-    lValue.Second,
-    lValue.Millisecond);
-  (aSelf as EcmaScriptObject).Value := DateTimeToUnix(lValue.ToUniversalTime);
+  var lValue: DateTime := UnixToDateTime(Utilities.GetObjAsDouble(&self, caller)).ToLocalTime();
+
+  lValue := new DateTime(lValue.Year, lValue.Month, 1, lValue.Hour, lValue.Minute, lValue.Second, lValue.Millisecond).AddDays(Utilities.GetArgAsInteger(args, 0, caller)-1);
+
+  (&self as EcmaScriptObject).Value := DateTimeToUnix(lValue.ToUniversalTime());
+
+  exit (&self as EcmaScriptObject).Value;
 end;
 
-method GlobalObject.DateSetUTCDate(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.DateSetUTCDate(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller));
-  lValue := new DateTime(lValue.Year, lValue.Month,
-    Utilities.GetArgAsInteger(args, 0, aCaller),
-    lValue.Hour,
-    lValue.Minute,
-    lValue.Second,
-    lValue.Millisecond);
-  (aSelf as EcmaScriptObject).Value := DateTimeToUnix(lValue);
+  var lValue: DateTime := UnixToDateTime(Utilities.GetObjAsDouble(&self, caller));
+
+  lValue := new DateTime(lValue.Year, lValue.Month, 1, lValue.Hour, lValue.Minute, lValue.Second, lValue.Millisecond).AddDays(Utilities.GetArgAsInteger(args, 0, caller)-1);
+
+  (&self as EcmaScriptObject).Value := DateTimeToUnix(lValue);
+
+  exit (&self as EcmaScriptObject).Value;
 end;
 
-method GlobalObject.DateSetMonth(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime;
-  lValue := new DateTime(lValue.Year, 
-    Utilities.GetArgAsInteger(args, 0, aCaller),
-    iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller), 0),
-    lValue.Hour,
-    lValue.Minute,
-    lValue.Second,
-    lValue.Millisecond);
-  (aSelf as EcmaScriptObject).Value := DateTimeToUnix(lValue.ToUniversalTime);
 
+method GlobalObject.DateSetMonth(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
+begin
+  var lValue: DateTime := UnixToDateTime(Utilities.GetObjAsDouble(&self, caller)).ToLocalTime();
+
+  var lMonth: Int32 := Utilities.GetArgAsInteger(args, 0, caller);
+  var lDay: Int32 := iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, caller), lValue.Day);
+  lValue := new DateTime(lValue.Year, 1, 1, lValue.Hour, lValue.Minute, lValue.Second, lValue.Millisecond).AddMonths(lMonth).AddDays(lDay-1);
+
+  (&self as EcmaScriptObject).Value := DateTimeToUnix(lValue.ToUniversalTime());
+
+  exit (&self as EcmaScriptObject).Value;
 end;
 
-method GlobalObject.DateSetUTCMonth(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.DateSetUTCMonth(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller));
-  lValue := new DateTime(lValue.Year, 
-    Utilities.GetArgAsInteger(args, 0, aCaller),
-    iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller), 0),
-    lValue.Hour,
-    lValue.Minute,
-    lValue.Second,
-    lValue.Millisecond);
-  (aSelf as EcmaScriptObject).Value := DateTimeToUnix(lValue);
+  var lValue: DateTime := UnixToDateTime(Utilities.GetObjAsDouble(&self, caller));
+
+  var lMonth: Int32 := Utilities.GetArgAsInteger(args, 0, caller);
+  var lDay: Int32 := iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, caller), lValue.Day);
+  lValue := new DateTime(lValue.Year, 1, 1, lValue.Hour, lValue.Minute, lValue.Second, lValue.Millisecond).AddMonths(lMonth).AddDays(lDay-1);
+
+  (&self as EcmaScriptObject).Value := DateTimeToUnix(lValue);
+
+  exit (&self as EcmaScriptObject).Value;
 end;
 
-method GlobalObject.DateSetFullYear(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.DateSetFullYear(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime;
-  lValue := new DateTime(Utilities.GetArgAsInteger(args, 0, aCaller), 
-    iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller), 0),
-    iif(args.Length > 2, Utilities.GetArgAsInteger(args, 2, aCaller), 0),
-    lValue.Hour,
-    lValue.Minute,
-    lValue.Second,
-    lValue.Millisecond);
-  (aSelf as EcmaScriptObject).Value := DateTimeToUnix(lValue.ToUniversalTime);
+  var lValue: DateTime := UnixToDateTime(Utilities.GetObjAsDouble(&self, caller)).ToLocalTime();
+
+  var lYear: Int32 := Utilities.GetArgAsInteger(args, 0, caller);
+  var lMonth: Int32 := iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, caller), lValue.Month-1);
+  var lDay: Int32 := iif(args.Length > 2, Utilities.GetArgAsInteger(args, 2, caller), lValue.Day);
+  lValue := new DateTime(lYear, 1, 1, lValue.Hour, lValue.Minute, lValue.Second, lValue.Millisecond).AddMonths(lMonth).AddDays(lDay-1);
+
+  (&self as EcmaScriptObject).Value := DateTimeToUnix(lValue.ToUniversalTime());
+
+  exit (&self as EcmaScriptObject).Value;
 end;
 
-method GlobalObject.DateSetUTCFullYear(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+method GlobalObject.DateSetUTCFullYear(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller));
-  lValue := new DateTime(Utilities.GetArgAsInteger(args, 0, aCaller), 
-    iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, aCaller), 0),
-    iif(args.Length > 2, Utilities.GetArgAsInteger(args, 2, aCaller), 0),
-    lValue.Hour,
-    lValue.Minute,
-    lValue.Second,
-    lValue.Millisecond);
-  (aSelf as EcmaScriptObject).Value := DateTimeToUnix(lValue);
+  var lValue: DateTime := UnixToDateTime(Utilities.GetObjAsDouble(&self, caller));
+
+  var lYear: Int32 := Utilities.GetArgAsInteger(args, 0, caller);
+  var lMonth: Int32 := iif(args.Length > 1, Utilities.GetArgAsInteger(args, 1, caller), lValue.Month-1);
+  var lDay: Int32 := iif(args.Length > 2, Utilities.GetArgAsInteger(args, 2, caller), lValue.Day);
+  lValue := new DateTime(lYear, 1, 1, lValue.Hour, lValue.Minute, lValue.Second, lValue.Millisecond).AddMonths(lMonth).AddDays(lDay-1);
+
+  (&self as EcmaScriptObject).Value := DateTimeToUnix(lValue);
+
+  exit (&self as EcmaScriptObject).Value;
 end;
+
 
 method GlobalObject.CreateDateObject(date: DateTime): Object;
 begin
-  result := new EcmaScriptObject(self, DatePrototype, &Class := 'Date', Value := DateTimeToUnix(date));
+  exit new EcmaScriptObject(self, DatePrototype, &Class := 'Date', Value := DateTimeToUnix(date));
 end;
+
 
 method GlobalObject.DateNow(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
@@ -632,14 +673,17 @@ begin
   exit lValue.Year mod 100;
 end;
 
+
 method EcmaScriptDateObject.Call(context: ExecutionContext; params args: array of Object): Object;
 begin
   exit Root.DateCall(context, self, args);
 end;
 
+
 method EcmaScriptDateObject.Construct(context: ExecutionContext; params args: array of Object): Object;
 begin
   exit Root.DateCtor(context, self, args);
 end;
+
 
 end.
