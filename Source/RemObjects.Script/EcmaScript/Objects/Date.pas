@@ -438,8 +438,11 @@ begin
 end;
 
 
+method GlobalObject.DateSetTime(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  (aSelf as EcmaScriptObject).Value := Utilities.GetArgAsInt64(args, 0, aCaller);
+  (&self as EcmaScriptObject).Value := Double(Utilities.GetArgAsDouble(args, 0, caller))/1000.00;
+
+  exit (&self as EcmaScriptObject).Value;
 end;
 
 
