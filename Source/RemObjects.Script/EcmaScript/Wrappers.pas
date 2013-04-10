@@ -31,7 +31,6 @@ type
     var fValue: Object;
     var fType: &Type;
 
-    class method ConvertTo(value: Object;  &type: &Type): Object;
     class method FindBestMatchingMethod(aMethods: List<MethodBase>; aParameters: array of Object);
     class method BetterFunctionMember(aBest, aCurrent: MethodEntry; aParameters: array of Object): Boolean;
     class method BetterConversionFromExpression(aMine: Object; aBest, aCurrent: &Type): Integer;
@@ -46,6 +45,7 @@ type
     property &Static: Boolean read fValue = nil;
 
     class method IsCompatibleType(sourceType: &Type;  targetType: &Type): Boolean;
+    class method ConvertTo(value: Object;  &type: &Type): Object;
     class method FindAndCallBestOverload(methods: List<MethodBase>;  root: GlobalObject;  methodName: String;  &self: Object;  parameters: array of Object): Object;
 
     method DefineOwnProperty(aName: String; aValue: PropertyValue; aThrow: Boolean): Boolean; override;
