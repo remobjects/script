@@ -44,6 +44,7 @@ type
     property Value: Object read fValue; reintroduce;
     property &Static: Boolean read fValue = nil;
 
+    class method UnwrapValue(value: Object): Object;
     class method IsCompatibleType(sourceType: &Type;  targetType: &Type): Boolean;
     class method ConvertTo(value: Object;  &type: &Type): Object;
     class method FindAndCallBestOverload(methods: List<MethodBase>;  root: GlobalObject;  methodName: String;  &self: Object;  parameters: array of Object): Object;
@@ -254,39 +255,20 @@ begin
 end;
 
 
-class method EcmaScriptObjectWrapper.FindAndCallBestOverload(methods: List<MethodBase>;  root: GlobalObject;  methodName: String;
-                   &self: Object;  parameters: array of Object): Object;
+class method EcmaScriptObjectWrapper.FindAndCallBestOverload(methods: List<MethodBase>;  root: GlobalObject;  methodName: String;  &self: Object;  parameters: array of Object): Object;
 begin
   var lMethods := methods;
 
-  for i: Int32 := 0 to length(parameters)-1 do begin
-    // This code is similar to the one used in .ConvertTo
-    // However it cannot be moved there because we have to determine target value types before converting to them
-    with matching objectWrapper := EcmaScriptObjectWrapper(parameters[i]) do begin
-      parameters[i] := objectWrapper.Value; // if these were wrapped before, we should unwrap
-      continue;
-    end;
-
-    with matching scriptObject := EcmaScriptObject(parameters[i]) do begin
-      if scriptObject.Class <> 'Date' then begin
-        parameters[i] := coalesce(scriptObject.Value, parameters[i]);
-        continue;
-      end;
-
-      if scriptObject.Value.GetType() = typeOf(DateTime) then
-        parameters[i] := DateTime(scriptObject.Value).ToLocalTime()
-      else
-        parameters[i] := GlobalObject.UnixToDateTime(Convert.ToDouble(scriptObject.Value)).ToLocalTime()
-    end;
-  end;
+  for i: Int32 := 0 to length(parameters)-1 do
+    parameters[i] := EcmaScriptObjectWrapper.UnwrapValue(parameters[i]);
 
   FindBestMatchingMethod(lMethods, parameters);
 
-  if  (lMethods.Count > 1)  then
-    root.RaiseNativeError(NativeErrorType.TypeError,String.Format( RemObjects.Script.Properties.Resources.Ambigious_overloaded_method_0_with_1_parameters, methodName, parameters.Length));
+  if lMethods.Count > 1 then
+    root.RaiseNativeError(NativeErrorType.TypeError, String.Format(RemObjects.Script.Properties.Resources.Ambigious_overloaded_method_0_with_1_parameters, methodName, parameters.Length));
 
-  if  (lMethods.Count = 0)  then
-    root.RaiseNativeError(NativeErrorType.TypeError,String.Format( RemObjects.Script.Properties.Resources.No_overloaded_method_0_with_1_parameters, methodName, parameters.Length));
+  if lMethods.Count = 0 then
+    root.RaiseNativeError(NativeErrorType.TypeError, String.Format(RemObjects.Script.Properties.Resources.No_overloaded_method_0_with_1_parameters, methodName, parameters.Length));
 
   var lMeth := lMethods[0];
   var lParams := lMeth.GetParameters();
@@ -363,6 +345,30 @@ begin
     exit  (true);
 
   exit  (false);
+end;
+
+
+class method EcmaScriptObjectWrapper.UnwrapValue(value: Object): Object;
+begin
+  // Preferred method is EcmaScriptObjectWrapper.ConvertTo(Object, &Type): Object;
+  // This method uses way less sophiscated approach, so some of the JS-specific value transitions are lost
+
+  // if provided object was wrapped before then we should unwrap it
+  with matching objectWrapper := EcmaScriptObjectWrapper(value) do
+    exit objectWrapper.Value; 
+
+  // DateTime handling
+  with matching scriptObject := EcmaScriptObject(value) do begin
+    if scriptObject.Class <> 'Date' then
+      exit coalesce(scriptObject.Value, value);
+
+    if scriptObject.Value.GetType() = typeOf(DateTime) then
+      exit DateTime(scriptObject.Value).ToLocalTime();
+
+    exit GlobalObject.UnixToDateTime(Convert.ToDouble(scriptObject.Value)).ToLocalTime();
+  end;
+
+  exit value;
 end;
 
 
