@@ -144,7 +144,7 @@ end;
 
 method ObjectEnvironmentRecord.SetMutableBinding(aName: String; aValue: Object; aStrict: Boolean);
 begin
-  fObject.Put(aName, aValue, if aStrict then 1 else 0);
+  fObject.Put(nil, aName, aValue, if aStrict then 1 else 0);
 end;
 
 method ObjectEnvironmentRecord.GetBindingValue(aName: String; aStrict: Boolean): Object;

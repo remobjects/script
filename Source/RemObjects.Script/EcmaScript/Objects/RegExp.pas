@@ -192,7 +192,7 @@ end;
 
 method EcmaScriptRegexpObject.set_LastIndex(value: Integer);
 begin
-  self.Put('lastIndex', value, 0);
+  self.Put(nil, 'lastIndex', value, 0);
 end;
 
 
