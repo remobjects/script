@@ -63,7 +63,7 @@ type
     property Value: Object;
 
     method GetOwnProperty(name: String;  getPropertyValue: Boolean): PropertyValue; virtual;
-    method GetOwnProperty(name: String): PropertyValue;
+    method GetOwnProperty(name: String): PropertyValue; virtual;
     method GetProperty(name: String): PropertyValue; virtual;
     method &Get(aExecutionContext: ExecutionContext := nil; aFlags: Integer := 0; aName: String): Object; virtual;
 
