@@ -57,7 +57,6 @@ implementation
 {$REGION Windows Form Designer generated code}
 method MainForm.InitializeComponent;
 begin
-  var resources: System.ComponentModel.ComponentResourceManager := new System.ComponentModel.ComponentResourceManager(typeOf(MainForm));
   self.mainsplit := new System.Windows.Forms.SplitContainer();
   self.tbMain := new ICSharpCode.TextEditor.TextEditorControl();
   self.tabs := new System.Windows.Forms.TabControl();
@@ -113,7 +112,6 @@ begin
   self.mainsplit.SplitterDistance := 347;
   self.mainsplit.TabIndex := 0;
   //  tbMain
-  self.tbMain.AllowCaretBeyondEOL := true;
   self.tbMain.Dock := System.Windows.Forms.DockStyle.Fill;
   self.tbMain.IsReadOnly := false;
   self.tbMain.Location := new System.Drawing.Point(0, 0);
@@ -137,15 +135,13 @@ begin
   self.tbOutput.Size := new System.Drawing.Size(803, 144);
   self.tbOutput.TabIndex := 0;
   self.tbOutput.Text := 'Output';
-  self.tbOutput.UseVisualStyleBackColor := true;
   //  edOutput
   self.edOutput.Dock := System.Windows.Forms.DockStyle.Fill;
   self.edOutput.Location := new System.Drawing.Point(3, 3);
   self.edOutput.Multiline := true;
   self.edOutput.Name := 'edOutput';
-  self.edOutput.ReadOnly := true;
   self.edOutput.ScrollBars := System.Windows.Forms.ScrollBars.Vertical;
-  self.edOutput.Size := new System.Drawing.Size(797, 138);
+  self.edOutput.Size := new System.Drawing.Size(797, 20);
   self.edOutput.TabIndex := 0;
   //  tbLocals
   self.tbLocals.Controls.Add(self.lvLocals);
@@ -155,7 +151,6 @@ begin
   self.tbLocals.Size := new System.Drawing.Size(803, 144);
   self.tbLocals.TabIndex := 1;
   self.tbLocals.Text := 'Locals';
-  self.tbLocals.UseVisualStyleBackColor := true;
   //  lvLocals
   self.lvLocals.Columns.AddRange(array of System.Windows.Forms.ColumnHeader([self.columnHeader1, self.columnHeader2]));
   self.lvLocals.Dock := System.Windows.Forms.DockStyle.Fill;
@@ -186,33 +181,33 @@ begin
   self.fileToolStripMenuItem.Click += new System.EventHandler(@self.fileToolStripMenuItem_Click);
   //  newToolStripMenuItem
   self.newToolStripMenuItem.Name := 'newToolStripMenuItem';
-  self.newToolStripMenuItem.Size := new System.Drawing.Size(119, 22);
+  self.newToolStripMenuItem.Size := new System.Drawing.Size(114, 22);
   self.newToolStripMenuItem.Text := '&New';
   self.newToolStripMenuItem.Click += new System.EventHandler(@self.newToolStripMenuItem_Click);
   //  toolStripMenuItem1
   self.toolStripMenuItem1.Name := 'toolStripMenuItem1';
-  self.toolStripMenuItem1.Size := new System.Drawing.Size(116, 6);
+  self.toolStripMenuItem1.Size := new System.Drawing.Size(111, 6);
   //  openToolStripMenuItem
   self.openToolStripMenuItem.Name := 'openToolStripMenuItem';
-  self.openToolStripMenuItem.Size := new System.Drawing.Size(119, 22);
+  self.openToolStripMenuItem.Size := new System.Drawing.Size(114, 22);
   self.openToolStripMenuItem.Text := '&Open';
   self.openToolStripMenuItem.Click += new System.EventHandler(@self.openToolStripMenuItem_Click);
   //  saveToolStripMenuItem
   self.saveToolStripMenuItem.Name := 'saveToolStripMenuItem';
-  self.saveToolStripMenuItem.Size := new System.Drawing.Size(119, 22);
+  self.saveToolStripMenuItem.Size := new System.Drawing.Size(114, 22);
   self.saveToolStripMenuItem.Text := '&Save';
   self.saveToolStripMenuItem.Click += new System.EventHandler(@self.saveToolStripMenuItem_Click);
   //  saveAsToolStripMenuItem
   self.saveAsToolStripMenuItem.Name := 'saveAsToolStripMenuItem';
-  self.saveAsToolStripMenuItem.Size := new System.Drawing.Size(119, 22);
-  self.saveAsToolStripMenuItem.Text := 'Save _As';
+  self.saveAsToolStripMenuItem.Size := new System.Drawing.Size(114, 22);
+  self.saveAsToolStripMenuItem.Text := 'Save As';
   self.saveAsToolStripMenuItem.Click += new System.EventHandler(@self.saveAsToolStripMenuItem_Click);
   //  toolStripMenuItem2
   self.toolStripMenuItem2.Name := 'toolStripMenuItem2';
-  self.toolStripMenuItem2.Size := new System.Drawing.Size(116, 6);
+  self.toolStripMenuItem2.Size := new System.Drawing.Size(111, 6);
   //  exitToolStripMenuItem
   self.exitToolStripMenuItem.Name := 'exitToolStripMenuItem';
-  self.exitToolStripMenuItem.Size := new System.Drawing.Size(119, 22);
+  self.exitToolStripMenuItem.Size := new System.Drawing.Size(114, 22);
   self.exitToolStripMenuItem.Text := 'E&xit';
   self.exitToolStripMenuItem.Click += new System.EventHandler(@self.exitToolStripMenuItem_Click);
   //  debugToolStripMenuItem
@@ -223,6 +218,7 @@ begin
   self.debugToolStripMenuItem.Click += new System.EventHandler(@self.debugToolStripMenuItem_Click);
   //  runToolStripMenuItem
   self.runToolStripMenuItem.Name := 'runToolStripMenuItem';
+  self.runToolStripMenuItem.ShortcutKeys := System.Windows.Forms.Keys.F5;
   self.runToolStripMenuItem.Size := new System.Drawing.Size(182, 22);
   self.runToolStripMenuItem.Text := '&Run';
   self.runToolStripMenuItem.Click += new System.EventHandler(@self.runToolStripMenuItem_Click);
@@ -231,11 +227,13 @@ begin
   self.toolStripMenuItem3.Size := new System.Drawing.Size(179, 6);
   //  stepIntoToolStripMenuItem
   self.stepIntoToolStripMenuItem.Name := 'stepIntoToolStripMenuItem';
+  self.stepIntoToolStripMenuItem.ShortcutKeys := System.Windows.Forms.Keys.F11;
   self.stepIntoToolStripMenuItem.Size := new System.Drawing.Size(182, 22);
   self.stepIntoToolStripMenuItem.Text := 'Step &Into';
   self.stepIntoToolStripMenuItem.Click += new System.EventHandler(@self.stepIntoToolStripMenuItem_Click);
   //  stepOverToolStripMenuItem
   self.stepOverToolStripMenuItem.Name := 'stepOverToolStripMenuItem';
+  self.stepOverToolStripMenuItem.ShortcutKeys := System.Windows.Forms.Keys.F10;
   self.stepOverToolStripMenuItem.Size := new System.Drawing.Size(182, 22);
   self.stepOverToolStripMenuItem.Text := 'Step &Over';
   self.stepOverToolStripMenuItem.Click += new System.EventHandler(@self.stepOverToolStripMenuItem_Click);
@@ -277,10 +275,10 @@ begin
   self.dlgSave.DefaultExt := 'js';
   self.dlgSave.Filter := 'JS Files|*.js';
   //  ScriptEngine
-  self.ScriptEngine.Debug := true;
+  self.ScriptEngine.Debug := false;
   self.ScriptEngine.JustFunctions := false;
   self.ScriptEngine.RootContext := nil;
-  self.ScriptEngine.RunInThread := true;
+  self.ScriptEngine.RunInThread := false;
   self.ScriptEngine.Source := nil;
   self.ScriptEngine.SourceFileName := nil;
   //  MainForm
@@ -289,7 +287,6 @@ begin
   self.ClientSize := new System.Drawing.Size(811, 545);
   self.Controls.Add(self.mainsplit);
   self.Controls.Add(self.menuStrip1);
-  self.Icon := System.Drawing.Icon(resources.GetObject('$this.Icon'));
   self.MainMenuStrip := self.menuStrip1;
   self.Name := 'MainForm';
   self.Text := 'Debugger';
