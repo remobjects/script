@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{656346D9-4656-40DA-A068-22D5425D4639}") = "Debugger", "Debugger.oxygene", "{37626F77-CB09-429C-909E-516216FAF34B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Default = Debug|Default
+		Release|Default = Release|Default
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{37626F77-CB09-429C-909E-516216FAF34B}.Debug|Default.ActiveCfg = Debug
+		{37626F77-CB09-429C-909E-516216FAF34B}.Debug|Default.Build.0 = Debug
+		{37626F77-CB09-429C-909E-516216FAF34B}.Release|Default.ActiveCfg = Release
+		{37626F77-CB09-429C-909E-516216FAF34B}.Release|Default.Build.0 = Release
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
