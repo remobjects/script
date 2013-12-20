@@ -114,9 +114,9 @@ type
     method WriteStatement(El: SourceElement);
     method AllocateLocal(aType: &Type): LocalBuilder;
     method ReleaseLocal(aLocal: LocalBuilder);
-    method CallGetValue(aFromElement: ElementType);
+    method CallGetValue(elementType: ElementType);
     method CallSetValue;
-    method WriteExpression(aExpression: ExpressionElement);
+    method WriteExpression(expression: ExpressionElement);
     method RecursiveFindFuncAndVars(aElements: sequence of SourceElement): sequence of SourceElement; iterator;
     method WriteIfStatement(el: IfStatement);
     method WriteDoStatement(el: DoStatement);
@@ -149,6 +149,18 @@ type
 
 
   CodeDelegate = public delegate (aScope: ExecutionContext; Args: array of Object): Object;
+
+
+  ExecutionStep = sealed class
+  public
+    constructor(expression: ExpressionElement);
+    constructor(expression: ExpressionElement;  step: Int32);
+
+    property Expression: ExpressionElement read write;
+    property Step: Int32 read write;
+
+    method NextStep(): ExecutionStep;
+  end;
 
 
 implementation
@@ -612,608 +624,1148 @@ method EcmaScriptCompiler.ReleaseLocal(aLocal: LocalBuilder);
 begin
   fLocals.Add(aLocal);
 end;
-{$REGION write expression}
-method EcmaScriptCompiler.WriteExpression(aExpression: ExpressionElement);
+
+
+{$REGION Write expression}
+method EcmaScriptCompiler.WriteExpression(expression: ExpressionElement);
 begin
-  case aExpression.Type of
-    ElementType.ThisExpression: begin
-      fILG.Emit(OpCodes.Ldarg_1); // this is arg nr 1
-    end;
-    ElementType.NullExpression: fILG.Emit(OpCodes.Ldnull);
-    ElementType.StringExpression: begin
-      fILG.Emit(OpCodes.Ldstr, StringExpression(aExpression).Value);
-    end;
+  var lExpressionStack: Stack<ExecutionStep> := new Stack<ExecutionStep>(128);
+  lExpressionStack.Push(new ExecutionStep(expression, 0));
 
-    ElementType.BooleanExpression: begin
-      if BooleanExpression(aExpression).Value then
-        fILG.Emit(OpCodes.Ldc_I4_1)
+  while true do begin
+    if lExpressionStack.Count = 0 then
+      break;
+
+    var lExecutionStep: ExecutionStep := lExpressionStack.Pop();
+    var lExpression: ExpressionElement := lExecutionStep.Expression;
+
+    case lExpression.Type of
+      ElementType.ThisExpression:
+          self.fILG.Emit(OpCodes.Ldarg_1); // this is arg nr 1
+
+      ElementType.NullExpression:
+          self.fILG.Emit(OpCodes.Ldnull);
+
+      ElementType.StringExpression:
+          self.fILG.Emit(OpCodes.Ldstr, StringExpression(lExpression).Value);
+
+      ElementType.BooleanExpression:
+          begin
+            if BooleanExpression(lExpression).Value then
+              self.fILG.Emit(OpCodes.Ldc_I4_1)
+            else
+              self.fILG.Emit(OpCodes.Ldc_I4_0);
+            self.fILG.Emit(OpCodes.Box, typeOf(Boolean));
+          end;
+
+      ElementType.IntegerExpression:
+          begin
+            if (IntegerExpression(lExpression).Value < Int64(Int32.MinValue)) or (IntegerExpression(lExpression).Value > Int64(Int32.MaxValue)) then begin
+              self.fILG.Emit(OpCodes.Ldc_R8, Double(IntegerExpression(lExpression).Value));
+              self.fILG.Emit(OpCodes.Box, typeOf(Double));
+            end
+            else begin
+              self.fILG.Emit(OpCodes.Ldc_I4, IntegerExpression(lExpression).Value);
+              self.fILG.Emit(OpCodes.Box, typeOf(Int32));
+            end;
+          end;
+
+      ElementType.DecimalExpression:
+          begin
+            self.fILG.Emit(OpCodes.Ldc_R8, DecimalExpression(lExpression).Value);
+            self.fILG.Emit(OpCodes.Box, typeOf(Double));
+          end;
+
+      ElementType.RegExExpression:
+          begin
+            self.fILG.Emit(OpCodes.Ldloc, fExecutionContext);
+            self.fILG.Emit(OpCodes.Call, ExecutionContext.Method_get_Global);
+            self.fILG.Emit(OpCodes.Ldstr, RegExExpression(lExpression).String);
+            self.fILG.Emit(OpCodes.Ldstr, RegExExpression(lExpression).Modifier);
+            self.fILG.Emit(OpCodes.Newobj,typeOf(EcmaScriptRegexpObject).GetConstructor([ typeOf(GlobalObject), typeOf(String), typeOf(String) ]));
+          end;
+
+      ElementType.UnaryExpression:
+          begin
+            case UnaryExpression(lExpression).Operator of
+              UnaryOperator.BinaryNot:
+                  begin
+                    if lExecutionStep.Step = 0 then begin
+                      lExpressionStack.Push(lExecutionStep.NextStep());
+                      lExpressionStack.Push(new ExecutionStep(UnaryExpression(lExpression).Value));
+                      continue;
+                    end;
+
+                    // Step 2
+                    self.CallGetValue(UnaryExpression(lExpression).Value.Type);
+                    self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                    self.fILG.Emit(OpCodes.Call, Operators.Method_BitwiseNot);
+                  end;
+
+              UnaryOperator.BoolNot:
+                  begin
+                    if lExecutionStep.Step = 0 then begin
+                      lExpressionStack.Push(lExecutionStep.NextStep());
+                      lExpressionStack.Push(new ExecutionStep(UnaryExpression(lExpression).Value));
+                      continue;
+                    end;
+
+                    // Step 2
+                    self.CallGetValue(UnaryExpression(lExpression).Value.Type);
+                    self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                    self.fILG.Emit(OpCodes.Call, Operators.Method_LogicalNot);
+                  end;
+
+              UnaryOperator.Delete:
+                  begin
+                    if lExecutionStep.Step = 0 then begin
+                      lExpressionStack.Push(lExecutionStep.NextStep());
+                      lExpressionStack.Push(new ExecutionStep(UnaryExpression(lExpression).Value));
+                      continue;
+                    end;
+
+                    // Step 2
+                    self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                    self.fILG.Emit(OpCodes.Call, Reference.Method_Delete);
+                    self.fILG.Emit(OpCodes.Box, typeOf(Boolean));
+                  end;
+
+              UnaryOperator.Minus:
+                  begin
+                    if lExecutionStep.Step = 0 then begin
+                      lExpressionStack.Push(lExecutionStep.NextStep());
+                      lExpressionStack.Push(new ExecutionStep(UnaryExpression(lExpression).Value));
+                      continue;
+                    end;
+
+                    // Step 2
+                    self.CallGetValue(UnaryExpression(lExpression).Value.Type);
+                    self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                    self.fILG.Emit(OpCodes.Call, Operators.Method_Minus);
+                  end;
+
+              UnaryOperator.Plus:
+                  begin
+                    if lExecutionStep.Step = 0 then begin
+                      lExpressionStack.Push(lExecutionStep.NextStep());
+                      lExpressionStack.Push(new ExecutionStep(UnaryExpression(lExpression).Value));
+                      continue;
+                    end;
+
+                    // Step 2
+                    self.CallGetValue(UnaryExpression(lExpression).Value.Type);
+                    self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                    self.fILG.Emit(OpCodes.Call, Operators.Method_Plus);
+                  end;
+
+              UnaryOperator.PostDecrement:
+                  begin
+                    if lExecutionStep.Step = 0 then begin
+                      lExpressionStack.Push(lExecutionStep.NextStep());
+                      lExpressionStack.Push(new ExecutionStep(UnaryExpression(lExpression).Value));
+                      continue;
+                    end;
+
+                    // Step 2
+                    self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                    self.fILG.Emit(OpCodes.Call, Operators.Method_PostDecrement);
+                  end;
+
+              UnaryOperator.PostIncrement:
+                  begin
+                    if lExecutionStep.Step = 0 then begin
+                      lExpressionStack.Push(lExecutionStep.NextStep());
+                      lExpressionStack.Push(new ExecutionStep(UnaryExpression(lExpression).Value));
+                      continue;
+                    end;
+
+                    // Step 2
+                    self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                    self.fILG.Emit(OpCodes.Call, Operators.Method_PostIncrement);
+                  end;
+
+              UnaryOperator.PreDecrement:
+                  begin
+                    if lExecutionStep.Step = 0 then begin
+                      lExpressionStack.Push(lExecutionStep.NextStep());
+                      lExpressionStack.Push(new ExecutionStep(UnaryExpression(lExpression).Value));
+                      continue;
+                    end;
+
+                    // Step 2
+                    self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                    self.fILG.Emit(OpCodes.Call, Operators.Method_PreDecrement);
+                  end;
+
+              UnaryOperator.PreIncrement:
+                  begin
+                    if lExecutionStep.Step = 0 then begin
+                      lExpressionStack.Push(lExecutionStep.NextStep());
+                      lExpressionStack.Push(new ExecutionStep(UnaryExpression(lExpression).Value));
+                      continue;
+                    end;
+
+                    // Step 2
+                    self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                    self.fILG.Emit(OpCodes.Call, Operators.Method_PreIncrement);
+                  end;
+
+              UnaryOperator.TypeOf:
+                  begin
+                    if lExecutionStep.Step = 0 then begin
+                      lExpressionStack.Push(lExecutionStep.NextStep());
+                      lExpressionStack.Push(new ExecutionStep(UnaryExpression(lExpression).Value));
+                      continue;
+                    end;
+
+                    // Step 2
+                    self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                    self.fILG.Emit(OpCodes.Call, Operators.Method_TypeOf);
+                  end;
+
+              UnaryOperator.Void:
+                  begin
+                    if lExecutionStep.Step = 0 then begin
+                      lExpressionStack.Push(lExecutionStep.NextStep());
+                      lExpressionStack.Push(new ExecutionStep(UnaryExpression(lExpression).Value));
+                      continue;
+                    end;
+
+                    // Step 2
+                    self.CallGetValue(UnaryExpression(lExpression).Value.Type);
+                    self.fILG.Emit(OpCodes.Pop);
+                    self.fILG.Emit(OpCodes.Call, Undefined.Method_Instance);
+                  end;
+
+              else
+                  raise new EcmaScriptException(lExpression.PositionPair.File, lExpression.PositionPair, EcmaScriptErrorKind.EInternalError, 'Unknown type: '+lExpression.Type);
+            end; // case
+          end;
+
+      ElementType.IdentifierExpression:
+          begin
+            self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+            self.fILG.Emit(OpCodes.Call, ExecutionContext.Method_get_LexicalScope);
+            self.fILG.Emit(OpCodes.Ldstr, IdentifierExpression(lExpression).Identifier);
+            if self.fUseStrict then
+              self.fILG.Emit(OpCodes.Ldc_I4_1)
+            else
+              self.fILG.Emit(OpCodes.Ldc_I4_0);
+            self.fILG.Emit(OpCodes.Call, EnvironmentRecord.Method_GetIdentifier);
+          end;
+
+      ElementType.BinaryExpression:
+          begin
+            case BinaryExpression(lExpression).Operator of
+              BinaryOperator.Assign:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call,  Reference.Method_SetValue);
+                        end;
+                  end;
+
+              BinaryOperator.Plus:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call,  Operators.Method_Add);
+                        end;
+                  end;
+
+              BinaryOperator.PlusAssign:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.fILG.Emit(OpCodes.Dup);
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_Add);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Reference.Method_SetValue);
+                        end;
+                  end;
+
+              BinaryOperator.Divide:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_Divide);
+                        end;
+                  end;
+
+              BinaryOperator.DivideAssign:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.fILG.Emit(OpCodes.Dup);
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_Divide);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Reference.Method_SetValue);
+                        end;
+                  end;
+
+              BinaryOperator.Minus:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_Subtract);
+                        end;
+                  end;
+
+              BinaryOperator.MinusAssign:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.fILG.Emit(OpCodes.Dup);
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_Subtract);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Reference.Method_SetValue);
+                        end;
+                  end;
+
+              BinaryOperator.Modulus:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_Modulus);
+                        end;
+                  end;
+
+              BinaryOperator.ModulusAssign:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.fILG.Emit(OpCodes.Dup);
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_Modulus);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Reference.Method_SetValue);
+                        end;
+                  end;
+
+              BinaryOperator.Multiply:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_Multiply);
+                        end;
+                  end;
+
+              BinaryOperator.MultiplyAssign:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.fILG.Emit(OpCodes.Dup);
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_Multiply);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Reference.Method_SetValue);
+                        end;
+                  end;
+
+              BinaryOperator.ShiftLeft:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_ShiftLeft);
+                        end;
+                  end;
+
+              BinaryOperator.ShiftLeftAssign:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.fILG.Emit(OpCodes.Dup);
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_ShiftLeft);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Reference.Method_SetValue);
+                        end;
+                  end;
+
+              BinaryOperator.ShiftRightSigned:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_ShiftRight);
+                        end;
+                  end;
+
+              BinaryOperator.ShiftRightSignedAssign:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.fILG.Emit(OpCodes.Dup);
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_ShiftRight);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Reference.Method_SetValue);
+                        end;
+                  end;
+
+              BinaryOperator.ShiftRightUnsigned:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_ShiftRightUnsigned);
+                        end;
+                  end;
+
+              BinaryOperator.ShiftRightUnsignedAssign:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.fILG.Emit(OpCodes.Dup);
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_ShiftRightUnsigned);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Reference.Method_SetValue);
+                        end;
+                  end;
+
+              BinaryOperator.And:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_And);
+                        end;
+                  end;
+
+              BinaryOperator.AndAssign:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.fILG.Emit(OpCodes.Dup);
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_And);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Reference.Method_SetValue);
+                        end;
+                  end;
+
+              BinaryOperator.Or:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_Or);
+                        end;
+                  end;
+
+              BinaryOperator.OrAssign:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.fILG.Emit(OpCodes.Dup);
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_Or);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Reference.Method_SetValue);
+                        end;
+                  end;
+
+              BinaryOperator.Xor,
+              BinaryOperator.DoubleXor:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_XOr);
+                        end;
+                  end;
+
+              BinaryOperator.XorAssign:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.fILG.Emit(OpCodes.Dup);
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_XOr);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Reference.Method_SetValue);
+                        end;
+                  end;
+
+              BinaryOperator.Equal:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_Equal);
+                        end;
+                  end;
+
+              BinaryOperator.NotEqual:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_NotEqual);
+                        end;
+                  end;
+
+              BinaryOperator.StrictEqual:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_StrictEqual);
+                        end;
+                  end;
+
+              BinaryOperator.StrictNotEqual:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_StrictNotEqual);
+                        end;
+                  end;
+
+              BinaryOperator.Less:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_LessThan);
+                        end;
+                  end;
+
+                  BinaryOperator.Greater:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_GreaterThan);
+                        end;
+                  end;
+
+              BinaryOperator.LessOrEqual:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_LessThanOrEqual);
+                        end;
+                  end;
+
+              BinaryOperator.GreaterOrEqual:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_GreaterThanOrEqual);
+                        end;
+                  end;
+
+              BinaryOperator.InstanceOf:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_InstanceOf);
+                        end;
+                  end;
+
+              BinaryOperator.In:
+                  case lExecutionStep.Step of
+                    0:  begin
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).LeftSide));
+                          continue;
+                        end;
+                    1:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                          lExpressionStack.Push(lExecutionStep.NextStep());
+                          lExpressionStack.Push(new ExecutionStep(BinaryExpression(lExpression).RightSide));
+                          continue;
+                        end;
+                    2:  begin
+                          self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                          self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                          self.fILG.Emit(OpCodes.Call, Operators.Method_In);
+                        end;
+                  end;
+
+              BinaryOperator.DoubleAnd:
+                  begin
+                    self.WriteExpression(BinaryExpression(lExpression).LeftSide);
+                    self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                    self.fILG.Emit(OpCodes.Dup);
+                    self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                    self.fILG.Emit(OpCodes.Call, Utilities.method_GetObjAsBoolean);
+                    var lGotIt := fILG.DefineLabel();
+                    self.fILG.Emit(OpCodes.Brfalse, lGotIt);
+                    self.fILG.Emit(OpCodes.Pop);
+                    self.WriteExpression(BinaryExpression(lExpression).RightSide);
+                    self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                    self.fILG.MarkLabel(lGotIt);
+                  end;
+
+              BinaryOperator.DoubleOr:
+                  begin
+                    self.WriteExpression(BinaryExpression(lExpression).LeftSide);
+                    self.CallGetValue(BinaryExpression(lExpression).LeftSide.Type);
+                    self.fILG.Emit(OpCodes.Dup);
+                    self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                    self.fILG.Emit(OpCodes.Call, Utilities.method_GetObjAsBoolean);
+                    var lGotIt := self.fILG.DefineLabel();
+                    self.fILG.Emit(OpCodes.Brtrue, lGotIt);
+                    self.fILG.Emit(OpCodes.Pop);
+                    self.WriteExpression(BinaryExpression(lExpression).RightSide);
+                    self.CallGetValue(BinaryExpression(lExpression).RightSide.Type);
+                    self.fILG.MarkLabel(lGotIt);
+                  end;
+              else
+                  raise new EcmaScriptException(lExpression.PositionPair.File, lExpression.PositionPair, EcmaScriptErrorKind.EInternalError, 'Unknown type: '+lExpression.Type);
+            end; // case
+          end;
+
+      ElementType.ConditionalExpression:
+        begin
+            self.WriteExpression(ConditionalExpression(lExpression).Condition);
+            self.CallGetValue(ConditionalExpression(lExpression).Condition.Type);
+            self.fILG.Emit(OpCodes.Ldloc, fExecutionContext);
+            self.fILG.Emit(OpCodes.Call, Utilities.method_GetObjAsBoolean);
+            var lFalse := fILG.DefineLabel();
+            var lExit := fILG.DefineLabel();
+            self.fILG.Emit(OpCodes.Brfalse, lFalse);
+            self.WriteExpression(ConditionalExpression(lExpression).True);
+            self.CallGetValue(ConditionalExpression(lExpression).True.Type);
+            self.fILG.Emit(OpCodes.Br, lExit);
+            self.fILG.MarkLabel(lFalse);
+            self.WriteExpression(ConditionalExpression(lExpression).False);
+            self.CallGetValue(ConditionalExpression(lExpression).False.Type);
+            self.fILG.MarkLabel(lExit);
+          end;
+
+      ElementType.ArrayLiteralExpression:
+          begin
+            self.fILG.Emit(OpCodes.Ldc_I4, ArrayLiteralExpression(lExpression).Items.Count);
+            self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+            self.fILG.Emit(OpCodes.Call, ExecutionContext.Method_get_Global);
+            self.fILG.Emit(OpCodes.Newobj, EcmaScriptArrayObject.Constructor);
+            for each el in ArrayLiteralExpression(lExpression).Items do begin
+              self.fILG.Emit(OpCodes.Dup);
+              if el = nil then  begin
+                self.fILG.Emit(OpCodes.Call, Undefined.Method_Instance);
+              end
+              else begin
+                self.WriteExpression(el);
+                self.CallGetValue(el.Type);
+              end;
+              self.fILG.Emit(OpCodes.Call, EcmaScriptArrayObject.Method_AddValue);
+            end;
+          end;
+
+      ElementType.ObjectLiteralExpression:
+          begin
+            self.fILG.Emit(OpCodes.Ldloc, fExecutionContext);
+            self.fILG.Emit(OpCodes.Call, ExecutionContext.Method_get_Global);
+            self.fILG.Emit(OpCodes.Newobj, EcmaScriptObject.Constructor);
+            for each el in ObjectLiteralExpression(lExpression).Items do begin
+              if el.Name.Type = ElementType.IdentifierExpression then
+                self.fILG.Emit(OpCodes.Ldstr, IdentifierExpression(el.Name).Identifier)
+              else
+                self.WriteExpression(el.Name);
+              self.fILG.Emit(OpCodes.Ldloc, fExecutionContext);
+              self.fILG.Emit(OpCodes.Call, Utilities.Method_GetObjAsString);
+              self.fILG.Emit(OpCodes.Ldc_I4, Integer(el.Mode));
+              self.WriteExpression(el.Value);   // Unwrapping this would be a nightmare
+              self.CallGetValue(el.Value.Type);
+              self.fILG.Emit(OpCodes.Ldc_I4, iif(self.fUseStrict, 1, 0));
+              self.fILG.Emit(OpCodes.Call, EcmaScriptObject.Method_ObjectLiteralSet);
+            end;
+          end;
+
+      ElementType.SubExpression:
+          begin
+            if lExecutionStep.Step = 0 then begin
+              lExpressionStack.Push(lExecutionStep.NextStep());
+              lExpressionStack.Push(new ExecutionStep(SubExpression(lExpression).Member));
+              continue;
+            end;
+
+            self.CallGetValue(SubExpression(lExpression).Member.Type);
+            self.fILG.Emit(OpCodes.Ldstr, SubExpression(lExpression).Identifier);
+            self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+            self.fILG.Emit(OpCodes.Ldc_I4, iif(self.fUseStrict, 1, 0));
+            self.fILG.Emit(OpCodes.Call, Reference.Method_Create);
+          end;
+
+      ElementType.ArrayAccessExpression:
+          case lExecutionStep.Step of
+            0:  begin
+                  lExpressionStack.Push(lExecutionStep.NextStep());
+                  lExpressionStack.Push(new ExecutionStep(ArrayAccessExpression(lExpression).Member));
+                  continue;
+                end;
+            1:  begin
+                  self.CallGetValue(ArrayAccessExpression(lExpression).Member.Type);
+                  lExpressionStack.Push(lExecutionStep.NextStep());
+                  lExpressionStack.Push(new ExecutionStep(ArrayAccessExpression(lExpression).Parameter));
+                  continue;
+                end;
+            2:  begin
+                  self.CallGetValue(ArrayAccessExpression(lExpression).Parameter.Type);
+                  self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+                  self.fILG.Emit(OpCodes.Ldc_I4, iif(self.fUseStrict, 3, 2));
+                  self.fILG.Emit(OpCodes.Call, Reference.Method_Create);
+                end;
+          end;
+
+      ElementType.NewExpression:
+          begin
+            if lExecutionStep.Step = 0 then begin
+              lExpressionStack.Push(lExecutionStep.NextStep());
+              lExpressionStack.Push(new ExecutionStep(NewExpression(lExpression).Member));
+              continue;
+            end;
+
+            // Step 2
+            self.CallGetValue(NewExpression(lExpression).Member.Type);
+            self.fILG.Emit(OpCodes.Isinst, typeOf(EcmaScriptObject));
+            self.fILG.Emit(OpCodes.Dup);
+            var lIsObject := fILG.DefineLabel();
+            self.fILG.Emit(OpCodes.Brtrue, lIsObject);
+            self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+            self.fILG.Emit(OpCodes.Call, ExecutionContext.Method_get_Global);
+            self.fILG.Emit(OpCodes.Ldc_I4, Integer(NativeErrorType.TypeError));
+            self.fILG.Emit(OpCodes.Ldstr, 'Cannot instantiate non-object value');
+            self.fILG.Emit(OpCodes.Call, GlobalObject.Method_RaiseNativeError);
+            self.fILG.MarkLabel(lIsObject);
+            self.fILG.Emit(OpCodes.Ldloc, fExecutionContext);
+            self.fILG.Emit(OpCodes.Ldc_I4, NewExpression(lExpression).Parameters.Count);
+            self.fILG.Emit(OpCodes.Newarr, typeOf(Object));
+            for each el in NewExpression(lExpression).Parameters index n do begin
+              self.fILG.Emit(OpCodes.Dup);
+              self.fILG.Emit(OpCodes.Ldc_I4, n);
+              self.WriteExpression(el);  // Unwrapping this would be a nightmare
+              self.CallGetValue(el.Type);
+              self.fILG.Emit(OpCodes.Stelem_Ref);
+            end;
+            self.fILG.Emit(OpCodes.Callvirt, EcmaScriptObject.Method_Construct);
+          end;
+
+      ElementType.CallExpression:
+          begin
+            if lExecutionStep.Step = 0 then begin
+              lExpressionStack.Push(lExecutionStep.NextStep());
+              lExpressionStack.Push(new ExecutionStep(CallExpression(lExpression).Member));
+              continue;
+            end;
+
+            // Step 2
+            self.fILG.Emit(OpCodes.Ldarg_1); // self
+            self.fILG.Emit(OpCodes.Ldc_I4, CallExpression(lExpression).Parameters.Count);
+            self.fILG.Emit(OpCodes.Newarr, typeOf(Object));
+            for each el in CallExpression(lExpression).Parameters index n do begin
+              self.fILG.Emit(OpCodes.Dup);
+              self.fILG.Emit(OpCodes.Ldc_I4, n);
+              self.WriteExpression(el); // Unwrapping this would be a nightmare
+              self.CallGetValue(el.Type);
+              self.fILG.Emit(OpCodes.Stelem_Ref);
+            end;
+            self.fILG.Emit(OpCodes.Ldloc, self.fExecutionContext);
+            self.fILG.Emit(OpCodes.Call, EcmaScriptObject.Method_CallHelper);
+          end;
+
+      ElementType.CommaSeparatedExpression: // only for for
+          begin
+            for i: Int32 := 0 to CommaSeparatedExpression(lExpression).Parameters.Count -1 do begin
+              if i <> 0 then
+                fILG.Emit(OpCodes.Pop);
+              self.WriteExpression(CommaSeparatedExpression(lExpression).Parameters[i]); // Unwrapping this would be a nightmare
+              self.CallGetValue(CommaSeparatedExpression(lExpression).Parameters[i].Type);
+            end;
+          end;
+
+      ElementType.FunctionExpression:
+          self.WriteFunction(FunctionExpression(lExpression).Function, false);
+
       else
-        fILG.Emit(OpCodes.Ldc_I4_0);
-      fILG.Emit(OpCodes.Box, typeOf(Boolean));
-    end;
-    ElementType.IntegerExpression: begin
-      if (IntegerExpression(aExpression).Value < Int64(Int32.MinValue)) or (IntegerExpression(aExpression).Value > Int64(Int32.MaxValue)) then begin
-        fILG.Emit(OpCodes.Ldc_R8, Double(IntegerExpression(aExpression).Value));
-        fILG.Emit(OpCodes.Box, typeOf(Double));
-      end else begin
-        fILG.Emit(OpCodes.Ldc_I4, IntegerExpression(aExpression).Value);
-        fILG.Emit(OpCodes.Box, typeOf(Integer));
-      end;
-    end;
-    ElementType.DecimalExpression: begin
-      fILG.Emit(OpCodes.Ldc_R8, DecimalExpression(aExpression).Value);
-      fILG.Emit(OpCodes.Box, typeOf(Double));
-    end;
-    ElementType.RegExExpression: begin
-      fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-      fILG.Emit(OpCodes.Call, ExecutionContext.Method_get_Global);
-      fILG.Emit(OpCodes.Ldstr, RegExExpression(aExpression).String);
-      fILG.Emit(OpCodes.Ldstr, RegExExpression(aExpression).Modifier);
-      fILG.Emit(OpCodes.Newobj,typeOf(EcmaScriptRegexpObject).GetConstructor([typeOf(GlobalObject), typeOf(String), typeOf(String)]));
-    end;
-    ElementType.UnaryExpression: begin
-      case UnaryExpression(aExpression).Operator of
-        UnaryOperator.BinaryNot: begin
-          WriteExpression(UnaryExpression(aExpression).Value);
-          CallGetValue(UnaryExpression(aExpression).Value.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_BitwiseNot);
-        end;
-        UnaryOperator.BoolNot: begin
-          WriteExpression(UnaryExpression(aExpression).Value);
-          CallGetValue(UnaryExpression(aExpression).Value.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_LogicalNot);
-        end;
+          raise new EcmaScriptException(lExpression.PositionPair.File, lExpression.PositionPair, EcmaScriptErrorKind.EInternalError, 'Unknown type: '+lExecutionStep.Expression.Type);
 
-        UnaryOperator.Delete: begin
-          WriteExpression(UnaryExpression(aExpression).Value);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Reference.Method_Delete);
-          fILG.Emit(OpCodes.Box, typeOf(Boolean));
-        end;
-
-        UnaryOperator.Minus: begin
-          WriteExpression(UnaryExpression(aExpression).Value);
-          CallGetValue(UnaryExpression(aExpression).Value.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_Minus);
-        end;
-
-        UnaryOperator.Plus: begin
-          WriteExpression(UnaryExpression(aExpression).Value);
-          CallGetValue(UnaryExpression(aExpression).Value.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_Plus);
-        end;
-        UnaryOperator.PostDecrement: begin
-          WriteExpression(UnaryExpression(aExpression).Value);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_PostDecrement);
-        end;
-
-        UnaryOperator.PostIncrement: begin
-          WriteExpression(UnaryExpression(aExpression).Value);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_PostIncrement);
-        end;
-        UnaryOperator.PreDecrement: begin
-          WriteExpression(UnaryExpression(aExpression).Value);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_PreDecrement);
-        end;
-        UnaryOperator.PreIncrement: begin
-          WriteExpression(UnaryExpression(aExpression).Value);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_PreIncrement);
-        end;
-        UnaryOperator.TypeOf: begin
-          WriteExpression(UnaryExpression(aExpression).Value);
-          //CallGetValue(UnaryExpression(aExpressioN).Value.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_TypeOf);
-        end;
-        UnaryOperator.Void: begin
-          WriteExpression(UnaryExpression(aExpression).Value);
-          CallGetValue(UnaryExpression(aExpression).Value.Type);
-          fILG.Emit(OpCodes.Pop);
-          fILG.Emit(OpCodes.Call, Undefined.Method_Instance);
-        end;
-        else raise new EcmaScriptException(aExpression.PositionPair.File, aExpression.PositionPair, EcmaScriptErrorKind.EInternalError, 'Unknown type: '+aExpression.Type);
-      end; // case
-    end;
-    ElementType.IdentifierExpression: begin
-      fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-      fILG.Emit(OpCodes.Call, ExecutionContext.Method_get_LexicalScope);
-      fILG.Emit(OpCodes.Ldstr, IdentifierExpression(aExpression).Identifier);
-      if fUseStrict then
-        fILG.Emit(OpCodes.Ldc_I4_1)
-      else
-        fILG.Emit(OpCodes.Ldc_I4_0);
-      fILG.Emit(OpCodes.Call, EnvironmentRecord.Method_GetIdentifier);
-    end;
-    ElementType.BinaryExpression: begin
-      case BinaryExpression(aExpression).Operator of
-        BinaryOperator.Assign: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call,  Reference.Method_SetValue);
-        end;
-        BinaryOperator.Plus: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_Add);
-        end;
-        BinaryOperator.PlusAssign: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          fILG.Emit(OpCodes.Dup);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_Add);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Reference.Method_SetValue);
-        end;
-        BinaryOperator.Divide: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_Divide);
-        end;
-        BinaryOperator.DivideAssign: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          fILG.Emit(OpCodes.Dup);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_Divide);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Reference.Method_SetValue);
-        end;
-        BinaryOperator.Minus: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_Subtract);
-        end;
-        BinaryOperator.MinusAssign: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          fILG.Emit(OpCodes.Dup);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_Subtract);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Reference.Method_SetValue);
-        end;
-
-        BinaryOperator.Modulus: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_Modulus);
-        end;
-        BinaryOperator.ModulusAssign: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          fILG.Emit(OpCodes.Dup);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_Modulus);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Reference.Method_SetValue);
-        end;
-
-        BinaryOperator.Multiply: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_Multiply);
-        end;
-        BinaryOperator.MultiplyAssign: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          fILG.Emit(OpCodes.Dup);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_Multiply);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Reference.Method_SetValue);
-        end;
-
-        BinaryOperator.ShiftLeft: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_ShiftLeft);
-        end;
-        BinaryOperator.ShiftLeftAssign: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          fILG.Emit(OpCodes.Dup);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_ShiftLeft);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Reference.Method_SetValue);
-        end;
-
-        BinaryOperator.ShiftRightSigned: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_ShiftRight);
-        end;
-        BinaryOperator.ShiftRightSignedAssign: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          fILG.Emit(OpCodes.Dup);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_ShiftRight);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Reference.Method_SetValue);
-        end;
-
-        BinaryOperator.ShiftRightUnsigned: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_ShiftRightUnsigned);
-        end;
-        BinaryOperator.ShiftRightUnsignedAssign: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          fILG.Emit(OpCodes.Dup);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_ShiftRightUnsigned);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Reference.Method_SetValue);
-        end;
-        BinaryOperator.And: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_And);
-        end;
-        BinaryOperator.AndAssign: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          fILG.Emit(OpCodes.Dup);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_And);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Reference.Method_SetValue);
-        end;
-        BinaryOperator.Or: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_Or);
-        end;
-        BinaryOperator.OrAssign: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          fILG.Emit(OpCodes.Dup);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_Or);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Reference.Method_SetValue);
-        end;
-        BinaryOperator.Xor, BinaryOperator.DoubleXor: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_XOr);
-        end;
-        BinaryOperator.XorAssign: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          fILG.Emit(OpCodes.Dup);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_XOr);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Reference.Method_SetValue);
-        end;
-
-        BinaryOperator.Equal: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_Equal);
-        end;
-
-        BinaryOperator.NotEqual: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_NotEqual);
-        end;
-
-        BinaryOperator.StrictEqual: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_StrictEqual);
-        end;
-
-        BinaryOperator.StrictNotEqual: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_StrictNotEqual);
-        end;
-
-        BinaryOperator.Less: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_LessThan);
-        end;
-        BinaryOperator.Greater: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_GreaterThan);
-        end;
-        BinaryOperator.LessOrEqual: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_LessThanOrEqual);
-        end;
-        BinaryOperator.GreaterOrEqual: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_GreaterThanOrEqual);
-        end;        
-        BinaryOperator.InstanceOf: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_InstanceOf);
-        end;
-        BinaryOperator.In: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Operators.Method_In);
-        end;
-        BinaryOperator.DoubleAnd: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          fILG.Emit(OpCodes.Dup);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Utilities.method_GetObjAsBoolean);
-          var lGotIt := fILG.DefineLabel;
-          fILG.Emit(OpCodes.Brfalse, lGotIt);
-          fILG.Emit(OpCodes.Pop);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.MarkLabel(lGotIt);
-        end;
-        BinaryOperator.DoubleOr: begin
-          WriteExpression(BinaryExpression(aExpression).LeftSide);
-          CallGetValue(BinaryExpression(aExpression).LeftSide.Type);
-          fILG.Emit(OpCodes.Dup);
-          fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-          fILG.Emit(OpCodes.Call, Utilities.method_GetObjAsBoolean);
-          var lGotIt := fILG.DefineLabel;
-          fILG.Emit(OpCodes.Brtrue, lGotIt);
-          fILG.Emit(OpCodes.Pop);
-          WriteExpression(BinaryExpression(aExpression).RightSide);
-          CallGetValue(BinaryExpression(aExpression).RightSide.Type);
-          fILG.MarkLabel(lGotIt);
-        end;
-      else
-        raise new EcmaScriptException(aExpression.PositionPair.File, aExpression.PositionPair, EcmaScriptErrorKind.EInternalError, 'Unknown type: '+aExpression.Type);
-      end; // case
-    end;
-    ElementType.ConditionalExpression: begin
-      WriteExpression(ConditionalExpression(aExpression).Condition);
-      CallGetValue(ConditionalExpression(aExpression).Condition.Type);
-      fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-      fILG.Emit(OpCodes.Call, Utilities.method_GetObjAsBoolean);
-      var lFalse := fILG.DefineLabel;
-      var lExit := fILG.DefineLabel;
-      fILG.Emit(OpCodes.Brfalse, lFalse);
-      WriteExpression(ConditionalExpression(aExpression).True);
-      CallGetValue(ConditionalExpression(aExpression).True.Type);
-      fILG.Emit(OpCodes.Br, lExit);
-      fILG.MarkLabel(lFalse);
-      WriteExpression(ConditionalExpression(aExpression).False);
-      CallGetValue(ConditionalExpression(aExpression).False.Type);
-      fILG.MarkLabel(lExit);
-    end;
-    ElementType.ArrayLiteralExpression: begin
-      fILG.Emit(OpCodes.Ldc_I4, ArrayLiteralExpression(aExpression).Items.Count);
-      fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-      fILG.Emit(OpCodes.Call, ExecutionContext.Method_get_Global);
-      fILG.Emit(OpCodes.Newobj, EcmaScriptArrayObject.Constructor);
-      for each el in ArrayLiteralExpression(aExpression).Items do begin
-        fILG.Emit(OpCodes.Dup);
-        if el = nil then  begin
-          fILG.Emit(OpCodes.Call, Undefined.Method_Instance);
-        end else begin
-          WriteExpression(el);
-          CallGetValue(el.Type);
-        end;
-        fILG.Emit(OpCodes.Call, EcmaScriptArrayObject.Method_AddValue);
-      end;
-    end;
-    ElementType.ObjectLiteralExpression: begin
-      fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-      fILG.Emit(OpCodes.Call, ExecutionContext.Method_get_Global);
-      fILG.Emit(OpCodes.Newobj, EcmaScriptObject.Constructor);
-      for each el in ObjectLiteralExpression(aExpression).Items do begin
-        case el.Name.Type of 
-          ElementType.IdentifierExpression: fILG.Emit(OpCodes.Ldstr, IdentifierExpression(el.Name).Identifier);
-        else
-          WriteExpression(el.Name);
-        end; // case
-        fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-        fILG.Emit(OpCodes.Call, Utilities.Method_GetObjAsString);
-        fILG.Emit(OpCodes.Ldc_I4, Integer(el.Mode));
-        WriteExpression(el.Value);
-        CallGetValue(el.Value.Type);
-        fILG.Emit(OpCodes.Ldc_I4, if fUseStrict then 1 else 0);
-        fILG.Emit(OpCodes.Call, EcmaScriptObject.Method_ObjectLiteralSet);
-      end;
-    end;
-    ElementType.SubExpression: begin
-      WriteExpression(SubExpression(aExpression).Member);
-      CallGetValue(SubExpression(aExpression).Member.Type);
-      fILG.Emit(OpCodes.Ldstr, SubExpression(aExpression).Identifier);
-      fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-      fILG.Emit(OpCodes.Ldc_I4, if fUseStrict then 1 else 0);
-      fILG.Emit(OpCodes.Call, Reference.Method_Create);
-    end;
-    ElementType.ArrayAccessExpression: begin
-      WriteExpression(ArrayAccessExpression(aExpression).Member);
-      CallGetValue(ArrayAccessExpression(aExpression).Member.Type);
-      
-      WriteExpression(ArrayAccessExpression(aExpression).Parameter);
-      CallGetValue(ArrayAccessExpression(aExpression).Parameter.Type);
-      fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-      fILG.Emit(OpCodes.Ldc_I4, if fUseStrict then 3 else 2);
-      fILG.Emit(OpCodes.Call, Reference.Method_Create);
-    end;
-    ElementType.NewExpression: begin
-      WriteExpression(NewExpression(aExpression).Member);
-      CallGetValue(NewExpression(aExpression).Member.Type);
-      fILG.Emit(OpCodes.Isinst, typeOf(EcmaScriptObject));
-      fILG.Emit(OpCodes.Dup);
-      var lIsObject := fILG.DefineLabel;
-      fILG.Emit(OpCodes.Brtrue, lIsObject);
-      fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-      fILG.Emit(OpCodes.Call, ExecutionContext.Method_get_Global);
-      fILG.Emit(OpCodes.Ldc_I4, Integer(NativeErrorType.TypeError));
-      fILG.Emit(OpCodes.Ldstr, 'Cannot instantiate non-object value');
-      fILG.Emit(OpCodes.Call, GlobalObject.Method_RaiseNativeError);
-      fILG.MarkLabel(lIsObject);
-      fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-      fILG.Emit(OpCodes.Ldc_I4, NewExpression(aExpression).Parameters.Count);
-      fILG.Emit(OpCodes.Newarr, typeOf(Object));
-      for each el in NewExpression(aExpression).Parameters index n do begin
-        fILG.Emit(OpCodes.Dup);
-        fILG.Emit(OpCodes.Ldc_I4, n);
-        WriteExpression(el);
-        CallGetValue(el.Type);
-        fILG.Emit(OpCodes.Stelem_Ref);
-      end;
-
-      fILG.Emit(OpCodes.Callvirt, EcmaScriptObject.Method_Construct);
-    end;
-
-    ElementType.CallExpression: begin
-      WriteExpression(CallExpression(aExpression).Member);
-      fILG.Emit(OpCodes.Ldarg_1); // self
-      
-      fILG.Emit(OpCodes.Ldc_I4, CallExpression(aExpression).Parameters.Count);
-      fILG.Emit(OpCodes.Newarr, typeOf(Object));
-      for each el in CallExpression(aExpression).Parameters index n do begin
-        fILG.Emit(OpCodes.Dup);
-        fILG.Emit(OpCodes.Ldc_I4, n);
-        WriteExpression(el);
-        CallGetValue(el.Type);
-        fILG.Emit(OpCodes.Stelem_Ref);
-      end;
-      fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-      fILG.Emit(OpCodes.Call, EcmaScriptObject.Method_CallHelper);
-    end;
-    ElementType.CommaSeparatedExpression: // only for for
-    begin
-      for i: Integer := 0 to CommaSeparatedExpression(aExpression).Parameters.Count -1 do begin
-        if i <> 0 then fILG.Emit(OpCodes.Pop);
-        WriteExpression(CommaSeparatedExpression(aExpression).Parameters[i]);
-        CallGetValue(CommaSeparatedExpression(aExpression).Parameters[i].Type);
-      end;
-    end;
-
-    ElementType.FunctionExpression: WriteFunction(FunctionExpression(aExpression).Function, false);
-  else
-    raise new EcmaScriptException(aExpression.PositionPair.File, aExpression.PositionPair, EcmaScriptErrorKind.EInternalError, 'Unknown type: '+aExpression.Type);
-  end; // case
+    end; // case
+  end;
 end;
-{$ENDREGION write expression}
+{$ENDREGION Write Expression}
 
-method EcmaScriptCompiler.CallGetValue(aFromElement: ElementType);
+
+method EcmaScriptCompiler.CallGetValue(elementType: ElementType);
 begin
-  case aFromElement of
-    ElementType.SubExpression,
-    ElementType.CallExpression,
-    ElementType.ArrayAccessExpression,
-    ElementType.IdentifierExpression: ;
-  else
-    exit; // not needed
-  end; // case
+  if not elementType in [ ElementType.SubExpression, ElementType.CallExpression, ElementType.ArrayAccessExpression, ElementType.IdentifierExpression ] then
+    exit;
+
   // Expect: POSSIBLE reference on stack (always typed object)
   // Returns: Object value
-  fILG.Emit(OpCodes.Ldloc, fExecutionContext);
-  fILG.Emit(OpCodes.Call, Reference.Method_GetValue);
-
+  self.fILG.Emit(OpCodes.Ldloc, fExecutionContext);
+  self.fILG.Emit(OpCodes.Call, Reference.Method_GetValue);
 end;
+
 
 method EcmaScriptCompiler.CallSetValue;
 begin
@@ -1807,5 +2359,27 @@ begin
   JumpTable.Add(aLabel);
   exit JumpTable.Count -1;
 end;
+
+
+constructor ExecutionStep(expression: ExpressionElement;  &step: Int32);
+begin
+  self.Expression := expression;
+  self.Step := step;
+end;
+
+
+constructor ExecutionStep(expression: ExpressionElement);
+begin
+  constructor(expression, 0);
+end;
+
+
+method ExecutionStep.NextStep(): ExecutionStep;
+begin
+  inc(self.Step);
+
+  exit self;
+end;
+
 
 end.
