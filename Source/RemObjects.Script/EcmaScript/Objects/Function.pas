@@ -32,7 +32,7 @@ type
 
   EcmaScriptBaseFunctionObject = public class(EcmaScriptObject)
   protected
-    fOriginalName: string;
+    fOriginalName: String;
   public
     property Scope: EnvironmentRecord;
 
@@ -67,14 +67,14 @@ type
   end;
   EcmaScriptInternalFunctionObject = public class(EcmaScriptBaseFunctionObject)
   private
-    fOriginalBody: string;
+    fOriginalBody: String;
     fDelegate: InternalFunctionDelegate;
   public
-    constructor (aScope: GlobalObject; aScopeVar: EnvironmentRecord; aOriginalName: String; aDelegate: InternalFunctionDelegate; aLength: Integer; aOriginalBody: string; aStrict: Boolean := false);
+    constructor (aScope: GlobalObject; aScopeVar: EnvironmentRecord; aOriginalName: String; aDelegate: InternalFunctionDelegate; aLength: Integer; aOriginalBody: String; aStrict: Boolean := false);
     property &Delegate: InternalFunctionDelegate read fDelegate;
-    property OriginalBody: string read fOriginalBody;
-    class var &Constructor: System.Reflection.ConstructorInfo := typeof(EcmaScriptInternalFunctionObject).GetConstructor([
-      typeof(GlobalObject), typeof(EnvironmentRecord), typeof(string), typeof(InternalFunctionDelegate), typeof(Integer),typeof(string), typeof(Boolean)]); readonly;
+    property OriginalBody: String read fOriginalBody;
+    class var &Constructor: System.Reflection.ConstructorInfo := typeOf(EcmaScriptInternalFunctionObject).GetConstructor([
+      typeOf(GlobalObject), typeOf(EnvironmentRecord), typeOf(String), typeOf(InternalFunctionDelegate), typeOf(Integer),typeOf(String), typeOf(Boolean)]); readonly;
     method Call(context: ExecutionContext; params args: array of Object): Object; override;
     method CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object; override;
     method Construct(context: ExecutionContext; params args: array of Object): Object; override;
@@ -104,14 +104,14 @@ end;
 
 method GlobalObject.FunctionCtor(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
-  var lNames: string := '';
+  var lNames: String := '';
   var lBody := '';
-  if Length(Args) <> 0 then begin
-    for i: Integer := 0 to Length(Args) -2 do begin
-      if i = 0 then lNames := Utilities.GetArgAsString(args, i, aCaller) else
-        lNames := lNames+','+Utilities.GetArgAsString(args, i, aCaller);
+  if length(Args) <> 0 then begin
+    for i: Integer := 0 to length(Args) -2 do begin
+      if i = 0 then lNames := Utilities.GetArgAsString(Args, i, aCaller) else
+        lNames := lNames+','+Utilities.GetArgAsString(Args, i, aCaller);
     end;
-    lBody := Utilities.GetArgAsString(Args, Length(Args)-1, aCaller);
+    lBody := Utilities.GetArgAsString(Args, length(Args)-1, aCaller);
   end;
   var lTokenizer := new Tokenizer;
   var lParser := new Parser;
@@ -151,7 +151,7 @@ begin
   var lFunc := new FunctionDeclarationElement(lCode.PositionPair, FunctionDeclarationType.None, nil, lParams, lCode);
 
   var lPrev := fParser.fLastData;
-  fPArser.fLastData := lBody;
+  fParser.fLastData := lBody;
   try
   exit new EcmaScriptInternalFunctionObject(self, fParser.fRoot, nil, InternalFunctionDelegate(fParser.Parse(lFunc, false, nil, lCode.Items)), lFunc.Parameters.Count, lBody, aCaller.Strict);
   finally
@@ -162,7 +162,7 @@ end;
 method GlobalObject.FunctionToString(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
 begin
   var lSelf := EcmaScriptBaseFunctionObject(aSelf);
-  if lself = nil then RaiseNativeError(NativeErrorType.TypeError, 'Function.prototype.toString() is not generic');
+  if lSelf = nil then RaiseNativeError(NativeErrorType.TypeError, 'Function.prototype.toString() is not generic');
   if lSelf is EcmaScriptInternalFunctionObject then
     exit EcmaScriptInternalFunctionObject(lSelf).OriginalBody;
   result := 'function '+lSelf:&Class+'() { }'
@@ -172,14 +172,14 @@ method GlobalObject.FunctionApply(aCaller: ExecutionContext;aSelf: Object; param
 begin
   if aSelf is not EcmaScriptObject then RaiseNativeError(NativeErrorType.TypeError, 'Function.prototype.apply is not generic');
   var lSelf: Object := nil;
-  if (Length(args) = 0) or (args[0] is not EcmaScriptObject) then lSelf := self else lSelf := args[0];
-  var lArgs: array of object;
-  if (Length(args) < 2) then lArgs := [] else begin
-    if (args[1] = nil) or (args[1] = Undefined.Instance) then lArgs := [] else 
-    if args[1] is not EcmaScriptObject then begin
+  if (length(Args) = 0) or (Args[0] is not EcmaScriptObject) then lSelf := self else lSelf := Args[0];
+  var lArgs: array of Object;
+  if (length(Args) < 2) then lArgs := [] else begin
+    if (Args[1] = nil) or (Args[1] = Undefined.Instance) then lArgs := [] else 
+    if Args[1] is not EcmaScriptObject then begin
       RaiseNativeError(NativeErrorType.TypeError, 'Array expected for argArray parameter');
     end;
-    var lArgObj := EcmaScriptObject(args[1]);
+    var lArgObj := EcmaScriptObject(Args[1]);
     var lLen := lArgObj.Get(aCaller, 0, 'length');
     if (lLen = nil) or (lLen = Undefined.Instance) then RaiseNativeError(NativeErrorType.TypeError, 'Array expected for argArray parameter');
     lArgs := new Object[Utilities.GetObjAsCardinal(lLen, aCaller)];
@@ -193,8 +193,8 @@ method GlobalObject.FunctionCall(aCaller: ExecutionContext;aSelf: Object; params
 begin
   if aSelf is not EcmaScriptObject then RaiseNativeError(NativeErrorType.TypeError, 'Function.prototype.call is not generic');
   var lSelf: Object := nil;
-  if (Length(args) = 0) or (args[0] is not EcmaScriptObject) then lSelf := self else lSelf := args[0];
-  var lArgs: array of object := new Object[iif(Length(Args) < 1, 0, Length(args) -1)];
+  if (length(Args) = 0) or (Args[0] is not EcmaScriptObject) then lSelf := self else lSelf := Args[0];
+  var lArgs: array of Object := new Object[iif(length(Args) < 1, 0, length(Args) -1)];
   if lArgs.Length >0 then Array.Copy(Args, 1, lArgs, 0, lArgs.Length);
   exit EcmaScriptObject(aSelf).CallEx(aCaller, lSelf, lArgs);
 end;
@@ -229,14 +229,14 @@ begin
   inherited constructor(aScope, new EcmaScriptObject(aScope, aScope.Root.FunctionPrototype));
   &Class := 'Function';
   var lProto := new EcmaScriptObject(aScope);
-  lProto.DefineOwnProperty('constructor', new PropertyValue(PropertyAttributes.writable or PropertyAttributes.Configurable, self));
+  lProto.DefineOwnProperty('constructor', new PropertyValue(PropertyAttributes.Writable or PropertyAttributes.Configurable, self));
   fOriginalName := aOriginalName;
   fDelegate := aDelegate;
   Values.Add('length', PropertyValue.NotAllFlags(aLength));
   if aNoProto then 
-    DefineOwnProperty('prototype', new PropertyValue(PropertyAttributes.writable, Undefined.Instance))
+    DefineOwnProperty('prototype', new PropertyValue(PropertyAttributes.Writable, Undefined.Instance))
   else
-    DefineOwnProperty('prototype', new PropertyValue(PropertyAttributes.writable, lProto));
+    DefineOwnProperty('prototype', new PropertyValue(PropertyAttributes.Writable, lProto));
   if aStrict then begin
     DefineOwnProperty('caller', new PropertyValue(PropertyAttributes.None, aScope.Thrower, aScope.Thrower));
     DefineOwnProperty('arguments', new PropertyValue(PropertyAttributes.None, aScope.Thrower, aScope.Thrower));
@@ -268,17 +268,17 @@ begin
   exit fDelegate(context, self, args);
 end;
 
-constructor EcmaScriptInternalFunctionObject(aScope: GlobalObject; aScopeVar: EnvironmentRecord; aOriginalName: String; aDelegate: InternalFunctionDelegate; aLength: Integer; aOriginalBody: string; aStrict: Boolean := false);
+constructor EcmaScriptInternalFunctionObject(aScope: GlobalObject; aScopeVar: EnvironmentRecord; aOriginalName: String; aDelegate: InternalFunctionDelegate; aLength: Integer; aOriginalBody: String; aStrict: Boolean := false);
 begin
   inherited constructor(aScope, new EcmaScriptObject(aScope, aScope.Root.FunctionPrototype));
   &Class := 'Function';
   Scope := aScopeVar;
   var lProto := new EcmaScriptObject(aScope);
-  lProto.DefineOwnProperty('constructor', new PropertyValue(PropertyAttributes.writable or PropertyAttributes.Configurable, self));
+  lProto.DefineOwnProperty('constructor', new PropertyValue(PropertyAttributes.Writable or PropertyAttributes.Configurable, self));
   fOriginalName := aOriginalName;
   fDelegate := aDelegate;
   Values.Add('length', PropertyValue.NotAllFlags(aLength));
-  DefineOwnProperty('prototype', new PropertyValue(PropertyAttributes.writable, lProto));
+  DefineOwnProperty('prototype', new PropertyValue(PropertyAttributes.Writable, lProto));
   if aStrict then begin
     DefineOwnProperty('caller', new PropertyValue(PropertyAttributes.None, aScope.Thrower, aScope.Thrower));
     DefineOwnProperty('arguments', new PropertyValue(PropertyAttributes.None, aScope.Thrower, aScope.Thrower));
@@ -310,34 +310,34 @@ constructor EcmaScriptBoundFunctionObject(aGlobal: GlobalObject; aFunc: EcmaScri
 begin
   inherited constructor(aGlobal);
   Prototype := aGlobal.FunctionPrototype;
-  self.fFunc := EcmaScriptInternalFunctionObject(afunc):&Delegate;
+  self.fFunc := EcmaScriptInternalFunctionObject(aFunc):&Delegate;
   &Class := 'Function';
   Scope := aFunc.Scope;
   var lProto := new EcmaScriptObject(aGlobal);
-  lProto.DefineOwnProperty('constructor', new PropertyValue(PropertyAttributes.writable or PropertyAttributes.Configurable, self));
+  lProto.DefineOwnProperty('constructor', new PropertyValue(PropertyAttributes.Writable or PropertyAttributes.Configurable, self));
   var lLength := Utilities.GetObjAsInteger(aFunc.Get(nil, 0, 'length'), aGlobal.ExecutionContext);
 
   fOriginal := aFunc;
   lLength := lLength - (length(args) - 1);
   if lLength < 0 then lLength := 0;
   fNewSelf := Utilities.GetArg(args, 0);
-  if Length(Args) = 0 then
+  if length(args) = 0 then
    fNewArgs := []
   else begin
-    fNewArgs := new Object[Length(Args ) -1];
-    ARray.Copy(args, 1, fNewArgs, 0, fNewArgs.Length);
+    fNewArgs := new Object[length(args ) -1];
+    Array.Copy(args, 1, fNewArgs, 0, fNewArgs.Length);
   end;
   Values.Add('length', PropertyValue.NotAllFlags(lLength));
-  DefineOwnProperty('prototype', new PropertyValue(PropertyAttributes.writable, lProto));
+  DefineOwnProperty('prototype', new PropertyValue(PropertyAttributes.Writable, lProto));
   DefineOwnProperty('caller', new PropertyValue(PropertyAttributes.None, aGlobal.Thrower, aGlobal.Thrower));
   DefineOwnProperty('arguments', new PropertyValue(PropertyAttributes.None, aGlobal.Thrower, aGlobal.Thrower));
 end;
 
 method EcmaScriptBoundFunctionObject.Call(context: ExecutionContext; params args: array of Object): Object;
 begin
-  if ffunc2 = nil then 
-    exit fFunc(new ExecutionContext(Scope, false), fNewSelf, System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Concat(fNewArgs, Args)), fOriginal);
-  exit fFunc2.CallEx(new ExecutionContext(Scope, false), fNewSelf, System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Concat(fNewArgs, Args)));
+  if fFunc2 = nil then 
+    exit fFunc(new ExecutionContext(Scope, false), fNewSelf, System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Concat(fNewArgs, args)), fOriginal);
+  exit fFunc2.CallEx(new ExecutionContext(Scope, false), fNewSelf, System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Concat(fNewArgs, args)));
 end;
 
 method EcmaScriptBoundFunctionObject.CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object;
@@ -348,25 +348,25 @@ end;
 constructor EcmaScriptBoundFunctionObject(aScope: EnvironmentRecord; aGlobal: GlobalObject; aFunc: EcmaScriptBaseFunctionObject; args: array of Object);
 begin
     inherited constructor(aGlobal);
-  self.fFunc2 := afunc;
+  self.fFunc2 := aFunc;
   &Class := 'Function';
-  Scope := ascope;
+  Scope := aScope;
   var lProto := new EcmaScriptObject(aGlobal);
-  lProto.DefineOwnProperty('constructor', new PropertyValue(PropertyAttributes.writable or PropertyAttributes.Configurable, self));
+  lProto.DefineOwnProperty('constructor', new PropertyValue(PropertyAttributes.Writable or PropertyAttributes.Configurable, self));
   var lLength := Utilities.GetObjAsInteger(aFunc.Get(nil, 0, 'length'), aGlobal.ExecutionContext);
 
   
   lLength := lLength - (length(args) - 1);
   if lLength < 0 then lLength := 0;
   fNewSelf := Utilities.GetArg(args, 0);
-  if Length(Args) = 0 then
+  if length(args) = 0 then
    fNewArgs := []
   else begin
-    fNewArgs := new Object[Length(Args ) -1];
-    ARray.Copy(args, 1, fNewArgs, 0, fNewArgs.Length);
+    fNewArgs := new Object[length(args ) -1];
+    Array.Copy(args, 1, fNewArgs, 0, fNewArgs.Length);
   end;
   Values.Add('length', PropertyValue.NotAllFlags(lLength));
-  DefineOwnProperty('prototype', new PropertyValue(PropertyAttributes.writable, lProto));
+  DefineOwnProperty('prototype', new PropertyValue(PropertyAttributes.Writable, lProto));
   DefineOwnProperty('caller', new PropertyValue(PropertyAttributes.None, aGlobal.Thrower, aGlobal.Thrower));
   DefineOwnProperty('arguments', new PropertyValue(PropertyAttributes.None, aGlobal.Thrower, aGlobal.Thrower));
 

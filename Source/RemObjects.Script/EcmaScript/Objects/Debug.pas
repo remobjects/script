@@ -10,9 +10,9 @@ uses
 
 type
   IDebugSink = public interface
-    method DebugLine(aFilename: string; aStartRow, aStartCol, aEndRow, aEndCol: Integer); 
-    method EnterScope(aName: string; aThis: Object; aContext: ExecutionContext); // enter method
-    method ExitScope(aName: string; aContext: ExecutionContext); // exit method
+    method DebugLine(aFilename: String; aStartRow, aStartCol, aEndRow, aEndCol: Integer); 
+    method EnterScope(aName: String; aThis: Object; aContext: ExecutionContext); // enter method
+    method ExitScope(aName: String; aContext: ExecutionContext; aResult: Object; aExcept: Boolean); // exit method
     method CaughtException(e: Exception); // triggers on a CATCH before the js code itself
     method UncaughtException(e: Exception); // triggers when an exception escapes the main method
     method Debugger; 
@@ -20,9 +20,9 @@ type
 
   RemObjects.Script.EcmaScript.Internal.DebugSink = class(IDebugSink)
   public
-    method DebugLine(aFilename: string; aStartRow, aStartCol, aEndRow, aEndCol: Integer); virtual; empty;
-    method EnterScope(aName: string; aThis: Object; aContext: ExecutionContext); virtual; empty;// enter method
-    method ExitScope(aName: string; aContext: ExecutionContext); virtual; empty;// exit method
+    method DebugLine(aFilename: String; aStartRow, aStartCol, aEndRow, aEndCol: Integer); virtual; empty;
+    method EnterScope(aName: String; aThis: Object; aContext: ExecutionContext); virtual; empty;// enter method
+    method ExitScope(aName: String; aContext: ExecutionContext; aResult: Object; aExcept: Boolean); virtual; empty;// exit method
     method CaughtException(e: Exception); virtual; empty;// triggers on a CATCH before the js code itself
     method UncaughtException(e: Exception); virtual; empty;// triggers when an exception escapes the main method
     method Debugger; virtual; empty;

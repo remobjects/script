@@ -1,8 +1,8 @@
 ﻿{
-
-  Copyright (c) 2009-2010 RemObjects Software. See LICENSE.txt for more details.
-
+  Copyright (c) 2009-2013 RemObjects Software, LLC.
+  See LICENSE.txt for more details.
 }
+
 namespace RemObjects.Script.EcmaScript;
 
 interface
@@ -24,21 +24,25 @@ type
     class property Instance: Undefined read fInstance;
     method ToString: String; override;
 
-    class var Method_Instance: System.Reflection.MethodInfo := typeof(Undefined).GetMethod('get_Instance'); readonly;
+    class var Method_Instance: System.Reflection.MethodInfo := typeOf(Undefined).GetMethod('get_Instance'); readonly;
   end;
+
 
   GlobalObject = public partial class(EcmaScriptObject)
   private
-    fExecutionContext: ExecutionContext;
-    fDebug: IDebugSink;
+    var fExecutionContext: ExecutionContext;
+    var fDebug: IDebugSink;
+
     method get_ExecutionContext: ExecutionContext;
     method get_Debug: IDebugSink;
+
   assembly
     fParser: EcmaScriptCompiler;
     fDelegates: List<InternalFunctionDelegate> := new List<InternalFunctionDelegate>;
+
   public
-    constructor (aParser: EcmaScriptCompiler);
-		constructor;
+    constructor(aParser: EcmaScriptCompiler);
+    constructor();
 
     property ExecutionContext: ExecutionContext read get_ExecutionContext write fExecutionContext;
 
@@ -47,11 +51,11 @@ type
     method IncreaseFrame;
     method DecreaseFrame;
 
-    class var Method_IncreaseFrame: System.Reflection.MethodInfo := typeof(GlobalObject).GetMethod('IncreaseFrame'); readonly;
-    class var Method_DecreaseFrame: System.Reflection.MethodInfo := typeof(GlobalObject).GetMethod('DecreaseFrame'); readonly;
+    class var Method_IncreaseFrame: System.Reflection.MethodInfo := typeOf(GlobalObject).GetMethod('IncreaseFrame'); readonly;
+    class var Method_DecreaseFrame: System.Reflection.MethodInfo := typeOf(GlobalObject).GetMethod('DecreaseFrame'); readonly;
 
     method StoreFunction(aDelegate: InternalFunctionDelegate): Integer;
-    class var Method_GetFunction: System.Reflection.MethodInfo := typeof(GlobalObject).GetMethod('GetFunction'); readonly;
+    class var Method_GetFunction: System.Reflection.MethodInfo := typeOf(GlobalObject).GetMethod('GetFunction'); readonly;
     method GetFunction(i: Integer): InternalFunctionDelegate;
 
     property Parser: EcmaScriptCompiler read fParser write fParser;
@@ -70,21 +74,28 @@ type
     property Thrower: EcmaScriptFunctionObject;
     property NativePrototype: EcmaScriptObject;
     property NotStrictGlobalEvalFunc: EcmaScriptFunctionObject;
-    method NativeToString(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
-    method eval(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
-    method NotStrictGlobalEval(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
-    method InnerEval(aCaller: ExecutionContext; aStrict: Boolean; aSelf: Object; params args: Array of object): Object;
-    method parseInt(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
-    method parseFloat(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
-    method isNaN(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
-    method isFinite(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
-    method escape(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
-    method unescape(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
-    method encodeURI(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
-    method decodeURI(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
-    method encodeURIComponent(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
-    method decodeURIComponent(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
-    
+    method NativeToString(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
+    method eval(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+    method NotStrictGlobalEval(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
+    method InnerExecutionContext(caller: ExecutionContext;  strict: Boolean): ExecutionContext;
+    method InnerCompile(strict: Boolean;  script: String): InternalDelegate;
+    method InnerEval(caller: ExecutionContext;  strict: Boolean;  &self: Object;  params args: array of Object): Object;
+    method InnerEval(caller: ExecutionContext;  strict: Boolean;  &self: Object;  evalDelegate: InternalDelegate): Object;
+    method InnerEval(strict: Boolean;  params args: array of Object): Object;
+    method InnerEval(strict: Boolean;  evalDelegate: InternalDelegate): Object;
+
+    method parseInt(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+    method parseFloat(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+    method isNaN(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+    method isFinite(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+    method escape(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+    method unescape(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+    method encodeURI(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+    method decodeURI(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+    method encodeURIComponent(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+    method decodeURIComponent(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+
     // Proto:
     method ObjectToString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method ObjectToLocaleString(aCaller: ExecutionContext; aSelf: Object; params args: Array of Object): Object;
@@ -107,17 +118,18 @@ type
     method ObjectisFrozen(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method ObjectisExtensible(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
     method ObjectKeys(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
-    
+
     method CreateObject: EcmaScriptObject;
     method ToString: String; override;
   end;
+
+
   EcmaScriptEvalFunctionObject = class(EcmaScriptFunctionObject);
 
 
   EcmaScriptObjectObject = class(EcmaScriptBaseFunctionObject)
-  private
   public
-    constructor(aOwner: GlobalObject; aName: string);
+    constructor(aOwner: GlobalObject; aName: String);
 
     method Call(context: ExecutionContext; params args: array of Object): Object; override;
     method CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object; override;
@@ -175,53 +187,93 @@ begin
 end;
 
 
-method GlobalObject.eval(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
+method GlobalObject.eval(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  InnerEval(aCaller, true, aSelf, args); // strict; this is called through the 
+  exit InnerEval(aCaller, true, aSelf, args); // strict; this is called through the 
 end;
 
 
-method GlobalObject.InnerEval(aCaller: ExecutionContext; aStrict: Boolean; aSelf: Object; params args: Array of object): Object;
+method GlobalObject.InnerExecutionContext(caller: ExecutionContext;  strict: Boolean): ExecutionContext;
 begin
-  if (args.Length < 0) or (args[0] is not String) then exit if args.Length= 0 then Undefined.Instance else args[0];
-  var lScript := string(args[0]);
+  if caller.Strict or strict then
+    exit new ExecutionContext(new DeclarativeEnvironmentRecord(caller.LexicalScope, self), true);
 
-  var lEx := aCaller;
-  if aCaller.Strict or aStrict then begin
-    lEx := new ExecutionContext(new DeclarativeEnvironmentRecord(aCaller.LexicalScope, self), aCaller.Strict);
-  end;
-  
-  var lTokenizer := new Tokenizer;
-  var lParser := new Parser;
+  exit caller;
+end;
+
+
+method GlobalObject.InnerCompile(strict: Boolean;  script: String): InternalDelegate;
+begin
+  if String.IsNullOrEmpty(script) then
+    exit nil;
+
+  var lTokenizer: Tokenizer := new Tokenizer();
+  var lParser: Parser := new Parser();
   lTokenizer.Error += lParser.fTok_Error;
-  lTokenizer.SetData(lScript, '<eval>');
+  lTokenizer.SetData(script, '<eval>');
   lTokenizer.Error -= lParser.fTok_Error;
-  
+
   try
-    var lElement := lParser.Parse(lTokenizer);
+    var lElement: ProgramElement := lParser.Parse(lTokenizer);
     for each el in lParser.Messages do begin
       if el.IsError then 
-        RaiseNativeError(NativeErrorType.SyntaxError, el.IntToString());
+        RaiseNativeError(NativeErrorType.SyntaxError, el.ToString());// this will reveal real error
     end;
-    var lEval: InternalDelegate := InternalDelegate(fParser.EvalParse(aCaller.Strict, lScript));
-    exit lEval(lEx, aSelf, []);
+
+    exit InternalDelegate(fParser.EvalParse(strict, script));
   except
-    on e: ScriptParsingException do begin
+    on e: ScriptParsingException do
       RaiseNativeError(NativeErrorType.SyntaxError, e.Message);
-    end;
   end;
-  
 end;
 
-method GlobalObject.parseInt(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
+
+method GlobalObject.InnerEval(caller: ExecutionContext;  strict: Boolean;  &self: Object;  params args: array of Object): Object;
+begin
+  if (args.Length < 0) or (args[0] is not String) then
+    exit iif(args.Length=0,Undefined.Instance,args[0]);
+
+  var lScript: String := String(args[0]);
+
+  var lContext: ExecutionContext := self.InnerExecutionContext(caller, strict);
+  var lEval: InternalDelegate := self.InnerCompile(lContext.Strict, lScript);
+
+  exit lEval(lContext, &self, []);
+end;
+
+
+method GlobalObject.InnerEval(caller: ExecutionContext;  strict: Boolean;  &self: Object;  evalDelegate: InternalDelegate): Object;
+begin
+  if not assigned(evalDelegate) then
+    exit Undefined.Instance;
+
+  var lContext: ExecutionContext := self.InnerExecutionContext(caller, strict);
+
+  exit evalDelegate(lContext, &self, []);
+end;
+
+
+method GlobalObject.InnerEval(strict: Boolean;  params args: array of Object): Object;
+begin
+  exit InnerEval(self.ExecutionContext, strict, self, args);
+end;
+
+
+method GlobalObject.InnerEval(strict: Boolean;  evalDelegate: InternalDelegate): Object;
+begin
+  exit InnerEval(self.ExecutionContext, strict, self, evalDelegate);
+end;
+
+
+method GlobalObject.parseInt(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   var lVal: String;
   var lRadix: Integer;
-  if Length(args) < 1 then 
+  if length(args) < 1 then 
     lVal := '0'
   else begin
-    lVal := Utilities.GetArgAsString(Args, 0, aCaller);
-    if Length(Args) < 2 then
+    lVal := Utilities.GetArgAsString(args, 0, aCaller);
+    if length(args) < 2 then
       lRadix := 0
     else if (args[1] = nil) or (args[1] = Undefined.Instance) then 
       lRadix := 0
@@ -274,18 +326,18 @@ begin
   exit lSign * lResD;
 end;
 
-method GlobalObject.parseFloat(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
+method GlobalObject.parseFloat(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   var lVal := Utilities.GetArgAsString(args, 0, aCaller);
   result := Utilities.ParseDouble(lVal, false);
 end;
 
-method GlobalObject.isNaN(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
+method GlobalObject.isNaN(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   exit Double.IsNaN(Utilities.GetArgAsDouble(args, 0, aCaller));
 end;
 
-method GlobalObject.isFinite(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
+method GlobalObject.isFinite(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   var lVal := Utilities.GetArgAsDouble(args, 0, aCaller);
   exit not Double.IsInfinity(lVal) and not Double.IsNaN(lVal);
@@ -338,8 +390,8 @@ begin
   result.Values.Add('defineProperty', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'defineProperty', @ObjectdefineProperty, 3)));
   result.Values.Add('defineProperties', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'defineProperties', @ObjectdefineProperties, 3)));
   result.Values.Add('seal', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'seal', @ObjectSeal, 1)));
-  result.Values.Add('freeze', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'freeze', @Objectfreeze, 1)));
-  result.Values.Add('preventExtensions', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'preventExtensions', @ObjectpreventExtensions, 1)));
+  result.Values.Add('freeze', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'freeze', @ObjectFreeze, 1)));
+  result.Values.Add('preventExtensions', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'preventExtensions', @ObjectPreventExtensions, 1)));
   result.Values.Add('isSealed', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'isSealed', @ObjectisSealed, 1)));
   result.Values.Add('isFrozen', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'isFrozen', @ObjectisFrozen, 1)));
   result.Values.Add('isExtensible', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'isExtensible', @ObjectisExtensible, 1)));
@@ -353,7 +405,7 @@ begin
   ObjectPrototype.Values.Add('valueOf', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'valueOf', @ObjectValueOf, 0, false, true)));
 
   ObjectPrototype.Values.Add('isPrototypeOf', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'isPrototypeOf', @ObjectIsPrototypeOf, 1, false, true)));
-  ObjectPrototype.Values.Add('propertyIsEnumerable', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'propertyIsEnumerable', @ObjectpropertyIsEnumerable, 1, false, true)));
+  ObjectPrototype.Values.Add('propertyIsEnumerable', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'propertyIsEnumerable', @ObjectPropertyIsEnumerable, 1, false, true)));
   ObjectPrototype.Values.Add('hasOwnProperty', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'hasOwnProperty', @ObjectHasOwnProperty, 1, false, true)));
 end;
 
@@ -369,9 +421,9 @@ begin
   constructor(nil);
 end;
 
-method GlobalObject.encodeURI(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
+method GlobalObject.encodeURI(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var val := Utilities.GetArgAsString(Args, 0, aCaller);
+  var val := Utilities.GetArgAsString(args, 0, aCaller);
   try
   exit Utilities.UrlEncode(val);
   except
@@ -379,7 +431,7 @@ begin
   end;
 end;
 
-method GlobalObject.decodeURI(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
+method GlobalObject.decodeURI(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   var val := Utilities.GetArgAsString(args, 0, aCaller);
   try
@@ -391,9 +443,9 @@ begin
   if result = nil then RaiseNativeError(NativeErrorType.URIError, 'Invalid input');
 end;
 
-method GlobalObject.encodeURIComponent(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
+method GlobalObject.encodeURIComponent(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var val := Utilities.GetArgAsString(Args, 0, aCaller);
+  var val := Utilities.GetArgAsString(args, 0, aCaller);
   try
     exit Utilities.UrlEncodeComponent(val);  
   except
@@ -402,7 +454,7 @@ begin
 
 end;
 
-method GlobalObject.decodeURIComponent(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
+method GlobalObject.decodeURIComponent(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   var val :=Utilities.GetArgAsString(args, 0, aCaller);
   try
@@ -452,7 +504,7 @@ begin
 
   var lArgs := Utilities.GetArgAsEcmaScriptObject(args, 1, aCaller);
   if lArgs <> nil then
-    ObjectdefineProperties(aCaller, nil, lRes, largs);
+    ObjectdefineProperties(aCaller, nil, lRes, lArgs);
   exit lRes;
 end;
 
@@ -502,13 +554,13 @@ begin
   var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0, aCaller);
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'Type(O) is not Object');
   for each el in lWork.Values do
-    el.Value.Attributes := el.Value.Attributes and not (PropertyAttributes.Enumerable or PropertyAttributes.writable);
+    el.Value.Attributes := el.Value.Attributes and not (PropertyAttributes.Enumerable or PropertyAttributes.Writable);
   lWork.Extensible := false;
 
   exit lWork;
 end;
 
-method GlobalObject.ObjectpreventExtensions(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
+method GlobalObject.ObjectPreventExtensions(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   var lWork := Utilities.GetArgAsEcmaScriptObject(args, 0, aCaller);
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'Type(O) is not Object');
@@ -534,7 +586,7 @@ begin
   if lWork.Extensible then exit false;
   for each el in lWork.Values do begin
     if 0 <> Integer(PropertyAttributes.Configurable and el.Value.Attributes) then exit false;
-    if IsDataDescriptor(el.Value) and (0 <> Integer(PropertyAttributes.writable and el.Value.Attributes)) then exit false;
+    if IsDataDescriptor(el.Value) and (0 <> Integer(PropertyAttributes.Writable and el.Value.Attributes)) then exit false;
   end;
   exit true;
 end;
@@ -575,7 +627,7 @@ begin
   exit fDelegates[i];
 end;
 
-method GlobalObject.NotStrictGlobalEval(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
+method GlobalObject.NotStrictGlobalEval(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   if (aSelf  = Undefined.Instance) or (aSelf = nil) then begin
     aSelf := aCaller.LexicalScope.ImplicitThisValue();
@@ -591,29 +643,29 @@ begin
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'this is not Object');
   var lToString := EcmaScriptFunctionObject(lWork.Get(aCaller, 0, 'toString'));
   if lToString = nil then RaiseNativeError(NativeErrorType.TypeError, 'toString is not callable');
-  exit lToSTring.CallEx(aCaller, aself, []);
+  exit lToString.CallEx(aCaller, aSelf, []);
 end;
 
 method GlobalObject.ObjectHasOwnProperty(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   var lWork := Utilities.GetObjAsEcmaScriptObject(aSelf, aCaller);
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'this is not Object');
-  exit lWork.GetOwnProperty(Utilities.GetArgAsString(Args, 0, aCaller)) <> nil;
+  exit lWork.GetOwnProperty(Utilities.GetArgAsString(args, 0, aCaller)) <> nil;
 end;
 
 method GlobalObject.ObjectPropertyIsEnumerable(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   var lWork := Utilities.GetObjAsEcmaScriptObject(aSelf, aCaller);
   if lWork = nil then RaiseNativeError(NativeErrorType.TypeError, 'this is not Object');
-  var lProp := lWork.GetOwnProperty(Utilities.GetArgAsString(Args, 0, aCaller));
-  exit (lProp <> nil) and (PropertyATtributes.Enumerable in lProp.Attributes);
+  var lProp := lWork.GetOwnProperty(Utilities.GetArgAsString(args, 0, aCaller));
+  exit (lProp <> nil) and (PropertyAttributes.Enumerable in lProp.Attributes);
 end;
 
-method GlobalObject.escape(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
+method GlobalObject.escape(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   var lWork := Utilities.GetArgAsString(args, 0, aCaller);
   var sb := new StringBuilder;
-  for i: Integer := 0 to Length(lWork) -1 do begin
+  for i: Integer := 0 to length(lWork) -1 do begin
     case lWork[i] of 
       'A' .. 'Z',
       'a' .. 'z',
@@ -635,12 +687,12 @@ begin
   exit sb.ToString;
 end;
 
-method GlobalObject.unescape(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
+method GlobalObject.unescape(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
  var lWork := Utilities.GetArgAsString(args, 0, aCaller);
   var sb := new StringBuilder;
   var i: Integer := 0;
-  while i < Length(lWork) do begin
+  while i < length(lWork) do begin
     if lWork[i] = '%' then begin
       inc(i);
       var lTmp: Integer;
@@ -650,11 +702,11 @@ begin
 
           
           if Int32.TryParse(lWork.Substring(i, 4), System.Globalization.NumberStyles.AllowHexSpecifier, System.Globalization.NumberFormatInfo.InvariantInfo, out lTmp) then
-            sb.Append(char(lTmp));
+            sb.Append(Char(lTmp));
           inc(i, 4);
         end else begin
           if Int32.TryParse(lWork.Substring(i, 2), System.Globalization.NumberStyles.AllowHexSpecifier, System.Globalization.NumberFormatInfo.InvariantInfo, out lTmp) then
-            sb.Append(char(lTmp));
+            sb.Append(Char(lTmp));
           inc(i, 2);
         end;
 
@@ -685,19 +737,23 @@ begin
   exit fExecutionContext;
 end;
 
-method GlobalObject.NativeToString(aCaller: ExecutionContext;aSelf: Object; params args: Array of object): Object;
+
+method GlobalObject.NativeToString(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  var lEl := EcmaScriptObjectWrapper(aSelf);
-  if lEl = nil then RaiseNativeError(NativeErrorType.ReferenceError, 'native toString() is not generic');
-  exit lEl.Type.ToString;
+  var lObject: EcmaScriptObjectWrapper := EcmaScriptObjectWrapper(&self);
+  if not assigned(lObject) then
+    self.RaiseNativeError(NativeErrorType.ReferenceError, 'native toString() is not generic');
+
+  exit lObject.Value:ToString();
 end;
+
 
 method Undefined.ToString: String;
 begin
   exit 'undefined';
 end;
 
-constructor EcmaScriptObjectObject(aOwner: GlobalObject; aName: string);
+constructor EcmaScriptObjectObject(aOwner: GlobalObject; aName: String);
 begin
   inherited constructor(aOwner, new EcmaScriptObject(aOwner, aOwner.FunctionPrototype));
   &Class := 'Function';
@@ -709,14 +765,14 @@ method EcmaScriptObjectObject.Call(context: ExecutionContext; params args: array
 begin
   var lVal := Utilities.GetArg(args, 0);
   if (lVal = nil) or (lVal = Undefined.Instance) then exit Construct(context, nil, args);
-  exit Utilities.ToObject(context, lVAl);
+  exit Utilities.ToObject(context, lVal);
 end;
 
 method EcmaScriptObjectObject.Construct(context: ExecutionContext; params args: array of Object): Object;
 begin
-  if (Length(args) <> 0) and (args[0] <> nil) and (args[0] <> Undefined.Instance) then begin
+  if (length(args) <> 0) and (args[0] <> nil) and (args[0] <> Undefined.Instance) then begin
     if args[0] is EcmaScriptObject then exit args[0];
-    if (args[0] is string) or (args[0] is Integer) or (args[0] is Int64) or (args[0] is Double) or( args[0] is Boolean) then exit Utilities.ToObject(context, args[0]);
+    if (args[0] is String) or (args[0] is Integer) or (args[0] is Int64) or (args[0] is Double) or( args[0] is Boolean) then exit Utilities.ToObject(context, args[0]);
   end;
   exit new EcmaScriptObject(Root);
 end;
@@ -725,7 +781,7 @@ method EcmaScriptObjectObject.CallEx(context: ExecutionContext; aSelf: Object; p
 begin
   var lVal := Utilities.GetArg(args, 0);
   if (lVal = nil) or (lVal = Undefined.Instance) then exit Construct(context, nil, args);
-  exit Utilities.ToObject(context, lVAl);
+  exit Utilities.ToObject(context, lVal);
 end;
 
 end.

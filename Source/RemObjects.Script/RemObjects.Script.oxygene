@@ -28,6 +28,7 @@
     <EnableUnmanagedDebugging>True</EnableUnmanagedDebugging>
     <DebugClass />
     <AssertMethodName />
+    <WarnOnCaseMismatch>True</WarnOnCaseMismatch>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DefineConstants>DESIGN</DefineConstants>
@@ -45,8 +46,8 @@
     <XmlDocWarningLevel>WarningOnPublicMembers</XmlDocWarningLevel>
     <XmlDocAllMembers>False</XmlDocAllMembers>
     <Optimize>True</Optimize>
-    <GeneratePDB>False</GeneratePDB>
-    <GenerateMDB>False</GenerateMDB>
+    <GeneratePDB>True</GeneratePDB>
+    <GenerateMDB>True</GenerateMDB>
     <WarnOnCaseMismatch>False</WarnOnCaseMismatch>
     <RunCodeAnalysis>False</RunCodeAnalysis>
     <RequireExplicitLocalInitialization>False</RequireExplicitLocalInitialization>
@@ -118,7 +119,7 @@
     </None>
     <Compile Include="Properties\Settings.Designer.pas" />
     <Compile Include="ScriptComponent.pas">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -130,9 +131,15 @@
     <Folder Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Glyphs\EcmaScriptComponent.png">
+    <Content Include="EcmaScript\EcmaScriptComponent.png">
       <SubType>Content</SubType>
-    </EmbeddedResource>
+    </Content>
+    <Content Include="Glyphs\EcmaScriptComponent.png">
+      <SubType>Content</SubType>
+    </Content>
   </ItemGroup>
-  <Import Project="$(MSBuildExtensionsPath)\RemObjects Software\Oxygene\RemObjects.Oxygene.targets" />
+  <Import Project="$(MSBuildExtensionsPath)\RemObjects Software\Oxygene\RemObjects.Oxygene.Echoes.targets" />
+  <PropertyGroup>
+    <PreBuildEvent />
+  </PropertyGroup>
 </Project>

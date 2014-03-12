@@ -1,128 +1,134 @@
 ﻿using System;
-using System.Windows.Forms;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.IO;
+using System.Windows.Forms;
 
 namespace Debugger
 {
-	public partial class MainForm
-	{
-		bool fChanged;
-		string fFilename;
+    public partial class MainForm
+    {
+        Boolean fChanged;
+        String fFilename;
 
-		bool CanFileCommands ()
-		{
-			return ScriptEngine.Status == RemObjects.Script.ScriptStatus.Stopped;
-		}
+        Boolean CanFileCommands()
+        {
+            return ScriptEngine.Status == RemObjects.Script.ScriptStatus.Stopped;
+        }
 
-		bool IsDebugging ()
-		{
-			return ScriptEngine.Status != RemObjects.Script.ScriptStatus.Stopped;
-		}
+        Boolean IsDebugging()
+        {
+            return ScriptEngine.Status != RemObjects.Script.ScriptStatus.Stopped;
+        }
 
-		bool IsPaused ()
-		{
-			return ScriptEngine.Status == RemObjects.Script.ScriptStatus.Paused;
-		}
-		#region File menu handling
-		DialogResult CheckModified ()
-		{
-			return MessageBox.Show ("File Not Saved, save now?", "SingleFileEcmaScript", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1);
-		}
+        Boolean IsPaused()
+        {
+            return ScriptEngine.Status == RemObjects.Script.ScriptStatus.Paused;
+        }
 
-		bool IsChanged ()
-		{
-			return fChanged;
-		}
+        #region File menu handling
+        DialogResult CheckModified()
+        {
+            return MessageBox.Show("File Not Saved, save now?", "SingleFileEcmaScript", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1);
+        }
 
-		void Changed ()
-		{
-			fChanged = true;
-		}
+        Boolean IsChanged()
+        {
+            return fChanged;
+        }
 
-        new void Load(string fn)
-		{
-			tbMain.Text = File.ReadAllText (fn);
-			fFilename = fn;
-			fChanged = false;
-		}
+        void Changed()
+        {
+            fChanged = true;
+        }
 
-		void Save (string fn)
-		{
-			File.WriteAllText (fn, tbMain.Text);
-			fChanged = false;
-			fFilename = fn;
-		}
+        new void Load(String fn)
+        {
+            tbMain.Text = File.ReadAllText(fn);
+            fFilename = fn;
+            fChanged = false;
+        }
 
-		bool CanQuit ()
-		{
-			if(IsChanged ()) {
-				switch(CheckModified ()) {
-					case DialogResult.Yes:  
-						if (cmdSave()) 
-							return true; 
-						return false;
-					case DialogResult.No: return true;
-					default:
-						return false;
-				}
-			}
-			return true;
-		}
+        void Save(String fn)
+        {
+            File.WriteAllText(fn, tbMain.Text);
+            fChanged = false;
+            fFilename = fn;
+        }
 
-		void cmdQuit ()
-		{
-			if(CanQuit ())
-				Close ();
-		}
+        Boolean CanQuit()
+        {
+            if (IsChanged())
+            {
+                switch (CheckModified())
+                {
+                    case DialogResult.Yes:
+                        if (cmdSave())
+                            return true;
+                        return false;
+                    case DialogResult.No: return true;
+                    default:
+                        return false;
+                }
+            }
+            return true;
+        }
 
-		void cmdOpen ()
-		{
-			if(CanQuit ()) {
-				if(dlgOpen.ShowDialog () == DialogResult.OK)
-					Load (dlgOpen.FileName);
-			}
-		}
+        void cmdQuit()
+        {
+            if (CanQuit())
+                Close();
+        }
 
-		void cmdSaveAs ()
-		{
-			if(dlgSave.ShowDialog () == DialogResult.OK) {
-				Save (dlgSave.FileName);
-				fChanged = false;
-			}
-		}
+        void cmdOpen()
+        {
+            if (CanQuit())
+            {
+                if (dlgOpen.ShowDialog() == DialogResult.OK)
+                    Load(dlgOpen.FileName);
+            }
+        }
 
-		bool cmdSave ()
-		{
-			if(fFilename == null) {
-				if(dlgSave.ShowDialog () == DialogResult.OK) {
-					Save (dlgSave.FileName);
-					fChanged = false;
-					return true;
-				}
-				return false;
-			}
-			else {
-				Save (fFilename);
-				return true;
-			}
-		}
+        void cmdSaveAs()
+        {
+            if (dlgSave.ShowDialog() == DialogResult.OK)
+            {
+                Save(dlgSave.FileName);
+                fChanged = false;
+            }
+        }
 
-		void cmdNew ()
-		{
-			if(CanQuit ()) {
-				fFilename = null;
-				tbMain.Text = "";
-				fChanged = false;
-			}
-		}
-		#endregion
+        Boolean cmdSave()
+        {
+            if (fFilename == null)
+            {
+                if (dlgSave.ShowDialog() == DialogResult.OK)
+                {
+                    Save(dlgSave.FileName);
+                    fChanged = false;
+                    return true;
+                }
+                return false;
+            }
+            else
+            {
+                Save(fFilename);
+                return true;
+            }
+        }
 
-		#region Debug handling
-		void cmdRun ()
-		{
+        void cmdNew()
+        {
+            if (CanQuit())
+            {
+                fFilename = null;
+                tbMain.Text = "";
+                fChanged = false;
+            }
+        }
+        #endregion
+
+        #region Debug handling
+        void cmdRun()
+        {
             tabs.TabIndex = 1;
             ScriptEngine.Clear(false);
             ScriptEngine.Source = tbMain.Text;
@@ -130,47 +136,47 @@ namespace Debugger
             {
                 ScriptEngine.Run();
             }
-            catch(Exception e)
+            catch (Exception e)
             {
-                MessageBox.Show("Error while running: "+e.Message);
+                MessageBox.Show("Error while running: " + e.Message);
             }
-		}
+        }
 
-		void cmdStepInto ()
-		{
+        void cmdStepInto()
+        {
             if (!IsDebugging())
             {
                 tabs.TabIndex = 1;
                 ScriptEngine.Source = tbMain.Text;
             }
             ScriptEngine.StepInto();
-		}
+        }
 
-		void cmdStepOut ()
-		{
+        void cmdStepOut()
+        {
             ScriptEngine.StepOut();
-		}
+        }
 
-		void cmdStepOver ()
-		{
+        void cmdStepOver()
+        {
             ScriptEngine.StepOver();
-		}
+        }
 
-		void cmdSetBreakpoint ()
-		{
-		}
+        void cmdSetBreakpoint()
+        {
+        }
 
-		void cmdStop ()
-		{
+        void cmdStop()
+        {
             ScriptEngine.Stop();
-		}
-		#endregion
+        }
+        #endregion
 
-		#region Help commands
-		void CmdAbout ()
-		{
-			MessageBox.Show ("RemObjects Ecmascript DLR engine.\r\n\r\nCopyright (c) 2009 by RemObjects Software\r\nhttp://www.remobjects.com");
-		}
-		#endregion
-	}
+        #region Help commands
+        void CmdAbout()
+        {
+            MessageBox.Show("RemObjects Ecmascript DLR engine.\r\n\r\nCopyright (c) 2009 by RemObjects Software\r\nhttp://www.remobjects.com");
+        }
+        #endregion
+    }
 }

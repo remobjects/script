@@ -29,7 +29,7 @@ type
   PascalScriptException = public class(Exception)
   private
   public
-    class method ErrorToString(anError: PascalScriptErrorKind; aMsg: string): string;
+    class method ErrorToString(anError: PascalScriptErrorKind; aMsg: String): String;
     constructor (aFilename: String; aPosition: PositionPair; anError: PascalScriptErrorKind; aMsg: String := '');
     property Position: PositionPair; readonly;
     property Error: PascalScriptErrorKind; readonly;
@@ -47,11 +47,11 @@ type
     class var fVendorGuid: Guid := new Guid('5133A728-E83E-4C0D-BCB9-AB02B9C172C0');readonly;
   protected
   public
-    constructor(manager: ScriptDomainManager; options: IDictionary<string, object>); 
+    constructor(manager: ScriptDomainManager; options: IDictionary<String, object>); 
 
     property LanguageGuid: Guid read fLanguageGuid; override;
     property VendorGuid: Guid read fVendorGuid; override;
-    property LanguageVersion: System.Version read typeof(PascalScriptLanguageContext).Assembly.GetName(false).Version; override;
+    property LanguageVersion: System.Version read typeOf(PascalScriptLanguageContext).Assembly.GetName(false).Version; override;
 
     method CompileSourceCode(sourceUnit: SourceUnit; options: CompilerOptions; errorSink: ErrorSink): ScriptCode; override;
   end;
@@ -77,7 +77,7 @@ type
   
 implementation
 
-constructor PascalScriptLanguageContext(manager: ScriptDomainManager; options: IDictionary<string, object>);
+constructor PascalScriptLanguageContext(manager: ScriptDomainManager; options: IDictionary<String, object>);
 begin
   inherited constructor(manager);
 end;
@@ -125,12 +125,12 @@ end;
 
 method PascalScriptCompiler.Parse(aElements: ProgramBlock): LambdaExpression;
 begin
-(*  fOutside := Utils.Lambda(typeof(Object), 'EcmaScript');
+(*  fOutside := Utils.Lambda(typeOf(Object), 'EcmaScript');
   fOutside.Visible := false;
 
-  var lScopeParam := fOutside.ClosedOverParameter(typeof(Scope), '$scope');
-  var lLanguageContextParam := fOutside.ClosedOverParameter(typeof(LanguageContext), '$languagecontext');
-  fGlobalObject := fOutside.ClosedOverVariable(typeof(GlobalObject), '$global') as ParameterExpression;
+  var lScopeParam := fOutside.ClosedOverParameter(typeOf(Scope), '$scope');
+  var lLanguageContextParam := fOutside.ClosedOverParameter(typeOf(LanguageContext), '$languagecontext');
+  fGlobalObject := fOutside.ClosedOverVariable(typeOf(GlobalObject), '$global') as ParameterExpression;
 
   var lInside: LambdaExpression := IntParse(aElements);
 *)
@@ -147,7 +147,7 @@ begin
     Expression.Call(fGlobalObject, fGlobalObject.Type.GetMethod('SetScope'), lScopeParam), 
   Expression.Invoke(lInside, 
     fGlobalObject,
-    Expression.NewArrayInit(typeof(object), []))),
+    Expression.NewArrayInit(typeOf(object), []))),
       fContext.Document, 
         aElements.PositionPair.StartRow, aElements.PositionPair.StartCol,
         aElements.PositionPair.EndRow, aElements.PositionPair.EndCol);
@@ -161,7 +161,7 @@ end;
 
 
 
-class method PascalScriptException.ErrorToString(anError: PascalScriptErrorKind; aMsg: string): string;
+class method PascalScriptException.ErrorToString(anError: PascalScriptErrorKind; aMsg: String): String;
 begin
 
 end;

@@ -17,9 +17,9 @@ type
     class method Divide(aLeft, aRight: Object; ec: ExecutionContext): Object;
     class method Modulus(aLeft, aRight: Object; ec: ExecutionContext): Object;
 
-    class var Method_Multiply: System.Reflection.MethodInfo := typeof(Operators).GetMethod('Multiply');
-    class var Method_Divide: System.Reflection.MethodInfo := typeof(Operators).GetMethod('Divide');
-    class var Method_Modulus: System.Reflection.MethodInfo := typeof(Operators).GetMethod('Modulus');
+    class var Method_Multiply: System.Reflection.MethodInfo := typeOf(Operators).GetMethod('Multiply');
+    class var Method_Divide: System.Reflection.MethodInfo := typeOf(Operators).GetMethod('Divide');
+    class var Method_Modulus: System.Reflection.MethodInfo := typeOf(Operators).GetMethod('Modulus');
   end;
 implementation
 class method Operators.Multiply(aLeft, aRight: Object; ec: ExecutionContext): Object;
@@ -42,7 +42,7 @@ end;
 
 class method Operators.Divide(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
-  if (aLeft is Int32) and (aRight is Int32) and (Integer(aRight) <> 0) and (Integer(aLeft) <> 0) and (Integer(aLeft) mod Integer(aright) = 0) then begin
+  if (aLeft is Int32) and (aRight is Int32) and (Integer(aRight) <> 0) and (Integer(aLeft) <> 0) and (Integer(aLeft) mod Integer(aRight) = 0) then begin
     exit Integer(aLeft) div Integer(aRight);
   end;
   

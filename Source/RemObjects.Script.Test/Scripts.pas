@@ -9,12 +9,7 @@ uses
   System.Text;
 
 type
-  MyDelegate = method(params args: Array of object): Object;  
-
-  Scripts = public class
-  assembly
-    fResult: String;
-    method ExecuteJS(s: String): Object;
+  Scripts = public class(ScriptTest)
   public
     [Fact]
     method Error;
@@ -38,28 +33,36 @@ type
     method SimpleFunctionTest;
     [Fact]
     method AndOrElse;
+
+    [Fact]
+    method MinMax();
+
     [Fact]
     method UnknownCall1;
     [Fact]
     method UnknownCall2;
-    [Fact]
-    method NativeMethodCall;
 
     [Theory]
     [InlineData('var x = new JSType(); writeln(x.A);',        'JSType', '42')]
     [InlineData('var x = new JSType(); writeln(x.B);',        'JSType', 'Foo')]
     [InlineData('writeln(JSType.Foo());',                     'JSType', 'Bar')]
     [InlineData('var x = new SimpleCLRType(); writeln(x.A);', '',       '42')]
+    [InlineData('writeln(lda.Bar());',                        '',       'LDA.CALL CALLED')]
     method ExposeType(aScript: String;  aTypeName: String;  aExpectedResult: String);
+
+    [Fact]
+    method RunFunction_Exception_IsNotLost();
+
+    [Fact]
+    method StingSlice();
+
+    [Fact]
+    method StingSubstring();
+
+    [Fact]
+    method StingSubStr();
   end;
 
-  LDA = public class
-  private
-    fScripts: Scripts;
-  public
-    constructor(aScripts: Scripts);
-    method Call;
-  end;
 
   SimpleCLRType = class
   public
@@ -69,6 +72,7 @@ type
     property B: String read write;
 
     class method Foo(): String;
+    method Bar(): String;
   end;
 
 
@@ -126,21 +130,6 @@ test
   Assert.Equal(lExpected.Replace(#13#10, #10), fresult.Replace(#13#10, #10));
 end;
 
-method Scripts.ExecuteJS(s: String): Object;
-begin
-  var lComp := new RemObjects.Script.EcmaScriptComponent;
-  lComp.Debug := false;
-  lComp.RunInThread := false;
-  lComp.Source := s;
-  fResult := '';
-  var lDel: MyDelegate :=  method (params args: Array of object): Object begin
-    for each el in args do fResult := fResult + RemObjects.Script.EcmaScript.Utilities.GetObjAsString(el, lComp.GlobalObject.ExecutionContext) + #13#10;
-  end;
-  lComp.Globals.SetVariable("writeln", lDel);
-  lComp.Globals.SetVariable('lda', new RemObjects.Script.EcmaScript.EcmaScriptObjectWrapper(new LDA(self), typeof(LDA), lComp.GlobalObject));
-  lComp.Run();
-  exit lComp.RunResult;
-end;
 
 method Scripts.SimpleEvalTest;
 begin
@@ -257,6 +246,20 @@ undefined";
   Assert.Equal(lExpected.Replace(#13#10, #10).Trim([#13, #9, #32, #10]), fresult.Replace(#13#10, #10).Trim([#13, #9, #32, #10]));
 end;
 
+
+method Scripts.MinMax();
+begin
+  self.ExecuteJS(
+      "var x = 1;
+       var y = 2;
+       writeln(Math.min(x,y) + ""--"" + Math.max(x,y));
+      ");
+  var lExpected: String := "1--2"+Environment.NewLine;
+
+  Assert.Equal(lExpected, self.fResult);
+end;
+
+
 method Scripts.TestProto;
 begin
   ExecuteJS(" function Test(x) { this.x = x; }
@@ -267,16 +270,18 @@ var lExpected:= 'x = 42';
   Assert.Equal(lExpected.Replace(#13#10, #10).Trim([#13, #9, #32, #10]), fresult.Replace(#13#10, #10).Trim([#13, #9, #32, #10]));
 end;
 
-method Scripts.Arguments;
+
+method Scripts.Arguments();
 begin
   ExecuteJS("var f = function(a,b) {
   writeln(arguments);
 };
 
 f();");
-var lExpected:= '[object Arguments]';
+  var lExpected:= '[object Arguments]';
   Assert.Equal(lExpected.Replace(#13#10, #10).Trim([#13, #9, #32, #10]), fresult.Replace(#13#10, #10).Trim([#13, #9, #32, #10]));
 end;
+
 
 method Scripts.UnicodeIdentifier;
 begin
@@ -312,11 +317,11 @@ writeln(Error.prototype.name);
 writeln(Error.prototype.message);
 writeln(Error.prototype.toString());");
 var lExpected :="Infinity
-SyntaxError: Syntax error
+SyntaxError: <eval>(1:2): Syntax error
 object
 true
 true
-Syntax error
+<eval>(1:2): Syntax error
 Error: test
 test
 Error
@@ -353,14 +358,6 @@ begin
   end;
 end;
 
-method Scripts.NativeMethodCall;
-begin
-  ExecuteJS("
-    lda.Call();
-  ");
-Assert.Equal(fResult, 'LDA.CALL CALLED'#13#10);
-end;
-
 
 method Scripts.ExposeType(aScript: String;  aTypeName: String;  aExpectedResult: String);
 begin
@@ -371,30 +368,114 @@ begin
   lScriptEngine.Source := aScript;
   self.fResult := String.Empty;
 
-  var lWriteLn: MyDelegate :=
-                   method (params args: array of Object): Object
-                   begin
-                     for each  el  in  args  do
-                       self.fResult := self.fResult + RemObjects.Script.EcmaScript.Utilities.GetObjAsString(el, lScriptEngine.GlobalObject.ExecutionContext);
-                   end;
+  var lWriteLn: ScriptDelegate :=
+      method (params args: array of Object): Object
+      begin
+        for each  el  in  args  do
+          self.fResult := self.fResult + RemObjects.Script.EcmaScript.Utilities.GetObjAsString(el, lScriptEngine.GlobalObject.ExecutionContext);
+      end;
   lScriptEngine.Globals.SetVariable("writeln", lWriteLn);
 
   lScriptEngine.ExposeType(typeOf(SimpleCLRType), aTypeName);
+  lScriptEngine.Globals.SetVariable('lda', new RemObjects.Script.EcmaScript.EcmaScriptObjectWrapper(new SimpleCLRType(), typeof(SimpleCLRType), lScriptEngine.GlobalObject));
   lScriptEngine.Run();
 
   Assert.Equal(aExpectedResult, self.fResult);
 end;
 
 
-constructor LDA(aScripts: Scripts);
+method Scripts.RunFunction_Exception_IsNotLost();
 begin
-  fScripts := aScripts;
+  var lScriptEngine := new RemObjects.Script.EcmaScriptComponent();
+  lScriptEngine.Debug := false;
+  lScriptEngine.RunInThread := false;
+
+  var lWasExceptionRaised: Boolean := false;
+  try
+    lScriptEngine.RunFunction('eval', "throw new Error('test error...');");
+  except
+    lWasExceptionRaised := true;
+  end;
+
+  Assert.True(lWasExceptionRaised, 'Exception was not raised in the .NET code');
+  Assert.NotNull(lScriptEngine.RunException);
 end;
 
 
-method LDA.Call;
+method Scripts.StingSlice();
 begin
-  fScripts.fResult := fScripts.fResult + 'LDA.CALL CALLED'#13#10;
+  // Samples were taken from the https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/String/slice specification
+  ExecuteJS(
+"var str1 = ""1234567890ABCDEFGH"";
+writeln(str1.slice(4, -2));
+writeln(str1.slice(-3));
+writeln(str1.slice(-3, -1));
+writeln(str1.slice(0, -1));
+");
+
+var lExpected:= "567890ABCDEF
+FGH
+FG
+1234567890ABCDEFG
+";
+
+  Assert.Equal(lExpected, fResult);
+end;
+
+
+method Scripts.StingSubstring();
+begin
+  // Samples were taken from the https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/String/substring specification
+  ExecuteJS(
+"var anyString = ""1234567"";
+
+writeln(anyString.substring(0,3));
+writeln(anyString.substring(3,0));
+ 
+writeln(anyString.substring(4,7));
+writeln(anyString.substring(7,4));
+
+writeln(anyString.substring(0,6));
+
+writeln(anyString.substring(0,7));
+writeln(anyString.substring(0,10))
+");
+
+var lExpected:= "123
+123
+567
+567
+123456
+1234567
+1234567
+";
+
+  Assert.Equal(lExpected, fResult);
+end;
+
+
+method Scripts.StingSubStr();
+begin
+  // Samples were taken from the https://developer.mozilla.org/en-US/docs/JavaScript/Reference/Global_Objects/String/substr specification
+  ExecuteJS(
+"var str = ""1234567890"";
+writeln(str.substr(1,2));
+writeln(str.substr(-3,2));
+writeln(str.substr(-3));
+writeln(str.substr(1));
+writeln(str.substr(-20,2));
+writeln(str.substr(20,2));
+");
+
+var lExpected:= "23
+89
+890
+234567890
+12
+
+";
+
+  Assert.Equal(lExpected, fResult);
 end;
 
 
@@ -407,7 +488,13 @@ end;
 
 class method SimpleCLRType.Foo(): String;
 begin
-  exit  ('Bar');
+  exit 'Bar';
+end;
+
+
+method SimpleCLRType.Bar(): String;
+begin
+  exit 'LDA.CALL CALLED';
 end;
 
 

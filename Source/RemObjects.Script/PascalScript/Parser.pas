@@ -50,7 +50,7 @@ type
     property Error: ParserErrorKind read fError;
     property Message: String read fMessage;
     method IntToString: String; override;
-    property Code: Integer read integer(fError); override;
+    property Code: Integer read Integer(fError); override;
     property IsError: Boolean read true; override;
   end;
 
@@ -126,15 +126,15 @@ begin
     ParserErrorKind.Custom: result := fMessage;
     ParserErrorKind.UnknownCharacter: result := Resources.eUnknownCharacter;
     ParserErrorKind.CommentError: result := Resources.eCommentError;
-    ParserErrorKind.ErrorInChar: result := resources.eErrorInCharacter;
+    ParserErrorKind.ErrorInChar: result := Resources.eErrorInCharacter;
     ParserErrorKind.EOFInString: result := Resources.eEOFInString;
     ParserErrorKind.UnexpectedEndOfFile: result := Resources.eUnexpectedEndOfFile;
     ParserErrorKind.IdentifierExpected: result := Resources.eIdentifierExpected;
     ParserErrorKind.SemicolonExpected: result := Resources.eSemicolonExpected;
     ParserErrorKind.EndExpected: result := Resources.eEndExpected;
     ParserErrorKind.BeginExpected: result := Resources.eBeginExpected;
-    ParserErrorKind.InterfaceExpected: result := resources.eInterfaceExpected;
-    ParserErrorKind.ImplementationExpected: result := resources.eImplementationExpected;
+    ParserErrorKind.InterfaceExpected: result := Resources.eInterfaceExpected;
+    ParserErrorKind.ImplementationExpected: result := Resources.eImplementationExpected;
     ParserErrorKind.SyntaxError: result := Resources.eSyntaxError;
     ParserErrorKind.DotExpected: result := Resources.eDotExpected;
     ParserErrorKind.ColonExpected: result := Resources.eColonExpected;
@@ -285,8 +285,8 @@ begin
   loop begin
     case fTok.Token of
       TokenKind.K_Label: aItems.Add(ParseLabels);// LabelBlock
-      TokenKind.K_var: AItems.Add(ParseVars); // VariableBlock
-      TokenKind.K_const: AItems.Add(ParseConsts); // ConstBlock
+      TokenKind.K_var: aItems.Add(ParseVars); // VariableBlock
+      TokenKind.K_const: aItems.Add(ParseConsts); // ConstBlock
       TokenKind.K_type: aItems.Add(ParseTypes); 
       TokenKind.K_function,
       TokenKind.K_procedure: aItems.Add(ParseFunction(aInterface));
@@ -298,11 +298,11 @@ end;
 method Parser.ParseUses: UsesBlock;
 begin
   var lPos := fTok.Position;
-  var lUses: List<string> := new List<String>;
+  var lUses: List<String> := new List<String>;
   fTok.Next;
   loop begin
     if not ExpectToken(TokenKind.Identifier, ParserErrorKind.IdentifierExpected) then break;
-    lUses.Add(ftok.TokenStr);
+    lUses.Add(fTok.TokenStr);
     fTok.Next;
     if fTok.Token = TokenKind.SemiColon then begin
       fTok.Next;
@@ -317,11 +317,11 @@ end;
 method Parser.ParseLabels: LabelBlock;
 begin
   var lPos := fTok.Position;
-  var lLabels: List<string> := new List<String>;
+  var lLabels: List<String> := new List<String>;
   fTok.Next;
   loop begin
     if not ExpectToken(TokenKind.Identifier, ParserErrorKind.IdentifierExpected) then break;
-    lLabels.Add(ftok.TokenStr);
+    lLabels.Add(fTok.TokenStr);
     fTok.Next;
     if fTok.Token = TokenKind.SemiColon then begin
       fTok.Next;
@@ -353,7 +353,7 @@ begin
       fTok.Next;
     end;
     if not ExpectToken(TokenKind.Colon, ParserErrorKind.ColonExpected) then break;
-    ftok.Next;
+    fTok.Next;
     var lType := ParseTypeRef(false);
     for each el in lNames do 
       lVars.Add(new VariableDeclaration(new PositionPair(lPositem, fTok.LastEndPosition), el, lType));
@@ -364,7 +364,7 @@ begin
     
   until fTok.Token <> TokenKind.Identifier;
 
-  exit new VariableBlock(new PositionPair(lPos, ftok.LastEndPosition), lVars);
+  exit new VariableBlock(new PositionPair(lPos, fTok.LastEndPosition), lVars);
 end;
 
 method Parser.ParseConsts: ConstantBlock;
@@ -381,7 +381,7 @@ begin
     var lType: TypeReference;
     fTok.Next;
     if fTok.Token = TokenKind.Colon then begin
-      ftok.Next;
+      fTok.Next;
       lType := ParseTypeRef(false);
     end else 
       lType := nil;
@@ -396,7 +396,7 @@ begin
     
   until fTok.Token <> TokenKind.Identifier;
 
-  exit new ConstantBlock(new PositionPair(lPos, ftok.LastEndPosition), lConsts);
+  exit new ConstantBlock(new PositionPair(lPos, fTok.LastEndPosition), lConsts);
 end;
 
 method Parser.ParseTypes: TypeBlock;
@@ -410,7 +410,7 @@ begin
     var lPositem := fTok.Position;
     if not ExpectToken(TokenKind.Identifier, ParserErrorKind.IdentifierExpected) then break;
     var lName := fTok.TokenStr;
-    var lType: TypeReference;
+    //var lType: TypeReference;
     fTok.Next;
     if not ExpectToken(TokenKind.Equal, ParserErrorKind.EqualExpected) then break;
     fTok.Next;
@@ -423,7 +423,7 @@ begin
     
   until fTok.Token <> TokenKind.Identifier;
 
-  exit new TypeBlock(new PositionPair(lPos, ftok.LastEndPosition), lTypes);
+  exit new TypeBlock(new PositionPair(lPos, fTok.LastEndPosition), lTypes);
 end;
 
 method Parser.ParseTypeRef(aNamed: Boolean): TypeReference;
@@ -470,81 +470,81 @@ begin
       break;
     end;
   end;
-  result := new RecordDeclaration(new PositionPair(lPos, ftok.LastEndPosition), lList);
+  result := new RecordDeclaration(new PositionPair(lPos, fTok.LastEndPosition), lList);
 end;
 
 method Parser.ParseVariableDeclaration: VariableDeclaration;
 begin
-  var lPos := ftok.Position;
+  var lPos := fTok.Position;
   if not ExpectToken(TokenKind.Identifier, ParserErrorKind.IdentifierExpected) then exit nil;
-  var lName := ftok.TokenStr;
+  var lName := fTok.TokenStr;
   fTok.Next;
   if not ExpectToken(TokenKind.Colon, ParserErrorKind.ColonExpected) then exit nil;
   fTok.Next;
   var lType := ParseTypeRef(false);
   if lType = nil then exit nil;
-  result := new VariableDeclaration(new PositionPair(lPos, ftok.LastEndPosition), lName, lType);
+  result := new VariableDeclaration(new PositionPair(lPos, fTok.LastEndPosition), lName, lType);
 end;
 
 method Parser.ParseEnumDeclaration: EnumDeclaration;
 begin
-  var lPos := ftok.Position;
+  var lPos := fTok.Position;
   var lNames := new List<EnumValue>();
-  ftok.Next;
+  fTok.Next;
   loop begin
     if not ExpectToken(TokenKind.Identifier, ParserErrorKind.IdentifierExpected) then exit nil;
-    var lItemPos := ftok.Position;
-    var lName := ftok.TokenStr;
+    var lItemPos := fTok.Position;
+    var lName := fTok.TokenStr;
     fTok.Next;
     var lValue:Expression;
-    if ftok.Token = TokenKind.Equal then begin
+    if fTok.Token = TokenKind.Equal then begin
       fTok.Next;
       lValue := ParseExpression;
     end else lValue := nil;
-    lNames.Add(new EnumValue(new PositionPair(lItemPos, ftok.LastEndPosition), lName, lValue));
+    lNames.Add(new EnumValue(new PositionPair(lItemPos, fTok.LastEndPosition), lName, lValue));
 
 
-    if ftok.Token = TokenKind.CloseRound then begin
+    if fTok.Token = TokenKind.CloseRound then begin
       fTok.Next;
       break;
     end;
     if not ExpectToken(TokenKind.Comma, ParserErrorKind.CloseRoundExpected) then exit nil;
   end;
-  result := new EnumDeclaration(new PositionPair(lPos, ftok.LastEndPosition), lNames);
+  result := new EnumDeclaration(new PositionPair(lPos, fTok.LastEndPosition), lNames);
 end;
 
 method Parser.ParseSetDeclaration: SetDeclaration;
 begin
-  var lPos := ftok.Position;
+  var lPos := fTok.Position;
   fTok.Next;
   if not ExpectToken(TokenKind.K_of, ParserErrorKind.OfExpected) then exit nil;
   if fTok.Token = TokenKind.OpenRound then begin
     var lNames := new List<EnumValue>();
-    ftok.Next;
+    fTok.Next;
     loop begin
       if not ExpectToken(TokenKind.Identifier, ParserErrorKind.IdentifierExpected) then exit nil;
-      var lItemPos := ftok.Position;
-      var lName := ftok.TokenStr;
+      var lItemPos := fTok.Position;
+      var lName := fTok.TokenStr;
       fTok.Next;
       var lValue:Expression;
-      if ftok.Token = TokenKind.Equal then begin
+      if fTok.Token = TokenKind.Equal then begin
         fTok.Next;
         lValue := ParseExpression;
       end else lValue := nil;
-      lNames.Add(new EnumValue(new PositionPair(lItemPos, ftok.LastEndPosition), lName, lValue));
+      lNames.Add(new EnumValue(new PositionPair(lItemPos, fTok.LastEndPosition), lName, lValue));
 
 
-      if ftok.Token = TokenKind.CloseRound then begin
+      if fTok.Token = TokenKind.CloseRound then begin
         fTok.Next;
         break;
       end;
       if not ExpectToken(TokenKind.Comma, ParserErrorKind.CloseRoundExpected) then exit nil;
     end;
-    result := new SetDeclaration(new PositionPair(lPos, ftok.LastEndPosition), lNames);
+    result := new SetDeclaration(new PositionPair(lPos, fTok.LastEndPosition), lNames);
   end else begin
 
     var lRef := ParseTypeRef(false);
-    result := new  SetDeclaration(new PositionPair(lPos, ftok.LastEndPosition), lRef);
+    result := new  SetDeclaration(new PositionPair(lPos, fTok.LastEndPosition), lRef);
   end;
 end;
 
@@ -553,7 +553,7 @@ begin
   var lPos := fTok.Position;
   var lWantResult := fTok.Token = TokenKind.K_function;
   var lPars: List<ParameterDeclaration>;
-  ftok.Next;
+  fTok.Next;
   if fTok.Token = TokenKind.OpenRound then 
     lPars := ParseParameterDeclarations()
   else
@@ -570,49 +570,49 @@ end;
 
 method Parser.ParseParameterDeclarations: List<ParameterDeclaration>;
 begin
-  ftok.Next; // presume openparen is there
+  fTok.Next; // presume openparen is there
   result := new List<ParameterDeclaration>;
   if fTok.Token = TokenKind.CloseRound then begin
-    FTok.Next;
+    fTok.Next;
     exit;
   end;
-  var lNames: List<string> := new List<String>;
+  var lNames: List<String> := new List<String>;
   loop begin
 
     var lPos := fTok.Position;
     var lMod:= ParameterModifier.In;
-    if ftok.Token = TokenKind.K_const then begin
+    if fTok.Token = TokenKind.K_const then begin
       lMod := ParameterModifier.Const;
-      ftok.Next;
+      fTok.Next;
     end else 
-    if ftok.Token = TokenKind.K_var then begin
+    if fTok.Token = TokenKind.K_var then begin
       lMod := ParameterModifier.Var;
-      ftok.Next;
+      fTok.Next;
     end else 
-    if ftok.Token = TokenKind.K_out then begin
+    if fTok.Token = TokenKind.K_out then begin
       lMod := ParameterModifier.Out;
-      ftok.Next;
+      fTok.Next;
     end;
     loop begin
 
-      if not ExpectToken(tokenKind.Identifier, ParserErrorKind.IdentifierExpected) then exit nil;
-      lnames.Add(ftok.TokenStr);
-      ftok.Next;
+      if not ExpectToken(TokenKind.Identifier, ParserErrorKind.IdentifierExpected) then exit nil;
+      lNames.Add(fTok.TokenStr);
+      fTok.Next;
       if fTok.Token <> TokenKind.Comma then 
         break;
       fTok.Next;
     end;
 
     if not ExpectToken(TokenKind.Colon, ParserErrorKind.ColonExpected) then exit nil;
-    ftok.Next;
+    fTok.Next;
     var lRef: TypeReference := ParseTypeRef(false);
     if lRef = nil then exit nil;
-    for i: Integer := 0 to lnames.Count -1 do begin
-      result.Add(new ParameterDeclaration(new PositionPair(lPos, ftok.LastEndPosition), lNames[i], lRef, lMod));
+    for i: Integer := 0 to lNames.Count -1 do begin
+      result.Add(new ParameterDeclaration(new PositionPair(lPos, fTok.LastEndPosition), lNames[i], lRef, lMod));
     end;
     lNames.Clear;
-    if ftok.Token = TokenKind.CloseRound then begin
-      ftok.Next;
+    if fTok.Token = TokenKind.CloseRound then begin
+      fTok.Next;
       break;
     end;
     if not ExpectToken(TokenKind.CloseRound, ParserErrorKind.CloseRoundExpected) then exit nil;
@@ -621,7 +621,7 @@ end;
 
 method Parser.ParseArrayDeclaration: ArrayDeclaration;
 begin
-  var lPos := FTok.Position;
+  var lPos := fTok.Position;
   fTok.Next; // expect array to be here
   var lStart: Expression := nil; 
   var lEnd: Expression := nil;
@@ -630,22 +630,22 @@ begin
     lStart := ParseExpression;
     if lStart = nil then exit nil;
     if fTok.Token = TokenKind.TwoDots then begin
-      ftok.Next;
+      fTok.Next;
       lEnd := ParseExpression;
       if lEnd = nil then exit nil;
     end;
     if not ExpectToken(TokenKind.CloseBlock, ParserErrorKind.CloseBlockExpected) then exit nil;
-    ftok.Next;
+    fTok.Next;
   end;
   if not ExpectToken(TokenKind.K_of, ParserErrorKind.OfExpected) then exit nil;
-  ftok.Next;
+  fTok.Next;
 
   var lType := ParseTypeRef(false);
   if lType = nil then exit;
   if lStart <> nil then
-    exit new StaticArrayDeclaration(new PositionPair(lPos, ftok.LastEndPosition), lType, lStart, lEnd)
+    exit new StaticArrayDeclaration(new PositionPair(lPos, fTok.LastEndPosition), lType, lStart, lEnd)
   else
-    exit new ArrayDeclaration(new PositionPair(lPos, ftok.LastEndPosition), lType);
+    exit new ArrayDeclaration(new PositionPair(lPos, fTok.LastEndPosition), lType);
 end;
 
 method Parser.ParseFunction(aInterface: Boolean): FunctionBlock;
@@ -653,9 +653,9 @@ begin
   var lPos := fTok.Position;
   var lWantResult := fTok.Token = TokenKind.K_function;
   var lPars: List<ParameterDeclaration>;
-  ftok.Next;
+  fTok.Next;
   if not ExpectToken(TokenKind.Identifier, ParserErrorKind.IdentifierExpected) then exit nil;
-  var lName := Ftok.TokenStr;
+  var lName := fTok.TokenStr;
   fTok.Next;
   if fTok.Token = TokenKind.OpenRound then 
     lPars := ParseParameterDeclarations()
@@ -693,7 +693,7 @@ begin
     end;
     var lItem := ParseStatement;
     if lItem = nil then begin
-      if not ExpectToken(Tokenkind.K_end, ParserErrorKind.EndExpected) then exit nil;
+      if not ExpectToken(TokenKind.K_end, ParserErrorKind.EndExpected) then exit nil;
       break;
     end else begin
       lStatements.Add(lItem);
@@ -712,16 +712,16 @@ begin
   case fTok.Token of
     TokenKind.K_begin: exit ParseBegin;
     TokenKind.K_Goto: exit ParseGoto;
-    TokenKind.K_With: exit ParseWith;
+    TokenKind.K_with: exit ParseWith;
     TokenKind.K_Try: exit ParseTry;
-    TokenKind.K_Repeat: exit ParseRepeat;
-    TokenKind.K_For: exit ParseFor;
-    TokenKind.K_While: exit ParseWhile;
-    TokenKind.K_Case: exit ParseCase;
-    TokenKind.K_Exit: exit ParseExit;
-    TokenKind.K_If: exit ParseIf;
-    TokenKind.K_Break: exit ParseBreak;
-    TokenKind.K_Continue: exit ParseContinue;
+    TokenKind.K_repeat: exit ParseRepeat;
+    TokenKind.K_for: exit ParseFor;
+    TokenKind.K_while: exit ParseWhile;
+    TokenKind.K_case: exit ParseCase;
+    TokenKind.K_exit: exit ParseExit;
+    TokenKind.K_if: exit ParseIf;
+    TokenKind.K_break: exit ParseBreak;
+    TokenKind.K_continue: exit ParseContinue;
     TokenKind.K_end,
     TokenKind.K_until,
     TokenKind.K_Finally,
@@ -754,7 +754,7 @@ begin
   var lPos := fTok.Position;
   fTok.Next;
   if not ExpectToken(TokenKind.Identifier, ParserErrorKind.IdentifierExpected) then exit nil;
-  var lTarget := Ftok.TokenStr;
+  var lTarget := fTok.TokenStr;
   fTok.Next;
   exit new GotoStatement(new PositionPair(lPos, fTok.LastEndPosition), lTarget);
 end;
@@ -786,7 +786,7 @@ begin
     end;
     var lItem := ParseStatement;
     if lItem = nil then begin
-      if not ExpectToken(Tokenkind.K_until, ParserErrorKind.UntilExpected) then exit nil;
+      if not ExpectToken(TokenKind.K_until, ParserErrorKind.UntilExpected) then exit nil;
       break;
     end else begin
       lStatements.Add(lItem);
@@ -811,7 +811,7 @@ begin
   fTok.Next;
   var lBlock := ParseStatement;
 
-  exit new WhileStatement(new PositionPair(lPos, ftok.LastEndPosition), lCondition, lBlock);
+  exit new WhileStatement(new PositionPair(lPos, fTok.LastEndPosition), lCondition, lBlock);
 end;
 
 method Parser.ParseIf: IfStatement;
@@ -835,7 +835,7 @@ begin
   var lPos := fTok.Position;
   var lDest := ParseExpression;
   if lDest = nil then exit nil;
-  if ftok.Token = TokenKind.Assignment then begin
+  if fTok.Token = TokenKind.Assignment then begin
     fTok.Next;
     var lSrc := ParseExpression;
     exit new AssignmentStatement(new PositionPair(lPos, fTok.LastEndPosition), lDest, lSrc);
@@ -875,16 +875,16 @@ begin
       end;
       break;
     end;
-    var lPosStart := ftok.Position;
+    var lPosStart := fTok.Position;
     var lValues: List<Expression> := new List<Expression>;
     loop begin
       var lValue := ParseExpression;
       if fTok.Token = TokenKind.TwoDots then begin
         fTok.Next;
-        lValue := new RangeExpression(new PositionPair(lValue.PositionPair.StartPos, lValue.PositionPair.StartRow,lValue.PositionPair.StartCol, fTok.LastEndPosition.Pos, ftok.LastEndPosition.Row, fTok.LastEndPosition.Col, fTok.LastEndPosition.Module), lValue, ParseExpression);
+        lValue := new RangeExpression(new PositionPair(lValue.PositionPair.StartPos, lValue.PositionPair.StartRow,lValue.PositionPair.StartCol, fTok.LastEndPosition.Pos, fTok.LastEndPosition.Row, fTok.LastEndPosition.Col, fTok.LastEndPosition.Module), lValue, ParseExpression);
       end;
       lValues.Add(lValue);
-      if ftok.Token = tokenKind.Colon then begin
+      if fTok.Token = TokenKind.Colon then begin
         fTok.Next;
         break;
       end;
@@ -939,11 +939,11 @@ begin
     end;
     var lItem := ParseStatement;
     if lItem = nil then begin
-      if not ExpectToken([Tokenkind.K_Except, TokenKind.K_Finally], ParserErrorKind.FinallyExceptExpected) then exit nil;
+      if not ExpectToken([TokenKind.K_Except, TokenKind.K_Finally], ParserErrorKind.FinallyExceptExpected) then exit nil;
       break;
     end else begin
       lStatements.Add(lItem);
-      if fTok.Token not in [Tokenkind.K_Except, TokenKind.K_Finally] then begin
+      if fTok.Token not in [TokenKind.K_Except, TokenKind.K_Finally] then begin
         if not ExpectToken(TokenKind.SemiColon, ParserErrorKind.SemicolonExpected) then exit nil;
         fTok.Next; // statement separator
       end else break;
@@ -965,11 +965,11 @@ begin
       end;
       var lItem := ParseStatement;
       if lItem = nil then begin
-        if not ExpectToken([Tokenkind.K_Except, TokenKind.K_End], ParserErrorKind.EndExpected) then exit nil;
+        if not ExpectToken([TokenKind.K_Except, TokenKind.K_end], ParserErrorKind.EndExpected) then exit nil;
         break;
       end else begin
         lStatements.Add(lItem);
-        if fTok.Token not in [Tokenkind.K_Except, TokenKind.K_End] then begin
+        if fTok.Token not in [TokenKind.K_Except, TokenKind.K_end] then begin
           if not ExpectToken(TokenKind.SemiColon, ParserErrorKind.SemicolonExpected) then exit nil;
           fTok.Next; // statement separator
         end else break;
@@ -987,13 +987,13 @@ begin
       end;
       var lItem := ParseStatement;
       if lItem = nil then begin
-        if (lFinally1 = nil) and (ftok.Token = TokenKind.K_Finally) then break;
+        if (lFinally1 = nil) and (fTok.Token = TokenKind.K_Finally) then break;
 
-        if not ExpectToken([Tokenkind.K_End], ParserErrorKind.EndExpected) then exit nil;
+        if not ExpectToken([TokenKind.K_end], ParserErrorKind.EndExpected) then exit nil;
         break;
       end else begin
         lStatements.Add(lItem);
-        if fTok.Token not in [Tokenkind.K_end, TokenKind.K_Finally] then begin
+        if fTok.Token not in [TokenKind.K_end, TokenKind.K_Finally] then begin
           if not ExpectToken(TokenKind.SemiColon, ParserErrorKind.SemicolonExpected) then exit nil;
           fTok.Next; // statement separator
         end;
@@ -1012,11 +1012,11 @@ begin
       end;
       var lItem := ParseStatement;
       if lItem = nil then begin
-        if not ExpectToken([Tokenkind.K_Except, TokenKind.K_Finally], ParserErrorKind.FinallyExceptExpected) then exit nil;
+        if not ExpectToken([TokenKind.K_Except, TokenKind.K_Finally], ParserErrorKind.FinallyExceptExpected) then exit nil;
         break;
       end else begin
         lStatements.Add(lItem);
-        if fTok.Token not in [Tokenkind.K_Except, TokenKind.K_Finally] then begin
+        if fTok.Token not in [TokenKind.K_Except, TokenKind.K_Finally] then begin
           if not ExpectToken(TokenKind.SemiColon, ParserErrorKind.SemicolonExpected) then exit nil;
           fTok.Next; // statement separator
         end else break;
@@ -1033,20 +1033,20 @@ end;
 
 method Parser.ParseWith: WithStatement;
 begin
-  var lPos := ftok.Position;
+  var lPos := fTok.Position;
 
   var lItems: List<Expression> := new List<Expression>;
 
   fTok.Next;
   loop begin
     lItems.Add(ParseExpression);
-    if ftok.Token = TokenKind.K_do then begin fTok.Next; break; end;
+    if fTok.Token = TokenKind.K_do then begin fTok.Next; break; end;
     if not ExpectToken(TokenKind.Comma, ParserErrorKind.DoExpected) then exit nil;
   end;
 
   var lBody := ParseStatement;
 
-  exit new WithStatement(new PositionPair(lPos, ftok.LastEndPosition), lItems, lBody);
+  exit new WithStatement(new PositionPair(lPos, fTok.LastEndPosition), lItems, lBody);
 end;
 
 method Parser.ParseExpression: Expression;
@@ -1065,7 +1065,7 @@ begin
 	  var lToken := fTok.Token;
 	  fTok.Next;
 	  var F2 := ParseSimpleExpression;
-	  if f2 = nil then exit nil;
+	  if F2 = nil then exit nil;
     var lOp: BinaryOperator;
 	  case lToken of
 	    TokenKind.GreaterEqual: lOp := BinaryOperator.GreaterEqual;
@@ -1075,7 +1075,7 @@ begin
 	    TokenKind.Equal: lOp := BinaryOperator.Equal;
 	    TokenKind.NotEqual: lOp := BinaryOperator.NotEqual;
 	    TokenKind.K_in: lOp := BinaryOperator.In;
-	    TokenKind.K_is: lOp := BinaryOperator.Is;
+	    TokenKind.K_Is: lOp := BinaryOperator.Is;
 	  else
 	    lOp := BinaryOperator.Add;
 	  end;
@@ -1090,13 +1090,13 @@ begin
   if Result = nil then exit;
   while fTok.Token in [ TokenKind.Plus, 
     TokenKind.Minus, 
-    TokenKind.K_Or, 
-    TokenKind.K_Xor] do
+    TokenKind.K_or, 
+    TokenKind.K_xor] do
   begin
 	  var lToken := fTok.Token;
 	  fTok.Next;
 	  var F2 := ParseTerm;
-	  if f2 = nil then exit nil;
+	  if F2 = nil then exit nil;
     var lOp: BinaryOperator;
 	  case lToken of
 	    TokenKind.Minus: lOp := BinaryOperator.Sub;
@@ -1118,7 +1118,7 @@ begin
 	  var lToken := fTok.Token;
 	  fTok.Next;
 	  var F2 := ParseFactor;
-	  if f2 = nil then exit nil;
+	  if F2 = nil then exit nil;
     var lOp: BinaryOperator;
 	  case lToken of
 	    TokenKind.Multiply: lOp := BinaryOperator.Mul;
@@ -1192,12 +1192,12 @@ begin
         if lExpr = nil then exit nil;
         result := new UnaryExpression(new PositionPair(lPos, fTok.LastEndPosition), lExpr, UnaryOperator.AdressOf);
       end;
-    TokenKind.K_True:
+    TokenKind.K_true:
       begin
         result := new TrueExpression(fTok.PositionPair);
         fTok.Next;
       end;
-    TokenKind.K_False:
+    TokenKind.K_false:
       begin
         result := new FalseExpression(fTok.PositionPair);
         fTok.Next;
@@ -1212,9 +1212,9 @@ begin
         var lStart := fTok.Position;
         var lArgs := ParseParameters(true);
         if lArgs = nil then exit;
-        result := new ArrayExpression(new PositionPair(lStart, ftok.LastEndPosition), lArgs);
+        result := new ArrayExpression(new PositionPair(lStart, fTok.LastEndPosition), lArgs);
       end;
-    Tokenkind.K_Ord:
+    TokenKind.K_Ord:
       begin
         var lStart := fTok.Position;
         fTok.Next;
@@ -1223,9 +1223,9 @@ begin
         var lExpr := ParseExpression;
         if not ExpectToken(TokenKind.CloseRound, ParserErrorKind.CloseBlockExpected) then exit;
         fTok.Next;
-        result := new OrdExpression(new PositionPair(lStart, ftok.LastEndPosition), lExpr);
+        result := new OrdExpression(new PositionPair(lStart, fTok.LastEndPosition), lExpr);
       end;
-    Tokenkind.K_Chr:
+    TokenKind.K_Chr:
       begin
         var lStart := fTok.Position;
         fTok.Next;
@@ -1234,7 +1234,7 @@ begin
         var lExpr := ParseExpression;
         if not ExpectToken(TokenKind.CloseRound, ParserErrorKind.CloseBlockExpected) then exit;
         fTok.Next;
-        result := new ChrExpression(new PositionPair(lStart, ftok.LastEndPosition), lExpr);
+        result := new ChrExpression(new PositionPair(lStart, fTok.LastEndPosition), lExpr);
       end;
       TokenKind.Identifier:
         begin
@@ -1284,7 +1284,7 @@ begin
         begin
           fTok.Next;
           if not ExpectToken(TokenKind.Identifier, ParserErrorKind.IdentifierExpected) then  exit;
-          var lPos := new Position( aSelf.PositionPair.StartPos, aSelf.PositionPair.StartRow, aself.PositionPair.StartCol, aSelf.PositionPair.File);
+          var lPos := new Position( aSelf.PositionPair.StartPos, aSelf.PositionPair.StartRow, aSelf.PositionPair.StartCol, aSelf.PositionPair.File);
           var lIdent := fTok.TokenStr;
           result := new MemberExpression(new PositionPair(lPos, fTok.LastEndPosition), aSelf, lIdent);
         end;
@@ -1292,14 +1292,14 @@ begin
         begin
           var lArgs := ParseParameters(false);
           if lArgs = nil then  exit nil;
-          var lPos := new Position( aSelf.PositionPair.StartPos, aSelf.PositionPair.StartRow, aself.PositionPair.StartCol, aSelf.PositionPair.File);
+          var lPos := new Position( aSelf.PositionPair.StartPos, aSelf.PositionPair.StartRow, aSelf.PositionPair.StartCol, aSelf.PositionPair.File);
           result := new ArrayElementExpression(new PositionPair(lPos, fTok.LastEndPosition), aSelf, lArgs);
         end;
       TokenKind.OpenRound:
         begin
           var lArgs := ParseParameters(true);
           if lArgs = nil then  exit nil;
-          var lPos := new Position( aSelf.PositionPair.StartPos, aSelf.PositionPair.StartRow, aself.PositionPair.StartCol, aSelf.PositionPair.File);
+          var lPos := new Position( aSelf.PositionPair.StartPos, aSelf.PositionPair.StartRow, aSelf.PositionPair.StartCol, aSelf.PositionPair.File);
           result := new CallExpression(new PositionPair(lPos, fTok.LastEndPosition), aSelf, lArgs);
         end;
       TokenKind.Dereference:

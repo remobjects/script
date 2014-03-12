@@ -50,6 +50,8 @@
     <CpuType>anycpu</CpuType>
     <XmlDocWarningLevel>WarningOnPublicMembers</XmlDocWarningLevel>
     <FutureHelperClassName />
+    <GeneratePDB>True</GeneratePDB>
+    <GenerateMDB>True</GenerateMDB>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
@@ -116,6 +118,6 @@
       <SubType>Content</SubType>
     </EmbeddedResource>
   </ItemGroup>
-  <Import Project="$(MSBuildExtensionsPath)\RemObjects Software\Oxygene\RemObjects.Oxygene.Silverlight.targets" />
+  <Import Project="$(MSBuildExtensionsPath)\RemObjects Software\Oxygene\RemObjects.Oxygene.Echoes.Silverlight.targets" />
   <ProjectExtensions />
 </Project>

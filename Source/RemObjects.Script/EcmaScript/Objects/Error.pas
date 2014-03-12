@@ -38,10 +38,10 @@ type
     property TypeError: EcmaScriptObject;
     property URIError: EcmaScriptObject;
 
-    method NativeErrorCtor(proto: EcmaScriptObject; arg: string): EcmaScriptObject;
+    method NativeErrorCtor(proto: EcmaScriptObject; arg: String): EcmaScriptObject;
 
-    method RaiseNativeError(e: NativeErrorType; msg: string);
-    class var Method_RaiseNativeError: System.Reflection.MethodInfo := typeof(GlobalObject).GetMethod('RaiseNativeError'); readonly;
+    method RaiseNativeError(e: NativeErrorType; msg: String);
+    class var Method_RaiseNativeError: System.Reflection.MethodInfo := typeOf(GlobalObject).GetMethod('RaiseNativeError'); readonly;
   end;  
 
   EcmaScriptExceptionFunctionObject = class(EcmaScriptFunctionObject)
@@ -61,7 +61,7 @@ begin
   Values.Add('Error', PropertyValue.NotEnum(Result));
 
   ErrorPrototype := new EcmaScriptObject(self, &Class := 'Error'); 
-  ErrorPrototype.values.Add('constructor', PropertyValue.NotEnum(result));
+  ErrorPrototype.Values.Add('constructor', PropertyValue.NotEnum(result));
   ErrorPrototype.Prototype := ObjectPrototype;
   result.Values['prototype'] := PropertyValue.NotAllFlags(ErrorPrototype);
   ErrorPrototype.Values.Add('toString', PropertyValue.NotEnum(new EcmaScriptFunctionObject(self, 'toString', @ErrorToString, 0)));
@@ -72,7 +72,7 @@ end;
 
 method GlobalObject.ErrorCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lUndef := (0 = Length(args)) or (args[0] = Undefined.Instance);
+  var lUndef := (0 = length(args)) or (args[0] = Undefined.Instance);
   var lMessage := if lUndef then nil else Utilities.GetArgAsString(args, 0, aCaller);
   var lObj := EcmaScriptObject(aSelf);
   if (lObj = nil) or (lObj.Class <> 'Error') then 
@@ -87,7 +87,7 @@ begin
   var lSelf := Utilities.GetObjAsEcmaScriptObject(aSelf, aCaller);
   var lMsg := if lSelf.Get(aCaller, 0, 'message') = nil then nil else Utilities.GetObjAsString(lSelf.Get(aCaller, 0, 'message'), aCaller);
   var lName := coalesce(Utilities.GetObjAsString(lSelf.Get(aCaller, 0, 'name'), aCaller), 'Error');
-  if STring.IsNullOrEmpty(lMsg) then
+  if String.IsNullOrEmpty(lMsg) then
     exit lName
 
   else
@@ -160,26 +160,21 @@ begin
 end;
 
 
-method GlobalObject.RaiseNativeError(e: NativeErrorType; msg: string);
+method GlobalObject.RaiseNativeError(e: NativeErrorType; msg: String);
 begin
   case e of
-    NativeErrorType.EvalError: raise new ScriptRuntimeException(EvalErrorCtor(fExecutionContext, nil, msg));
-    NativeErrorType.RangeError: raise new ScriptRuntimeException(RangeErrorCtor(fExecutionContext, nil, msg));
-    NativeErrorType.ReferenceError: 
-      begin
-        raise new ScriptRuntimeException(ReferenceErrorCtor(fExecutionContext, nil, msg));
-      end;
-    NativeErrorType.SyntaxError: raise new ScriptRuntimeException(SyntaxErrorCtor(fExecutionContext, nil, msg));
-    NativeErrorType.TypeError: raise new ScriptRuntimeException(TypeErrorCtor(fExecutionContext, nil, msg));
-    NativeErrorType.URIError: raise new ScriptRuntimeException(URIErrorCtor(fExecutionContext, nil, msg));
-  else
-    raise ErrorCtor(nil, nil, ['Unknown']);
-  end; // case
-  
+    NativeErrorType.EvalError:      raise new ScriptRuntimeException(EvalErrorCtor(fExecutionContext, nil, msg));
+    NativeErrorType.RangeError:     raise new ScriptRuntimeException(RangeErrorCtor(fExecutionContext, nil, msg));
+    NativeErrorType.ReferenceError: raise new ScriptRuntimeException(ReferenceErrorCtor(fExecutionContext, nil, msg));
+    NativeErrorType.SyntaxError:    raise new ScriptRuntimeException(SyntaxErrorCtor(fExecutionContext, nil, msg));
+    NativeErrorType.TypeError:      raise new ScriptRuntimeException(TypeErrorCtor(fExecutionContext, nil, msg));
+    NativeErrorType.URIError:       raise new ScriptRuntimeException(URIErrorCtor(fExecutionContext, nil, msg));
+    else                            raise ErrorCtor(nil, nil, [ 'Unknown' ]);
+  end;
 end;
 
 
-method GlobalObject.NativeErrorCtor(proto: EcmaScriptObject; arg: string): EcmaScriptObject;
+method GlobalObject.NativeErrorCtor(proto: EcmaScriptObject; arg: String): EcmaScriptObject;
 begin
   var lMessage := arg;
   result := new EcmaScriptObject(self, proto, &Class := proto.Class);
@@ -188,7 +183,7 @@ end;
 
 method GlobalObject.EvalErrorCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lUndef := (0 = Length(args)) or (args[0] = Undefined.Instance);
+  var lUndef := (0 = length(args)) or (args[0] = Undefined.Instance);
   var lMessage := if lUndef then nil else Utilities.GetArgAsString(args, 0, aCaller);
   var lObj := EcmaScriptObject(aSelf);
   if (lObj = nil) or (lObj.Class <> 'EvalError') then 
@@ -200,7 +195,7 @@ end;
 
 method GlobalObject.RangeErrorCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lUndef := (0 = Length(args)) or (args[0] = Undefined.Instance);
+  var lUndef := (0 = length(args)) or (args[0] = Undefined.Instance);
   var lMessage := if lUndef then nil else Utilities.GetArgAsString(args, 0, aCaller);
   var lObj := EcmaScriptObject(aSelf);
   if (lObj = nil) or (lObj.Class <> 'RangeError') then 
@@ -212,7 +207,7 @@ end;
 
 method GlobalObject.ReferenceErrorCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lUndef := (0 = Length(args)) or (args[0] = Undefined.Instance);
+  var lUndef := (0 = length(args)) or (args[0] = Undefined.Instance);
   var lMessage := if lUndef then nil else Utilities.GetArgAsString(args, 0, aCaller);
   var lObj := EcmaScriptObject(aSelf);
   if (lObj = nil) or (lObj.Class <> 'ReferenceError') then 
@@ -224,7 +219,7 @@ end;
 
 method GlobalObject.SyntaxErrorCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lUndef := (0 = Length(args)) or (args[0] = Undefined.Instance);
+  var lUndef := (0 = length(args)) or (args[0] = Undefined.Instance);
   var lMessage := if lUndef then nil else Utilities.GetArgAsString(args, 0, aCaller);
   var lObj := EcmaScriptObject(aSelf);
   if (lObj = nil) or (lObj.Class <> 'SyntaxError') then 
@@ -236,7 +231,7 @@ end;
 
 method GlobalObject.TypeErrorCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lUndef := (0 = Length(args)) or (args[0] = Undefined.Instance);
+  var lUndef := (0 = length(args)) or (args[0] = Undefined.Instance);
   var lMessage := if lUndef then nil else Utilities.GetArgAsString(args, 0, aCaller);
   var lObj := EcmaScriptObject(aSelf);
   if (lObj = nil) or (lObj.Class <> 'TypeError') then 
@@ -248,7 +243,7 @@ end;
 
 method GlobalObject.URIErrorCtor(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  var lUndef := (0 = Length(args)) or (args[0] = Undefined.Instance);
+  var lUndef := (0 = length(args)) or (args[0] = Undefined.Instance);
   var lMessage := if lUndef then nil else Utilities.GetArgAsString(args, 0, aCaller);
   var lObj := EcmaScriptObject(aSelf);
   if (lObj = nil) or (lObj.Class <> 'URIError') then 

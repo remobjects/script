@@ -15,9 +15,9 @@ type
     class method ShiftLeft(aLeft, aRight: Object; ec: ExecutionContext): Object;
     class method ShiftRight(aLeft, aRight: Object; ec: ExecutionContext): Object;
     class method ShiftRightUnsigned(aLeft, aRight: Object; ec: ExecutionContext): Object;
-    class var Method_ShiftLeft: System.Reflection.MethodInfo := typeof(Operators).GetMethod('ShiftLeft');
-    class var Method_ShiftRight: System.Reflection.MethodInfo := typeof(Operators).GetMethod('ShiftRight');
-    class var Method_ShiftRightUnsigned: System.Reflection.MethodInfo := typeof(Operators).GetMethod('ShiftRightUnsigned');
+    class var Method_ShiftLeft: System.Reflection.MethodInfo := typeOf(Operators).GetMethod('ShiftLeft');
+    class var Method_ShiftRight: System.Reflection.MethodInfo := typeOf(Operators).GetMethod('ShiftRight');
+    class var Method_ShiftRightUnsigned: System.Reflection.MethodInfo := typeOf(Operators).GetMethod('ShiftRightUnsigned');
 
   end;
 
@@ -25,20 +25,20 @@ implementation
 
 class method Operators.ShiftLeft(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
-  exit Utilities.GetObjAsInteger(aLeft, ec) shl Utilities.GetObjAsInteger(aright, ec);
+  exit Utilities.GetObjAsInteger(aLeft, ec) shl Utilities.GetObjAsInteger(aRight, ec);
 end;
 
 class method Operators.ShiftRight(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
-  exit Utilities.GetObjAsInteger(aLeft, ec) shr Utilities.GetObjAsInteger(aright, ec);
+  exit Utilities.GetObjAsInteger(aLeft, ec) shr Utilities.GetObjAsInteger(aRight, ec);
 end;
 
 class method Operators.ShiftRightUnsigned(aLeft, aRight: Object; ec: ExecutionContext): Object;
 begin
   var l := Cardinal(Utilities.GetObjAsInteger(aLeft, ec));
-  var r := Cardinal(Utilities.GetObjAsInteger(aright, ec));
+  var r := Cardinal(Utilities.GetObjAsInteger(aRight, ec));
   var res := Int64(l shr r);
-  exit double(res);
+  exit Double(res);
 end;
 
 end.

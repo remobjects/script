@@ -10,9 +10,9 @@ type
   Reference = public class
   private
   public
-    constructor(aBase: Object; aName: string; aStrict: Integer);
+    constructor(aBase: Object; aName: String; aStrict: Integer);
     property Base: Object; // Undefined, Simple, IEnvironmentRecord or Object
-    property Name: string;
+    property Name: String;
     property &Flags: Integer;
     property Strict: Boolean read 0 <> (1 and &Flags);
     property ArrayAccess: Boolean read 0 <> (2 and &Flags);
@@ -22,10 +22,10 @@ type
     class method Delete(aReference: Object; aExecutionContext: ExecutionContext): Boolean;
     class method CreateReference(aBase, aSub: Object; aExecutionContext: ExecutionContext; aStrict: Integer): Reference;
 
-    class var Method_GetValue: System.Reflection.MethodInfo := typeof(Reference).GetMethod('GetValue'); readonly;
-    class var Method_SetValue: System.Reflection.MethodInfo := typeof(Reference).GetMethod('SetValue'); readonly;
-    class var Method_Delete: System.Reflection.MethodInfo := typeof(Reference).GetMethod('Delete'); readonly;
-    class var Method_Create: System.Reflection.MethodInfo := typeof(Reference).GetMethod('CreateReference'); readonly;
+    class var Method_GetValue: System.Reflection.MethodInfo := typeOf(Reference).GetMethod('GetValue'); readonly;
+    class var Method_SetValue: System.Reflection.MethodInfo := typeOf(Reference).GetMethod('SetValue'); readonly;
+    class var Method_Delete: System.Reflection.MethodInfo := typeOf(Reference).GetMethod('Delete'); readonly;
+    class var Method_Create: System.Reflection.MethodInfo := typeOf(Reference).GetMethod('CreateReference'); readonly;
   end;
 
   ExecutionContext = public class
@@ -34,57 +34,57 @@ type
   public
     constructor; empty;
     constructor(aScope: EnvironmentRecord; aStrict: Boolean);
-    
+
     method &With(aVal: Object): ExecutionContext;
-    class method Catch(aVal: Object; ex: ExecutionContext; aName: string): ExecutionContext;
+    class method Catch(value: Object;  context: ExecutionContext;  name: String): ExecutionContext;
 
     property Strict: Boolean;
     property LexicalScope: EnvironmentRecord;
     property VariableScope: EnvironmentRecord;
-    
+
     property Global: GlobalObject read get_Global;
 
-    method StoreParameter(Args: array of Object; index: Integer; name: string; aStrict: Boolean);
+    method StoreParameter(Args: array of Object; index: Integer; name: String; aStrict: Boolean);
     method GetDebugSink: IDebugSink;
 
-    class var method_SetStrict: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('set_Strict'); readonly;
-    class var &Method_Catch: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('Catch'); readonly;
-    class var &Method_With: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('With'); readonly;
-    class var &Constructor: System.Reflection.ConstructorInfo := typeof(ExecutionContext).GetConstructor([typeof(EnvironmentRecord), typeof(Boolean)]); readonly;
-    class var Method_GetDebugSink: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('GetDebugSink'); readonly;
-    class var Method_get_LexicalScope: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('get_LexicalScope'); readonly;
-    class var Method_get_VariableScope: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('get_VariableScope'); readonly;
-    class var Method_get_Global: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('get_Global'); readonly;
-    class var Method_StoreParameter: System.Reflection.MethodInfo := typeof(ExecutionContext).GetMethod('StoreParameter'); readonly;
+    class var method_SetStrict: System.Reflection.MethodInfo := typeOf(ExecutionContext).GetMethod('set_Strict'); readonly;
+    class var &Method_Catch: System.Reflection.MethodInfo := typeOf(ExecutionContext).GetMethod('Catch'); readonly;
+    class var &Method_With: System.Reflection.MethodInfo := typeOf(ExecutionContext).GetMethod('With'); readonly;
+    class var &Constructor: System.Reflection.ConstructorInfo := typeOf(ExecutionContext).GetConstructor([typeOf(EnvironmentRecord), typeOf(Boolean)]); readonly;
+    class var Method_GetDebugSink: System.Reflection.MethodInfo := typeOf(ExecutionContext).GetMethod('GetDebugSink'); readonly;
+    class var Method_get_LexicalScope: System.Reflection.MethodInfo := typeOf(ExecutionContext).GetMethod('get_LexicalScope'); readonly;
+    class var Method_get_VariableScope: System.Reflection.MethodInfo := typeOf(ExecutionContext).GetMethod('get_VariableScope'); readonly;
+    class var Method_get_Global: System.Reflection.MethodInfo := typeOf(ExecutionContext).GetMethod('get_Global'); readonly;
+    class var Method_StoreParameter: System.Reflection.MethodInfo := typeOf(ExecutionContext).GetMethod('StoreParameter'); readonly;
   end;
 
   EnvironmentRecord = public abstract class
   public
     class method GetIdentifier(aLex: EnvironmentRecord; aName: String; aStrict: Boolean): Reference; 
 
-    class var Method_GetIdentifier: System.Reflection.MethodInfo := typeof(EnvironmentRecord).GetMethod('GetIdentifier'); readonly;
+    class var Method_GetIdentifier: System.Reflection.MethodInfo := typeOf(EnvironmentRecord).GetMethod('GetIdentifier'); readonly;
     
     constructor(aPrev: EnvironmentRecord);
     property Previous: EnvironmentRecord; readonly;
     property Global: GlobalObject read ; abstract;
     property IsDeclarative: Boolean read; abstract; 
-    method CreateMutableBindingNoFail(aName: string; aDeleteAfter: Boolean);
+    method CreateMutableBindingNoFail(aName: String; aDeleteAfter: Boolean);
 
-    method HasBinding(aName: string): Boolean; abstract;
-    method CreateMutableBinding(aName: string; aDeleteAfter: Boolean); abstract;
-    method SetMutableBinding(aName: string; aValue: Object; aStrict: Boolean); abstract;
-    method GetBindingValue(aName: string; aStrict: Boolean): Object; abstract;
-    method DeleteBinding(aName: string): Boolean;  abstract;
+    method HasBinding(aName: String): Boolean; abstract;
+    method CreateMutableBinding(aName: String; aDeleteAfter: Boolean); abstract;
+    method SetMutableBinding(aName: String; aValue: Object; aStrict: Boolean); abstract;
+    method GetBindingValue(aName: String; aStrict: Boolean): Object; abstract;
+    method DeleteBinding(aName: String): Boolean;  abstract;
     method ImplicitThisValue: Object; abstract;
 
-    method Names: sequence of string; abstract;
+    method Names: sequence of String; abstract;
 
-    class method CreateAndSetMutableBindingNoFail(aVal: Object; aName: string; Ex: EnvironmentRecord; aImmutable, aDeleteAfter: Boolean);
+    class method CreateAndSetMutableBindingNoFail(aVal: Object; aName: String; Ex: EnvironmentRecord; aImmutable, aDeleteAfter: Boolean);
 
-    class var Method_CreateAndSetMutableBindingNoFail: System.Reflection.MethodInfo := typeof(EnvironmentRecord).GetMethod('CreateAndSetMutableBindingNoFail'); readonly;
-    class var Method_CreateMutableBindingNoFail: System.Reflection.MethodInfo := typeof(EnvironmentRecord).GetMethod('CreateMutableBindingNoFail'); readonly;
-    class var Method_SetMutableBinding: System.Reflection.MethodInfo := typeof(EnvironmentRecord).GetMethod('SetMutableBinding'); readonly;
-    class var Method_HasBinding: System.Reflection.MethodInfo := typeof(EnvironmentRecord).GetMethod('HasBinding'); readonly;
+    class var Method_CreateAndSetMutableBindingNoFail: System.Reflection.MethodInfo := typeOf(EnvironmentRecord).GetMethod('CreateAndSetMutableBindingNoFail'); readonly;
+    class var Method_CreateMutableBindingNoFail: System.Reflection.MethodInfo := typeOf(EnvironmentRecord).GetMethod('CreateMutableBindingNoFail'); readonly;
+    class var Method_SetMutableBinding: System.Reflection.MethodInfo := typeOf(EnvironmentRecord).GetMethod('SetMutableBinding'); readonly;
+    class var Method_HasBinding: System.Reflection.MethodInfo := typeOf(EnvironmentRecord).GetMethod('HasBinding'); readonly;
   end;
   ObjectEnvironmentRecord = public class(EnvironmentRecord)
   private
@@ -92,49 +92,49 @@ type
   public
     constructor(aPrevious: EnvironmentRecord; aObject: EcmaScriptObject; aProvideThis: Boolean := false);
 
-    method Names: sequence of string; override;
+    method Names: sequence of String; override;
     property Global: GlobalObject read fObject.Root; override;
     property IsDeclarative: Boolean read false; override;
-    method HasBinding(aName: string): Boolean; override;
-    method CreateMutableBinding(aName: string; aDeleteAfter: Boolean); override;
-    method SetMutableBinding(aName: string; aValue: Object; aStrict: Boolean); override;
-    method GetBindingValue(aName: string; aStrict: Boolean): Object; override;
-    method DeleteBinding(aName: string): Boolean; override;
+    method HasBinding(aName: String): Boolean; override;
+    method CreateMutableBinding(aName: String; aDeleteAfter: Boolean); override;
+    method SetMutableBinding(aName: String; aValue: Object; aStrict: Boolean); override;
+    method GetBindingValue(aName: String; aStrict: Boolean): Object; override;
+    method DeleteBinding(aName: String): Boolean; override;
     method ImplicitThisValue: Object; override;
     property ProvideThis: Boolean;
   end;
   DeclarativeEnvironmentRecord = public class(EnvironmentRecord)
   private
     fGlobal: GlobalObject;
-    fBag: Dictionary<string, PropertyValue> := new Dictionary<String,PropertyValue>();
+    fBag: Dictionary<String, PropertyValue> := new Dictionary<String,PropertyValue>();
   public
     constructor(aPrevious: EnvironmentRecord; aGlobal: GlobalObject);
-    method Names: sequence of string; override;
+    method Names: sequence of String; override;
     property Global: GlobalObject read fGlobal write fGlobal; override;
-    property Bag: Dictionary<string, PropertyValue> read fBag;
+    property Bag: Dictionary<String, PropertyValue> read fBag;
     property IsDeclarative: Boolean read true; override;
-    method HasBinding(aName: string): Boolean; override;
-    method CreateMutableBinding(aName: string; aDeleteAfter: Boolean); override;
-    method SetMutableBinding(aName: string; aValue: Object; aStrict: Boolean); override;
-    method GetBindingValue(aName: string; aStrict: Boolean): Object; override;
-    method DeleteBinding(aName: string): Boolean; override;
+    method HasBinding(aName: String): Boolean; override;
+    method CreateMutableBinding(aName: String; aDeleteAfter: Boolean); override;
+    method SetMutableBinding(aName: String; aValue: Object; aStrict: Boolean); override;
+    method GetBindingValue(aName: String; aStrict: Boolean): Object; override;
+    method DeleteBinding(aName: String): Boolean; override;
     method ImplicitThisValue: Object; empty; override;
-    method CreateImmutableBinding(aName: string); virtual;
-    method InitializeImmutableBinding(aName: string; aValue: Object); virtual;
-    class method SetAndInitializeImmutable(val: EcmaScriptBaseFunctionObject; aName: string): EcmaScriptBaseFunctionObject;
-    class var &Constructor: System.Reflection.ConstructorInfo := typeof(DeclarativeEnvironmentRecord).GetConstructor([typeof(EnvironmentRecord), Typeof(GlobalObject)]); readonly;
-    class var Method_SetAndInitializeImmutable: System.Reflection.MethodInfo := typeof(DeclarativeEnvironmentRecord).GetMethod('SetAndInitializeImmutable'); readonly;
+    method CreateImmutableBinding(aName: String); virtual;
+    method InitializeImmutableBinding(aName: String; aValue: Object); virtual;
+    class method SetAndInitializeImmutable(val: EcmaScriptBaseFunctionObject; aName: String): EcmaScriptBaseFunctionObject;
+    class var &Constructor: System.Reflection.ConstructorInfo := typeOf(DeclarativeEnvironmentRecord).GetConstructor([typeOf(EnvironmentRecord), typeOf(GlobalObject)]); readonly;
+    class var Method_SetAndInitializeImmutable: System.Reflection.MethodInfo := typeOf(DeclarativeEnvironmentRecord).GetMethod('SetAndInitializeImmutable'); readonly;
   end;
 
 implementation
 
 
-method ObjectEnvironmentRecord.HasBinding(aName: string): Boolean;
+method ObjectEnvironmentRecord.HasBinding(aName: String): Boolean;
 begin
   exit fObject.HasProperty(aName);
 end;
 
-method ObjectEnvironmentRecord.CreateMutableBinding(aName: string; aDeleteAfter: Boolean);
+method ObjectEnvironmentRecord.CreateMutableBinding(aName: String; aDeleteAfter: Boolean);
 begin
   if fObject.HasProperty(aName) then fObject.Root.RaiseNativeError(NativeErrorType.TypeError, 'Duplicate property '+aName);
   var lProp := PropertyAttributes.All;
@@ -142,12 +142,12 @@ begin
   fObject.DefineOwnProperty(aName, new PropertyValue(lProp, Undefined.Instance), false);
 end;
 
-method ObjectEnvironmentRecord.SetMutableBinding(aName: string; aValue: Object; aStrict: Boolean);
+method ObjectEnvironmentRecord.SetMutableBinding(aName: String; aValue: Object; aStrict: Boolean);
 begin
-  fObject.Put(aName, aValue, if aStrict then 1 else 0);
+  fObject.Put(nil, aName, aValue, if aStrict then 1 else 0);
 end;
 
-method ObjectEnvironmentRecord.GetBindingValue(aName: string; aStrict: Boolean): Object;
+method ObjectEnvironmentRecord.GetBindingValue(aName: String; aStrict: Boolean): Object;
 begin
   if (fObject = &Global) and (aName = 'eval') and not aStrict then begin
     exit Global.NotStrictGlobalEvalFunc;
@@ -157,11 +157,11 @@ begin
     exit fObject.Get(aName);
   end;
   if aStrict then 
-    fObject.Root.RaiseNativeError(NAtiveErrorType.ReferenceError, aName+' does not exist in this object');
+    fObject.Root.RaiseNativeError(NativeErrorType.ReferenceError, aName+' does not exist in this object');
   exit Undefined.Instance;   
 end;
 
-method ObjectEnvironmentRecord.DeleteBinding(aName: string): Boolean;
+method ObjectEnvironmentRecord.DeleteBinding(aName: String): Boolean;
 begin
   exit fObject.Delete(aName, false);
 end;
@@ -178,7 +178,7 @@ begin
   ProvideThis := aProvideThis;
 end;
 
-method ObjectEnvironmentRecord.Names: sequence of string;
+method ObjectEnvironmentRecord.Names: sequence of String;
 begin
   exit fObject.Names;
 end;
@@ -189,29 +189,29 @@ begin
   fGlobal := aGlobal;
 end;
 
-method DeclarativeEnvironmentRecord.HasBinding(aName: string): Boolean;
+method DeclarativeEnvironmentRecord.HasBinding(aName: String): Boolean;
 begin
   exit fBag.ContainsKey(aName);
 end;
 
-method DeclarativeEnvironmentRecord.CreateMutableBinding(aName: string; aDeleteAfter: Boolean);
+method DeclarativeEnvironmentRecord.CreateMutableBinding(aName: String; aDeleteAfter: Boolean);
 begin
   if fBag.ContainsKey(aName) then fGlobal.RaiseNativeError(NativeErrorType.TypeError, 'Duplicate property: '+aName);
-  fBag.Add(aName, new PropertyValue(PropertyAttributes.writable or PropertyAttributes.Configurable, Undefined.Instance));
+  fBag.Add(aName, new PropertyValue(PropertyAttributes.Writable or PropertyAttributes.Configurable, Undefined.Instance));
 end;
 
-method DeclarativeEnvironmentRecord.SetMutableBinding(aName: string; aValue: Object; aStrict: Boolean);
+method DeclarativeEnvironmentRecord.SetMutableBinding(aName: String; aValue: Object; aStrict: Boolean);
 begin
   var lVal: PropertyValue;
   if not fBag.TryGetValue(aName, out lVal) then begin
     fGlobal.RaiseNativeError(NativeErrorType.TypeError, 'Unknown property: '+aName);
   end;
-  if PropertyAttributes.writable not in lVal.Attributes then 
+  if PropertyAttributes.Writable not in lVal.Attributes then 
     fGlobal.RaiseNativeError(NativeErrorType.TypeError, 'Property is immutable: '+aName);
   lVal.Value := aValue;
 end;
 
-method DeclarativeEnvironmentRecord.GetBindingValue(aName: string; aStrict: Boolean): Object;
+method DeclarativeEnvironmentRecord.GetBindingValue(aName: String; aStrict: Boolean): Object;
 begin
   var lVal: PropertyValue;
   if not fBag.TryGetValue(aName, out lVal) then fGlobal.RaiseNativeError(NativeErrorType.TypeError, 'Unknown property: '+aName);
@@ -220,21 +220,21 @@ begin
   exit lVal.Value;
 end;
 
-method DeclarativeEnvironmentRecord.DeleteBinding(aName: string): Boolean;
+method DeclarativeEnvironmentRecord.DeleteBinding(aName: String): Boolean;
 begin
   var lVal: PropertyValue;
   if not fBag.TryGetValue(aName, out lVal) then exit true;
-  if lVal.Attributes <> (PropertyAttributes.Configurable or PropertyAttributes.writable) then exit false;
+  if lVal.Attributes <> (PropertyAttributes.Configurable or PropertyAttributes.Writable) then exit false;
   exit fBag.Remove(aName);
 end;
 
-method DeclarativeEnvironmentRecord.CreateImmutableBinding(aName: string);
+method DeclarativeEnvironmentRecord.CreateImmutableBinding(aName: String);
 begin
   if fBag.ContainsKey(aName) then fGlobal.RaiseNativeError(NativeErrorType.TypeError, 'Duplicate property: '+aName);
   fBag.Add(aName, new PropertyValue(PropertyAttributes.Configurable, Undefined.Instance));
 end;
 
-method DeclarativeEnvironmentRecord.InitializeImmutableBinding(aName: string; aValue: Object);
+method DeclarativeEnvironmentRecord.InitializeImmutableBinding(aName: String; aValue: Object);
 begin
   var lVal: PropertyValue;
   if not fBag.TryGetValue(aName, out lVal) then fGlobal.RaiseNativeError(NativeErrorType.TypeError, 'Unknown property: '+aName);
@@ -243,7 +243,7 @@ begin
   lVal.Value := aValue;
 end;
 
-class method DeclarativeEnvironmentRecord.SetAndInitializeImmutable(val: EcmaScriptBaseFunctionObject; aName: string): EcmaScriptBaseFunctionObject;
+class method DeclarativeEnvironmentRecord.SetAndInitializeImmutable(val: EcmaScriptBaseFunctionObject; aName: String): EcmaScriptBaseFunctionObject;
 begin
   var lSelf := (val.Scope as DeclarativeEnvironmentRecord);
   lSelf.CreateImmutableBinding(aName);
@@ -251,12 +251,12 @@ begin
   exit val;
 end;
 
-method DeclarativeEnvironmentRecord.Names: sequence of string;
+method DeclarativeEnvironmentRecord.Names: sequence of String;
 begin
   exit fBag.Keys;
 end;
 
-constructor Reference(aBase: Object; aName: string; aStrict: Integer);
+constructor Reference(aBase: Object; aName: String; aStrict: Integer);
 begin
   Base := aBase;
   Name := aName;
@@ -272,7 +272,7 @@ begin
   if lRef.Base = nil then exit aExecutionContext.Global.ObjectPrototype.Get(aExecutionContext, lRef.Name);
   var lObj := EcmaScriptObject(lRef.Base);
   if assigned(lObj) then 
-    exit lObj.Get(aExecutionContext, lREf.Flags, lRef.Name);
+    exit lObj.Get(aExecutionContext, lRef.Flags, lRef.Name);
   var lExec := EnvironmentRecord(lRef.Base); 
   if assigned(lExec) then
     exit lExec.GetBindingValue(lRef.Name, lRef.Strict);
@@ -281,7 +281,7 @@ begin
   if lRef.Base is Double then exit aExecutionContext.Global.NumberPrototype.Get(aExecutionContext, lRef.Name);
   if lRef.Base is String then begin
     if lRef.Name = 'length' then 
-      exit string(lREf.Base).Length;
+      exit String(lRef.Base).Length;
     exit aExecutionContext.Global.StringPrototype.Get(aExecutionContext, lRef.Name);
   end;
 end;
@@ -298,7 +298,7 @@ begin
     if lRef.Strict then
       aExecutionContext.Global.RaiseNativeError(NativeErrorType.TypeError,'Cannot call '+lRef.Name+' on undefined')
     else
-      exit aExecutionContext.Global.Put(aExecutionContext, lRef.NAme, aValue, lRef.Flags);
+      exit aExecutionContext.Global.Put(aExecutionContext, lRef.Name, aValue, lRef.Flags);
   var lObj := EcmaScriptObject(lRef.Base);
   if assigned(lObj) then 
     exit lObj.Put(aExecutionContext,lRef.Name, aValue, lRef.Flags);
@@ -309,7 +309,7 @@ begin
   end;
   if lRef.Strict then
     aExecutionContext.Global.RaiseNativeError(NativeErrorType.TypeError, 'Cannot set value on transient object');
-  exit aValue; // readonly so the on the fly object 
+  exit aValue; // readonly so the on the fly Object 
 end;
 
 class method Reference.Delete(aReference: Object; aExecutionContext: ExecutionContext): Boolean;
@@ -323,7 +323,7 @@ begin
   end;
   var lObj := EcmaScriptObject(lRef.Base);
   if assigned(lObj) then
-    exit lObj.Delete(lREf.Name, lRef.Strict);
+    exit lObj.Delete(lRef.Name, lRef.Strict);
   var lExec := EnvironmentRecord(lRef.Base);
   if assigned(lExec) then begin
     if lRef.Strict then aExecutionContext.Global.RaiseNativeError(NativeErrorType.SyntaxError, 'Cannot delete execution context element');
@@ -358,12 +358,12 @@ begin
 end;
 
 
-method EnvironmentRecord.CreateMutableBindingNoFail(aName: string; aDeleteAfter: Boolean);
+method EnvironmentRecord.CreateMutableBindingNoFail(aName: String; aDeleteAfter: Boolean);
 begin
   if not HasBinding(aName) then CreateMutableBinding(aName, aDeleteAfter);
 end;
 
-class method EnvironmentRecord.CreateAndSetMutableBindingNoFail(aVal: Object; aName: string; Ex: EnvironmentRecord; aImmutable, aDeleteAfter: Boolean);
+class method EnvironmentRecord.CreateAndSetMutableBindingNoFail(aVal: Object; aName: String; Ex: EnvironmentRecord; aImmutable, aDeleteAfter: Boolean);
 begin
   if aImmutable then begin
     var lDec := DeclarativeEnvironmentRecord(Ex);
@@ -373,8 +373,8 @@ begin
       exit;
     end;
   end;
-  Ex.CreateMutableBinding(aname, aDeleteAfter);
-  ex.SetMutableBinding(aName, aVal, false);
+  Ex.CreateMutableBinding(aName, aDeleteAfter);
+  Ex.SetMutableBinding(aName, aVal, false);
 end;
 
 constructor ExecutionContext(aScope: EnvironmentRecord; aStrict: Boolean);
@@ -389,9 +389,9 @@ begin
   exit &Global.Debug;
 end;
 
-method ExecutionContext.StoreParameter(Args: array of Object; &index: Integer; name: string; aStrict: Boolean);
+method ExecutionContext.StoreParameter(Args: array of Object; &index: Integer; name: String; aStrict: Boolean);
 begin
-  var lVal := if Index < Args.Length then args[Index] else Undefined.Instance;
+  var lVal := if index < Args.Length then Args[index] else Undefined.Instance;
   if not VariableScope.HasBinding(name) then begin
     VariableScope.CreateMutableBinding(name, false);
     VariableScope.SetMutableBinding(name, lVal, aStrict);
@@ -403,12 +403,20 @@ begin
   exit new ExecutionContext(new ObjectEnvironmentRecord(LexicalScope, Utilities.ToObject(self, aVal), true), false);
 end;
 
-class method ExecutionContext.Catch(aVal: Object; ex: ExecutionContext; aName: string): ExecutionContext;
+
+class method ExecutionContext.Catch(value: Object;  context: ExecutionContext;  name: String): ExecutionContext;
 begin
-  result := new ExecutionContext(new DeclarativeEnvironmentRecord(ex.LexicalScope, ex.Global), ex.Strict);
-  result.LexicalScope.CreateMutableBinding(aName, false);
-  result.LexicalScope.SetMutableBinding(aName, aVal, false);
+  var lResult: ExecutionContext := new ExecutionContext(new DeclarativeEnvironmentRecord(context.LexicalScope, context.Global), context.Strict);
+  lResult.LexicalScope.CreateMutableBinding(name, false);
+
+  if (value is EcmaScriptObjectWrapper) and (EcmaScriptObjectWrapper(value).Value is Exception) then
+    lResult.LexicalScope.SetMutableBinding(name, lResult.Global.ErrorCtor(lResult, nil, Exception(EcmaScriptObjectWrapper(value).Value).Message), false)
+  else
+    lResult.LexicalScope.SetMutableBinding(name, value, false);
+
+  exit lResult;
 end;
+
 
 method ExecutionContext.get_Global: GlobalObject;
 begin

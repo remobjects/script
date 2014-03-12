@@ -136,7 +136,7 @@ type
   private
   public
     constructor(aOriginal: String; aToken: TokenKind);
-    Chars: Array of char; readonly;
+    Chars: Array of Char; readonly;
     Token: TokenKind; readonly;
     Original: String; readonly;
   end;
@@ -165,7 +165,7 @@ type
   private
     class var     
       FIdentifiers: array of KeywordMap;
-      FCharMap: Array[byte] of Char;
+      FCharMap: Array[Byte] of Char;
     var     
     FInput: array of Char;
     FPos, FRow, FLastEnterPos, FLen: Integer;
@@ -193,8 +193,8 @@ type
     property Row: Integer read FRow;
     property Col: Integer read FPos - FLastEnterPos;
     property Token: TokenKind read FToken;
-    property TokenStr: String read iif(FTokenStr = nil, string.Empty, new string(FTokenStr));
-    property Position: Position read fPosition;
+    property TokenStr: String read iif(FTokenStr = nil, String.Empty, new String(FTokenStr));
+    property Position: Position read FPosition;
     property EndPosition: Position read FEndPosition;
     property LastEndPosition: Position read FLastEndPosition;
     property PositionPair: PositionPair read new PositionPair(Position, EndPosition);
@@ -229,8 +229,8 @@ end;
 method Tokenizer.IdentCompare(aPos: Integer; len: Integer; Data: array of Char): Integer;
 begin
   for i: Integer := 0 to iif(len > Data.Length, Data.Length, len) -1 do begin
-    if Data[i] > FCharMap[Ord(FInput[aPos + i])] then exit 1;
-    if Data[i] < FCharMap[Ord(FInput[aPos + i])] then exit -1;
+    if Data[i] > FCharMap[ord(FInput[aPos + i])] then exit 1;
+    if Data[i] < FCharMap[ord(FInput[aPos + i])] then exit -1;
   end;
   if len < Data.Length then exit 1;
   if len > Data.Length then exit -1;
@@ -276,12 +276,12 @@ begin
     end;
     case FToken of
       TokenKind.Comment, 
-      TokenKind.Whitespace: ;
+      TokenKind.WhiteSpace: ;
       else begin
         Stop := true;
         FPosition.Col := lStartRow;
         FPosition.Row := lStartColumn;
-        FEndPosition.Col := (FPos + fLen) - FLastEnterPos;
+        FEndPosition.Col := (FPos + FLen) - FLastEnterPos;
         FEndPosition.Row := Row;
       end;
     end;
@@ -316,12 +316,12 @@ begin
           FToken := TokenKind.Comment
         end else if FInput[curroffset + 1] = '*' then begin
           curroffset := curroffset + 2;
-          var lHadEnters: Boolean := false;
+          //var lHadEnters: Boolean := false;
           while (FInput[curroffset] <> '*') and (FInput[curroffset] <> '/') and (FInput[curroffset] <> #0) do begin
             if FInput[curroffset] in [#13, #10] then begin
               if (FInput[curroffset +1] = #10) and (FInput[curroffset] = #13) then inc(curroffset);
               FLastEnterPos := curroffset;
-              lHadEnters := true;
+              //lHadEnters := true;
               inc(FRow);
             end;
             inc(curroffset);
@@ -360,7 +360,7 @@ begin
           inc(curroffset);
         end;
         FLen := curroffset - FPos;
-        FToken := TokenKind.Whitespace;
+        FToken := TokenKind.WhiteSpace;
       end;
       #0:begin
         FLen := 0;
@@ -371,7 +371,7 @@ begin
           inc(curroffset);
 
           while (FInput[curroffset] in ['0'..'9', 'a'..'f', 'A'..'F'])
-            do Inc(curroffset);
+            do inc(curroffset);
 
           FToken := TokenKind.HexInt;
           FLen := curroffset - FPos;
@@ -425,11 +425,11 @@ begin
             if (FInput[curroffset] = #39) then
             begin
               if FInput[curroffset+1] = #39 then
-                Inc(curroffset)
+                inc(curroffset)
               else
                 Break;
             end;
-            Inc(curroffset);
+            inc(curroffset);
           end;
           if FInput[curroffset] = #39 then
             FToken := TokenKind.String
@@ -455,14 +455,14 @@ begin
           begin
             inc(curroffset);
             while (FInput[curroffset] in ['A'..'F', 'a'..'f', '0'..'9']) do begin
-              Inc(curroffset);
+              inc(curroffset);
             end;
             FToken := TokenKind.Char;
             FLen := curroffset - FPos;
           end else
           begin
             while (FInput[curroffset] in ['0'..'9']) do begin
-              Inc(curroffset);
+              inc(curroffset);
             end;
             if FInput[curroffset] in ['A'..'Z', 'a'..'z', '_'] then
             begin
@@ -535,7 +535,7 @@ begin
                 inc(FRow);
                 FLastEnterPos := curroffset +1;
               end;
-              Inc(curroffset);
+              inc(curroffset);
             end;
             if (FInput[curroffset] = #0) then
             begin
@@ -546,7 +546,7 @@ begin
             end else
             begin
               FToken := TokenKind.Comment;
-              Inc(curroffset, 2);
+              inc(curroffset, 2);
             end;
             FLen := curroffset - FPos;
           end
@@ -583,7 +583,7 @@ begin
         end;
       ';':
         begin
-          FToken := TokenKind.Semicolon;
+          FToken := TokenKind.SemiColon;
           FLen := 1;
         end;
       ':':
@@ -628,7 +628,7 @@ begin
               inc(FRow);
               FLastEnterPos := curroffset + 1;
             end;
-            Inc(curroffset);
+            inc(curroffset);
           end;
           if (FInput[curroffset] = #0) then
           begin
@@ -727,9 +727,9 @@ begin
   lItems.Sort((a, b) -> a.Original.CompareTo(b.Original));
   FIdentifiers := lItems.ToArray;
 
- FCharMap := new array[byte] of Char();
- for i: Integer := Low(FCharMap) to High(FCharMap) do begin
-   FCharMap[i] := Char.ToUpperInvariant(char(i));
+ FCharMap := new array[Byte] of Char();
+ for i: Integer := low(FCharMap) to high(FCharMap) do begin
+   FCharMap[i] := Char.ToUpperInvariant(Char(i));
  end;
 end;
 
@@ -751,7 +751,7 @@ begin
   lResult[3] := FLen;
   lResult[4] := FToken;
   lResult[5] := FTokenStr;
-  lResult[6] := fPosition;
+  lResult[6] := FPosition;
   result := lResult;
 end;
 
@@ -763,8 +763,8 @@ begin
   FLastEnterPos := Integer(lArr[2]);
   FLen := Integer(lArr[3]);
   FToken := TokenKind(lArr[4]);
-  FTokenStr := array of char(lArr[5]);
-  fPosition := RemObjects.Script.Position(lArr[6]);
+  FTokenStr := array of Char(lArr[5]);
+  FPosition := RemObjects.Script.Position(lArr[6]);
 end;
 
 end.
