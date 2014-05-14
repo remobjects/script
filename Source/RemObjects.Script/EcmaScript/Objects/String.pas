@@ -216,7 +216,7 @@ begin
   var lIndex := Utilities.GetArgAsInteger(args, 1, aCaller);
 
   if  ((lIndex >= lSelf.Length)  or  (lIndex = 0))  then
-    exit  (lSelf.Length);
+    lIndex := lSelf.Length;
 
   exit  (lSelf.LastIndexOf(lNeedle, lIndex));
 end;
