@@ -211,6 +211,7 @@ begin
         else
           lValue := Math.Floor(lValue);
       end;
+      lValue := lValue / 1000;
     end;
   end
   else begin
@@ -269,7 +270,7 @@ end;
 
 method GlobalObject.DateToUTCString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  exit UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToString(System.Globalization.DateTimeFormatInfo.InvariantInfo);
+  exit UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToString('R', System.Globalization.DateTimeFormatInfo.InvariantInfo);
 end;
 
 method GlobalObject.DateToDateString(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
@@ -304,7 +305,7 @@ begin
   if (not ((lValue is Double) or (lValue is Int64))) then
     RaiseNativeError(NativeErrorType.TypeError, 'Date.valueOf is not generic');
 
-  exit Convert.ToDouble(lValue);
+  exit Convert.ToDouble(lValue) * 1000;
 end;
 
 
@@ -364,14 +365,14 @@ method GlobalObject.DateGetDay(aCaller: ExecutionContext;aSelf: Object; params a
 begin
 if Double.IsNaN(Utilities.GetObjAsDouble(aSelf, aCaller)) then exit Double.NaN;
   var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller)).ToLocalTime;
-  exit lValue.DayOfWeek;
+  exit Integer(lValue.DayOfWeek);
 end;
 
 method GlobalObject.DateGetUTCDay(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
   if Double.IsNaN(Utilities.GetObjAsDouble(aSelf, aCaller)) then exit Double.NaN;
   var lValue := UnixToDateTime(Utilities.GetObjAsDouble(aSelf, aCaller));
-  exit lValue.DayOfWeek;
+  exit Integer(lValue.DayOfWeek);
 end;
 
 method GlobalObject.DateGetHours(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
@@ -648,7 +649,7 @@ end;
 
 method GlobalObject.DateNow(aCaller: ExecutionContext;aSelf: Object; params args: Array of Object): Object;
 begin
-  exit DateTimeToUnix(DateTime.UtcNow);
+  exit DateTimeToUnix(DateTime.UtcNow) * 1000;
 end;
 
 
