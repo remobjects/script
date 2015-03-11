@@ -195,7 +195,7 @@ begin
   var lOwn: PropertyValue := self.GetOwnProperty(propertyName, false);
 
   if assigned(lOwn) and IsDataDescriptor(lOwn) then begin
-    if self.DefineOwnProperty(propertyName, new PropertyValue(PropertyAttributes.None, propertyValue), 0 <> (&flags and 1)) then
+    if self.DefineOwnProperty(propertyName, new PropertyValue(lOwn.Attributes, propertyValue), 0 <> (&flags and 1)) then
       exit propertyValue;
 
     exit Undefined.Instance;
