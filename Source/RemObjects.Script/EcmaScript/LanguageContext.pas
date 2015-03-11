@@ -1757,7 +1757,7 @@ end;
 
 method EcmaScriptCompiler.CallGetValue(elementType: ElementType);
 begin
-  if not elementType in [ ElementType.SubExpression, ElementType.CallExpression, ElementType.ArrayAccessExpression, ElementType.IdentifierExpression ] then
+  if not elementType in [ elementType.SubExpression, elementType.CallExpression, elementType.ArrayAccessExpression, elementType.IdentifierExpression ] then
     exit;
 
   // Expect: POSSIBLE reference on stack (always typed object)
