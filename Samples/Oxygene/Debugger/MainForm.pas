@@ -68,7 +68,7 @@ begin
       s := s + #13#10;
       edOutput.AppendText(s);
       self.tabs.SelectedTab := tbOutput;
-      exit nil;
+      exit ;
     end), array of Object([args]));
     exit nil;
   end));
