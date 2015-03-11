@@ -391,7 +391,7 @@ begin
         lWork.Append('{'#10);
         lWork.Append(aIndent);
         for i: Integer := 0 to lItems.Count -1 do begin
-          if (i <> 0) and (i <> lItems.Count- 1) then begin 
+          if (i <> 0) then begin 
             lWork.Append(','#10);
             lWork.Append(aIndent);
           end;

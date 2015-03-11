@@ -522,7 +522,7 @@ begin
     inc(k);
   end;
 
-  lSelf.Put(aCaller, 'length', Integer(lLen - lActualDeleteCount + (length(args)-2)));
+    lSelf.Put(aCaller, 'length', Integer(lLen - lActualDeleteCount + (length(args)-2)));
 
   exit  (A);
 end;
