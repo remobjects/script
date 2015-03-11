@@ -184,8 +184,10 @@ begin
                      var i: Integer; 
                      if  (not Int32.TryParse(aTok.TokenStr, out i))  then  begin
                        var i6: Int64;
-                       if  (Int64.TryParse(aTok.TokenStr, out i6))  then
+                       if  (Int64.TryParse(aTok.TokenStr, out i6))  then begin
+                         aTok.Next;
                          exit  (i6);
+                       end;
 
                        RaiseNativeError(NativeErrorType.SyntaxError, 'Number expected at '+aTok.Row+':'+aTok.Col);
                      end;
