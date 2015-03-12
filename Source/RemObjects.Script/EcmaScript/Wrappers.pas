@@ -365,7 +365,7 @@ begin
     if scriptObject.Value.GetType() = typeOf(DateTime) then
       exit DateTime(scriptObject.Value).ToLocalTime();
 
-    exit GlobalObject.UnixToDateTime(Convert.ToDouble(scriptObject.Value)).ToLocalTime();
+    exit GlobalObject.UnixToDateTime(Convert.ToInt64(scriptObject.Value)).ToLocalTime();
   end;
 
   exit value;
@@ -399,7 +399,7 @@ begin
       if wrapper.Value.GetType() = typeOf(DateTime) then
         value := DateTime(wrapper.Value).ToLocalTime()
       else
-        value := GlobalObject.UnixToDateTime(Convert.ToDouble(wrapper.Value)).ToLocalTime();
+        value := GlobalObject.UnixToDateTime(Convert.ToInt64(wrapper.Value)).ToLocalTime();
 
       exit ConvertTo(value, &type);
     end;
@@ -421,7 +421,7 @@ begin
   // type in [ .. ] doesn't compile on Silverlight
   var lValueType: &Type := value.GetType();
   if (&type = typeOf(DateTime)) and ((lValueType = typeOf(Double)) or (lValueType = typeOf(Int32)) or (lValueType = typeOf(Int64)) or (lValueType = typeOf(UInt32)) or (lValueType = typeOf(UInt64))) then
-    exit GlobalObject.UnixToDateTime(Convert.ToDouble(value)).ToLocalTime();
+    exit GlobalObject.UnixToDateTime(Convert.ToInt64(value)).ToLocalTime();
 
   // Implicitly convert Date to its String representation while sending it to .NET code
   if value.GetType() = typeOf(DateTime) then begin
