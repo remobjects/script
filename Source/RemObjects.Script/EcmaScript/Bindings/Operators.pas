@@ -46,7 +46,13 @@ begin
     case lLeft of 
       SimpleType.Boolean: exit Utilities.GetObjAsBoolean(aLeft, ec) = Utilities.GetObjAsBoolean(aRight, ec);
       SimpleType.Undefined, SimpleType.Null: exit true;
-      SimpleType.Number: exit DoubleCompare(Utilities.GetObjAsDouble(aLeft, ec), Utilities.GetObjAsDouble(aRight, ec));
+      SimpleType.Number: begin 
+        if (aLeft is Int32) and (aRight is Int32) then
+          exit Int32(aLeft) = Int32(aRight);
+        if (aLeft is Int64) and (aRight is Int64) then
+          exit Int64(aLeft) = Int64(aRight);
+        exit DoubleCompare(Utilities.GetObjAsDouble(aLeft, ec), Utilities.GetObjAsDouble(aRight, ec));
+      end;
       SimpleType.String: exit Utilities.GetObjAsString(aLeft, ec) = Utilities.GetObjAsString(aRight, ec);
     else // object
       exit EcmaScriptObject(aLeft) = EcmaScriptObject(aRight);
@@ -121,9 +127,9 @@ begin
   if Double.IsNaN(aLeft) then exit false;
   if Double.IsNaN(aRight) then exit false;
   if Double.IsInfinity(aLeft) or Double.IsInfinity(aRight) then exit false; 
-  var bits := BitConverter.DoubleToInt64Bits(aLeft);
-    // Note that the shift is sign-extended, hence the test against -1 not 1
-  exit 		Math.Abs(aLeft - aRight ) <= Math.Abs(aLeft * 0.0000000000001);
+  //var bits := BitConverter.DoubleToInt64Bits(aLeft);
+  // Note that the shift is sign-extended, hence the test against -1 not 1
+  exit aLeft = aRight;
 end;
 
 class method Operators.SameValue(aLeft, aright: Object; ec: ExecutionContext): Boolean;
