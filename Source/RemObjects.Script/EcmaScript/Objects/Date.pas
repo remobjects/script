@@ -210,9 +210,15 @@ end;
 
 method GlobalObject.DateParse(caller: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 begin
-  var lValue: DateTime := DateTime.Parse(Utilities.GetArgAsString(args, 0, caller), System.Globalization.DateTimeFormatInfo.InvariantInfo).ToUniversalTime();
+  try
+    var lValue: DateTime := DateTime.Parse(Utilities.GetArgAsString(args, 0, caller), System.Globalization.DateTimeFormatInfo.InvariantInfo,
+      System.Globalization.DateTimeStyles.AssumeLocal).ToUniversalTime();
 
-  exit new EcmaScriptObject(self, DatePrototype, &Class := 'Date', Value := lValue);
+    exit DateTimeToUnix(lValue);
+  except
+    exit Double.NaN;
+  end;
+  //exit new EcmaScriptObject(self, DatePrototype, &Class := 'Date', Value := lValue);
 end;
 
 
