@@ -226,11 +226,7 @@ begin
   var lSec := Utilities.GetArgAsInteger(args, 5, caller);
   var lMSec := Utilities.GetArgAsInteger(args, 6, caller);
 
-  if lDay = 0 then
-    lDay := 1;
-
-  var lValue: DateTime := new DateTime(lYear, lMonth, lDay, lHour, lMinute, lSec, lMSec);
-
+  var lValue: DateTime := new DateTime(lYear, 1, 1, lHour, lMinute, lSec, lMSec).AddMonths(lMonth).AddDays(lDay-1);
   exit new EcmaScriptObject(self, DatePrototype, &Class := 'Date', Value := DateTimeToUnix(lValue));
 end;
 
