@@ -11,7 +11,6 @@ uses
   System.Collections.Generic,
   System.Runtime.CompilerServices,
   System.Text,
-  Microsoft,
   RemObjects.Script,
   RemObjects.Script.EcmaScript.Internal;
 

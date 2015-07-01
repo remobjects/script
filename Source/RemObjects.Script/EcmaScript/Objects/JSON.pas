@@ -1,4 +1,4 @@
-{
+﻿{
 
   Copyright (c) 2009-2011 RemObjects Software. See LICENSE.txt for more details.
 
@@ -12,7 +12,6 @@ uses
   System.Globalization,
   System.Text,
   System.Linq,
-  Microsoft,
   RemObjects.Script,
   RemObjects.Script.EcmaScript.Internal;
 

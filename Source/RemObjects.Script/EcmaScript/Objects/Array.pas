@@ -11,7 +11,6 @@ interface
 uses
   System.Collections.Generic,
   System.Text,
-  Microsoft,
   RemObjects.Script,
   RemObjects.Script.EcmaScript.Internal;
 

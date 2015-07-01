@@ -7,11 +7,9 @@ namespace RemObjects.Script.EcmaScript;
 
 interface
 
-
 uses
   System.Collections.Generic,
   System.Text,
-  Microsoft,
   System.Text.RegularExpressions,
   RemObjects.Script.EcmaScript.Internal;
 

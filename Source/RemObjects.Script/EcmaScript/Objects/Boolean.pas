@@ -10,7 +10,6 @@ interface
 uses
   System.Collections.Generic,
   System.Text,
-  Microsoft,
   RemObjects.Script.EcmaScript.Internal;
 
 type
