@@ -1,4 +1,4 @@
-{
+﻿{
 
   Copyright (c) 2009-2010 RemObjects Software. See LICENSE.txt for more details.
 
@@ -11,7 +11,6 @@ interface
 uses
   System.Collections.Generic,
   System.Text,
-  Microsoft,
   RemObjects.Script,
   RemObjects.Script.EcmaScript.Internal;
 
