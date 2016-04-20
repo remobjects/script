@@ -246,7 +246,6 @@ end;
 
 class method Utilities.GetObjAsString(arg: Object; ec: ExecutionContext): String;
 begin
-  var lOrg := arg;
   if arg is EcmaScriptObject then arg := GetObjectAsPrimitive(ec, EcmaScriptObject(arg), PrimitiveType.String);
   if arg = Undefined.Instance then exit 'undefined';
   if arg = nil then exit 'null';

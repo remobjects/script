@@ -213,7 +213,7 @@ begin
   lTokenizer.Error -= lParser.fTok_Error;
 
   try
-    var lElement: ProgramElement := lParser.Parse(lTokenizer);
+    //var lElement: ProgramElement := lParser.Parse(lTokenizer);
     for each el in lParser.Messages do begin
       if el.IsError then 
         RaiseNativeError(NativeErrorType.SyntaxError, el.ToString());// this will reveal real error
@@ -300,8 +300,8 @@ begin
   end;
   if lVal = '' then Exit Double.NaN;
 
-  var lRes: Int64;
   (*
+  var lRes: Int64;
   if lRadix = 10 then begin
     if Length(lVal) <= 20 then begin
       if not Int64.TryParse(lVal, System.Globalization.NumberStyles.Integer, System.Globalization.NumberFormatInfo.InvariantInfo, out lRes) then 

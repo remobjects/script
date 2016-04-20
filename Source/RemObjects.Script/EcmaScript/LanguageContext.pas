@@ -19,9 +19,7 @@ uses
 type
   InternalDelegate = public delegate(scope: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 
-
   InternalFunctionDelegate = public delegate(scope: ExecutionContext;  selfRef: Object;  args: array of Object;  func: EcmaScriptInternalFunctionObject): Object;
-
 
   EcmaScriptErrorKind = public enum (
     FatalErrorWhileCompiling,
@@ -56,7 +54,6 @@ type
     DuplicateLabel
   );
 
-
   ScriptParsingException = public class(ScriptException)
   public
     class method ErrorToString(anError: EcmaScriptErrorKind; aMsg: String): String;
@@ -66,9 +63,7 @@ type
     property Msg: String; readonly;
   end;
 
-
   EcmaScriptException = public ScriptParsingException;
-
 
   EcmaScriptCompilerOptions = public class
   public
@@ -80,7 +75,6 @@ type
     property GlobalObject: GlobalObject;
   end;
 
-
   FinallyInfo = public class
   public
     property FinallyLabel: Label;
@@ -88,7 +82,6 @@ type
     method AddUnique(aLabel: Label): Integer;
     property JumpTable: List<Label> := new List<Label>; readonly;
   end;
-
 
   EcmaScriptCompiler = public class
   assembly
@@ -142,29 +135,24 @@ type
     property JustFunctions: Boolean read fJustFunctions write fJustFunctions;
   end;
 
-
   DynamicMethods = public static class
   public
   end;
 
-
   CodeDelegate = public delegate (aScope: ExecutionContext; Args: array of Object): Object;
-
 
   ExecutionStep = sealed class
   public
-    constructor(expression: ExpressionElement);
-    constructor(expression: ExpressionElement;  step: Int32);
+    constructor(aExpression: ExpressionElement);
+    constructor(aExpression: ExpressionElement; aStep: Int32);
 
     property Expression: ExpressionElement read write;
-    property Step: Int32 read write;
+    property &Step: Int32 read write;
 
     method NextStep(): ExecutionStep;
   end;
 
-
 implementation
-
 
 constructor ScriptParsingException(aFilename: String; aPosition: PositionPair; anError: EcmaScriptErrorKind; aMsg: String := '');
 begin
@@ -173,7 +161,6 @@ begin
   Position := aPosition;
   Error := anError;
   Msg := aMsg;
-
 end;
 
 class method ScriptParsingException.ErrorToString(anError: EcmaScriptErrorKind; aMsg: String): String;
@@ -2361,16 +2348,16 @@ begin
 end;
 
 
-constructor ExecutionStep(expression: ExpressionElement;  &step: Int32);
+constructor ExecutionStep(aExpression: ExpressionElement;  aStep: Int32);
 begin
-  self.Expression := expression;
-  self.Step := step;
+  self.Expression := aExpression;
+  self.Step := aStep;
 end;
 
 
-constructor ExecutionStep(expression: ExpressionElement);
+constructor ExecutionStep(aExpression: ExpressionElement);
 begin
-  constructor(expression, 0);
+  constructor(aExpression, 0);
 end;
 
 

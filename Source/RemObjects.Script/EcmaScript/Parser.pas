@@ -640,7 +640,6 @@ begin
     lCatch := new CatchBlock(new PositionPair(lCp, fTok.LastEndPosition), lIdent, lCatchBody);
   end;
   if fTok.Token = TokenKind.K_finally then begin
-    var lCp := fTok.Position;
     fTok.Next;
     if fTok.Token <> TokenKind.CurlyOpen then begin
       Error(ParserErrorKind.OpeningBraceExpected, '');

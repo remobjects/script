@@ -451,7 +451,7 @@ begin
 
   Sort(lSelf, 0, lLen -1,
     method (aList: EcmaScriptObject; L, R: Integer) begin
-      if l <> r then self.Swap(self.ExecutionContext, aList, L, R);
+      if L <> R then self.Swap(self.ExecutionContext, aList, L, R);
     end,
     method (aList: EcmaScriptObject; L, R: Integer): Integer begin
       var jString := L.ToString;

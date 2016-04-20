@@ -1062,23 +1062,23 @@ begin
     TokenKind.K_in, 
     TokenKind.K_Is] do
   begin
-	  var lToken := fTok.Token;
-	  fTok.Next;
-	  var F2 := ParseSimpleExpression;
-	  if F2 = nil then exit nil;
+    var lToken := fTok.Token;
+    fTok.Next;
+    var F2 := ParseSimpleExpression;
+    if F2 = nil then exit nil;
     var lOp: BinaryOperator;
-	  case lToken of
-	    TokenKind.GreaterEqual: lOp := BinaryOperator.GreaterEqual;
-	    TokenKind.LessEqual: lOp := BinaryOperator.LessEqual;
-	    TokenKind.Greater: lOp := BinaryOperator.Greater;
-	    TokenKind.Less: lOp := BinaryOperator.Less;
-	    TokenKind.Equal: lOp := BinaryOperator.Equal;
-	    TokenKind.NotEqual: lOp := BinaryOperator.NotEqual;
-	    TokenKind.K_in: lOp := BinaryOperator.In;
-	    TokenKind.K_Is: lOp := BinaryOperator.Is;
-	  else
-	    lOp := BinaryOperator.Add;
-	  end;
+    case lToken of
+      TokenKind.GreaterEqual: lOp := BinaryOperator.GreaterEqual;
+      TokenKind.LessEqual: lOp := BinaryOperator.LessEqual;
+      TokenKind.Greater: lOp := BinaryOperator.Greater;
+      TokenKind.Less: lOp := BinaryOperator.Less;
+      TokenKind.Equal: lOp := BinaryOperator.Equal;
+      TokenKind.NotEqual: lOp := BinaryOperator.NotEqual;
+      TokenKind.K_in: lOp := BinaryOperator.In;
+      TokenKind.K_Is: lOp := BinaryOperator.Is;
+    else
+      lOp := BinaryOperator.Add;
+    end;
     result := new BinaryExpression(Result, F2, lOp);
   end;
 end;
@@ -1093,18 +1093,18 @@ begin
     TokenKind.K_or, 
     TokenKind.K_xor] do
   begin
-	  var lToken := fTok.Token;
-	  fTok.Next;
-	  var F2 := ParseTerm;
-	  if F2 = nil then exit nil;
+    var lToken := fTok.Token;
+    fTok.Next;
+    var F2 := ParseTerm;
+    if F2 = nil then exit nil;
     var lOp: BinaryOperator;
-	  case lToken of
-	    TokenKind.Minus: lOp := BinaryOperator.Sub;
-	    TokenKind.K_or: lOp := BinaryOperator.Or;
-	    TokenKind.K_xor: lOp := BinaryOperator.Xor;
-	  else
-	    lOp := BinaryOperator.Add;
-	  end;
+    case lToken of
+      TokenKind.Minus: lOp := BinaryOperator.Sub;
+      TokenKind.K_or: lOp := BinaryOperator.Or;
+      TokenKind.K_xor: lOp := BinaryOperator.Xor;
+    else
+      lOp := BinaryOperator.Add;
+    end;
     result := new BinaryExpression(Result, F2, lOp);
   end;
 end;
@@ -1115,13 +1115,13 @@ begin
   if Result = nil then exit;
   while fTok.Token in [TokenKind.Multiply,TokenKind.Divide, TokenKind.K_div, TokenKind.K_mod, TokenKind.K_and, TokenKind.K_shl,TokenKind.K_shr, TokenKind.K_As] do
   begin
-	  var lToken := fTok.Token;
-	  fTok.Next;
-	  var F2 := ParseFactor;
-	  if F2 = nil then exit nil;
+    var lToken := fTok.Token;
+    fTok.Next;
+    var F2 := ParseFactor;
+    if F2 = nil then exit nil;
     var lOp: BinaryOperator;
-	  case lToken of
-	    TokenKind.Multiply: lOp := BinaryOperator.Mul;
+    case lToken of
+      TokenKind.Multiply: lOp := BinaryOperator.Mul;
       TokenKind.Divide:lOp := BinaryOperator.Div;
       TokenKind.K_div:lOp := BinaryOperator.Div;
       TokenKind.K_mod:lOp := BinaryOperator.Mod;
@@ -1129,9 +1129,9 @@ begin
       TokenKind.K_shl:lOp := BinaryOperator.Shl;
       TokenKind.K_shr:lOp := BinaryOperator.Shr;
       TokenKind.K_As:lOp := BinaryOperator.As;
-	  else
-	    lOp := BinaryOperator.Add;
-	  end;
+    else
+      lOp := BinaryOperator.Add;
+    end;
     result := new BinaryExpression(Result, F2, lOp);
   end;
 end;
@@ -1141,7 +1141,6 @@ begin
   case fTok.Token of
     TokenKind.Plus:
       begin
-        var lPos := fTok.Position;
         var lExpr := ParseTerm;
         if lExpr = nil then exit nil;
         exit lExpr;
@@ -1171,7 +1170,7 @@ begin
         result := new NilExpression(fTok.PositionPair);
         fTok.Next;
       end;
-	  TokenKind.HexInt, TokenKind.Integer:
+    TokenKind.HexInt, TokenKind.Integer:
       begin
         var lVal := fTok.TokenStr;
         if lVal.StartsWith('$') then
@@ -1180,7 +1179,7 @@ begin
           result := new IntegerExpression(fTok.PositionPair, Int64.Parse(lVal));
         fTok.Next;
       end;
-	  TokenKind.Real:
+    TokenKind.Real:
       begin
         result := new FloatExpression(fTok.PositionPair, Double.Parse(fTok.TokenStr, System.Globalization.NumberFormatInfo.InvariantInfo));
         fTok.Next;

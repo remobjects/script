@@ -100,13 +100,14 @@ type
 
   UsesBlock = public class(BodyBlock)
   private
-    fItems: ReadOnlyCollection<String>;
+    //fItems: ReadOnlyCollection<String>;
   public
     property &Type: ElementType read ElementType.UsesBlock; override;
     constructor (aPosition: PositionPair; aItems: sequence of String);
     constructor (aPosition: PositionPair; aItems: array of String);
     constructor (aPosition: PositionPair; aItems: IList<String>);
   end;
+  
   InterfaceBlock = public class(BodyBlock)
   private
     fItems: ReadOnlyCollection<BodyBlock>;
@@ -133,7 +134,7 @@ type
 
   LabelBlock = public class(BodyBlock)
   private
-    fItems: ReadOnlyCollection<String>;
+    //fItems: ReadOnlyCollection<String>;
   public
     property &Type: ElementType read ElementType.LabelBlock; override;
     constructor (aPosition: PositionPair; aItems: sequence of String);
@@ -681,19 +682,19 @@ end;
 constructor UsesBlock(aPosition: PositionPair; aItems: sequence of String);
 begin
   inherited constructor(aPosition);
-  fItems := new ReadOnlyCollection<String>(new List<String>(aItems));
+  //fItems := new ReadOnlyCollection<String>(new List<String>(aItems));
 end;
 
 constructor UsesBlock(aPosition: PositionPair; aItems: array of String);
 begin
   inherited constructor(aPosition);
-  fItems := new ReadOnlyCollection<String>(new List<String>(aItems));
+  //fItems := new ReadOnlyCollection<String>(new List<String>(aItems));
 end;
 
 constructor UsesBlock(aPosition: PositionPair; aItems: IList<String>);
 begin
   inherited constructor(aPosition);
-  fItems := new ReadOnlyCollection<String>(aItems);
+  //fItems := new ReadOnlyCollection<String>(aItems);
 end;
 
 constructor InterfaceBlock(aPosition: PositionPair; aItems: sequence of BodyBlock);
@@ -735,19 +736,19 @@ end;
 constructor LabelBlock(aPosition: PositionPair; aItems: sequence of String);
 begin
   inherited constructor(aPosition);
-  fItems := new ReadOnlyCollection<String>(new List<String>(aItems));
+  //fItems := new ReadOnlyCollection<String>(new List<String>(aItems));
 end;
 
 constructor LabelBlock(aPosition: PositionPair; aItems: array of String);
 begin
   inherited constructor(aPosition);
-  fItems := new ReadOnlyCollection<String>(new List<String>(aItems));
+  //fItems := new ReadOnlyCollection<String>(new List<String>(aItems));
 end;
 
 constructor LabelBlock(aPosition: PositionPair; aItems: IList<String>);
 begin
   inherited constructor(aPosition);
-  fItems := new ReadOnlyCollection<String>(aItems);
+  //fItems := new ReadOnlyCollection<String>(aItems);
 end;
 
 constructor VariableBlock(aPosition: PositionPair; aItems: sequence of VariableDeclaration);
