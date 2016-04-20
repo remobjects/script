@@ -291,8 +291,7 @@ begin
       Byte('A')..Byte('Z'), Byte(';'), Byte('/'), Byte('?'), Byte(':'), Byte('@'), Byte('&'), Byte('='), Byte('+'), Byte('$'), Byte(','),
       Byte('-'), Byte('_'), Byte('.'), Byte('!'), Byte('~'), Byte('*'), Byte(''''), Byte('('), Byte(')'), 
       Byte('a')..Byte('z'), Byte('#'),
-      Byte('0')..Byte('9'),
-      Byte('.'), Byte('_'), Byte('-'), Byte('~'):
+      Byte('0')..Byte('9'):
         res.Append(Char(bytes[i]));
     else
       res.Append('%');
@@ -414,7 +413,7 @@ if String.IsNullOrEmpty(s) then exit String.Empty;
       Byte('a')..Byte('z'),
       Byte('0')..Byte('9'),
       Byte('!'), Byte('~'), Byte('*'), Byte(''''), Byte('('), Byte(')'), 
-      Byte('.'), Byte('_'), Byte('-'), Byte('~'):
+      Byte('.'), Byte('_'), Byte('-'):
         res.Append(Char(bytes[i]));
     else
       res.Append('%');

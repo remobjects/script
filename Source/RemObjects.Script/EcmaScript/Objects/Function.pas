@@ -288,13 +288,12 @@ end;
 
 method EcmaScriptInternalFunctionObject.Call(context: ExecutionContext; params args: array of Object): Object;
 begin
-  exit fDelegate(new ExecutionContext(Scope, false), self, args, self);
+  exit self.fDelegate(new ExecutionContext(Scope, false), self, args, self);
 end;
 
 method EcmaScriptInternalFunctionObject.CallEx(context: ExecutionContext; aSelf: Object; params args: array of Object): Object;
 begin
-  result := fDelegate(new ExecutionContext(Scope, false), aSelf, args, self);
-  exit;
+  exit self.fDelegate(new ExecutionContext(Scope, false), aSelf, args, self);
 end;
 
 method EcmaScriptInternalFunctionObject.Construct(context: ExecutionContext; params args: array of Object): Object;

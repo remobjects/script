@@ -578,7 +578,7 @@ begin
         FToken := TokenKind.LineFeed;
       end;
 
-      #11, #9, #12, #32, #133, #160,#$200B,#$FEFF,#$2000 .. #$200B, #$202f, #$205f, #$3000:
+      #11, #9, #12, #32, #133, #160, #$FEFF, #$2000 .. #$200B, #$202f, #$205f, #$3000:
       begin //whitespace
         if fJSON and (FInput[curroffset] in [#11]) then begin
           FLen := 0;

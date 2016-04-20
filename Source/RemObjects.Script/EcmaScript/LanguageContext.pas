@@ -20,7 +20,7 @@ type
   InternalDelegate = public delegate(scope: ExecutionContext;  &self: Object;  params args: array of Object): Object;
 
 
-  InternalFunctionDelegate = public delegate(aScope: ExecutionContext; aSelf: Object; params args: array of Object; aFunc: EcmaScriptInternalFunctionObject): Object;
+  InternalFunctionDelegate = public delegate(scope: ExecutionContext;  selfRef: Object;  args: array of Object;  func: EcmaScriptInternalFunctionObject): Object;
 
 
   EcmaScriptErrorKind = public enum (
