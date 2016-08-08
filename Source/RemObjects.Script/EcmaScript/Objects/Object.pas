@@ -64,7 +64,7 @@ type
     property Value: Object read fValue write fValue;
 
     method GetOwnProperty(name: String;  getPropertyValue: Boolean): PropertyValue; virtual;
-    method GetOwnProperty(name: String): PropertyValue;
+    method GetOwnProperty(name: String): PropertyValue; virtual;
     method GetProperty(name: String): PropertyValue; virtual;
     method &Get(aExecutionContext: ExecutionContext := nil; aFlags: Integer := 0; aName: String): Object; virtual;
 
