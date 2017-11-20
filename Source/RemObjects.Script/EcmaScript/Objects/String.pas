@@ -288,19 +288,7 @@ begin
   if  (lMax <= 0)  then
     lMax := Int32.MaxValue;
 
-{$IFDEF SILVERLIGHT}
-  var lValues := lSelf.Split([lNeedle], StringSplitOptions.None);
-  if lValues.length > lMax then begin
-    result := new EcmaScriptArrayObject(self, 0);
-    for i: Integer := 0 to lMax -1 do begin
-      EcmaScriptArrayObject(Result).AddValue(lValues[i]);
-    end;
-    exit;
-  end else
-    exit new EcmaScriptArrayObject(self, 0).AddValues(lValues);
-{$ELSE}
-  exit  (new EcmaScriptArrayObject(self, 0).AddValues(lSelf.Split([lNeedle], lMax, StringSplitOptions.None)));
-{$ENDIF}
+  exit new EcmaScriptArrayObject(self, 0).AddValues(lSelf.Split([ lNeedle ], lMax, StringSplitOptions.None));
 end;
 
 

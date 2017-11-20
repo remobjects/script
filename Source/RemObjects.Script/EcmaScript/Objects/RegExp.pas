@@ -26,22 +26,31 @@ type
     method RegExpToString(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
     method RegExpCompile(aCaller: ExecutionContext;aSelf: Object; params Args: array of Object): Object;
   end;
+
+
   RemObjects.Script.EcmaScript.Internal.EcmaScriptRegexpObject = public class(EcmaScriptObject)
   private
-    fRegex: Regex;
-    fGlobalVal: Boolean;
+    var fGlobalVal: Boolean;
+    var fRegex: Regex;
+
     method set_LastIndex(value: Integer);
+
   assembly
     method Recreate(aPattern: String; aSettings: RegexOptions);
+
   public
+    constructor(aGlobal: GlobalObject; aPattern, aFlags: String);
+
     property GlobalVal: Boolean read fGlobalVal write fGlobalVal;
     property Options: RegexOptions read fRegex.Options;
-    //fRegEx: Regex;
     property Regex: Regex read fRegex;
-    constructor(aGlobal: GlobalObject; aPattern, aFlags: String);
     property LastIndex: Integer read Utilities.GetObjAsInteger(Get(nil, 0, 'lastIndex'), Root.ExecutionContext) write set_LastIndex;
   end;
+
+
 implementation
+
+
 method GlobalObject.CreateRegExp: EcmaScriptObject;
 begin
   result := EcmaScriptObject(Get('RegExp'));
@@ -156,7 +165,8 @@ begin
   exit lObj;
 end;
 
-constructor EcmaScriptRegexpObject(aGlobal: GlobalObject; aPattern, aFlags: String);
+
+constructor RemObjects.Script.EcmaScript.Internal.EcmaScriptRegexpObject(aGlobal: GlobalObject; aPattern, aFlags: String);
 begin
   inherited constructor(aGlobal, aGlobal.RegExpPrototype, &Class := 'RegExp');
   var lOpt := RegexOptions.ECMAScript;
@@ -188,15 +198,17 @@ begin
   end;
 end;
 
-method EcmaScriptRegexpObject.set_LastIndex(value: Integer);
+
+method RemObjects.Script.EcmaScript.Internal.EcmaScriptRegexpObject.set_LastIndex(value: Integer);
 begin
   self.Put(nil, 'lastIndex', value, 0);
 end;
 
 
-method EcmaScriptRegexpObject.Recreate(aPattern: String; aSettings: RegexOptions);
+method RemObjects.Script.EcmaScript.Internal.EcmaScriptRegexpObject.Recreate(aPattern: String; aSettings: RegexOptions);
 begin
   fRegex := new Regex(aPattern, aSettings);
 end;
+
 
 end.

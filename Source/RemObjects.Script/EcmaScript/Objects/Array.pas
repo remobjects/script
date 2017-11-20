@@ -52,9 +52,10 @@ type
   end;
 
 
-  RemObjects.Script.EcmaScript.EcmaScriptArrayObject = public class(EcmaScriptObject)
+  EcmaScriptArrayObject = public class(EcmaScriptObject)
   private
-    method get_Length: Cardinal;
+    method get_Length(): Cardinal;
+
   public
     constructor(aRoot: GlobalObject; aLength: Object);
     constructor(aCapacity: Integer; aRoot: GlobalObject);
@@ -68,7 +69,7 @@ type
     property Length: Cardinal read get_Length;
 
     method DefineOwnProperty(aName: String;  aValue: PropertyValue;  aThrow: Boolean): Boolean; override;
-    
+
     class method TryGetArrayIndex(s: String;  out val: Cardinal): Boolean;
   end;
 

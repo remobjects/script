@@ -1,7 +1,5 @@
-﻿{
-  Copyright (c) 2009-2013 RemObjects Software, LLC.
-  See LICENSE.txt for more details.
-}
+﻿//  Copyright RemObjects Software, 2002-2017. All rights reserved.
+//  See LICENSE.txt for more details.
 
 namespace RemObjects.Script;
 
@@ -66,7 +64,7 @@ type
   end;
 
 
-  ScriptComponent = public abstract class({$IFNDEF SILVERLIGHT} Component, {$ENDIF}IDebugSink, IDisposable)
+  ScriptComponent = public abstract class(Component, IDebugSink, IDisposable)
   private
     fWorkThread: System.Threading.Thread;
     fRunResult: Object;
@@ -107,16 +105,12 @@ type
     property Source: String;
     [Category('Script')]
     property RunInThread: Boolean read fRunInThread write set_RunInThread;    
-
     [Browsable(false)]
     property CallStack: ReadOnlyCollection<ScriptStackFrame> read fStackItems;
     [Browsable(false)]
     property Globals: ScriptScope read; abstract;
-    {$IFDEF SILVERLIGHT}
-    method Dispose;
-    {$ELSE}
+
     method Dispose(disposing: Boolean); override;
-    {$ENDIF}
 
     method ExposeType(&type: &Type;  name: String := nil); abstract;
 
@@ -165,11 +159,9 @@ type
   end;
 
 
-  {$REGION Designtime Attributes}
-  {$IFDEF DESIGN}
+{$IFDEF DESIGN}
   [System.Drawing.ToolboxBitmap(typeOf(RemObjects.Script.EcmaScriptComponent), 'Glyphs.EcmaScriptComponent.png')]
-  {$ENDIF}
-  {$ENDREGION}
+{$ENDIF}
   EcmaScriptComponent = public class(ScriptComponent)
   private
   protected
@@ -177,7 +169,7 @@ type
     var fScope: ScriptScope;
     var fRoot: ExecutionContext;
     var fGlobalObject: RemObjects.Script.EcmaScript.GlobalObject;
-    fJustFunctions: Boolean;
+    var fJustFunctions: Boolean;
 
     method set_JustFunctions(value: Boolean);
     method SetDebug(b: Boolean); override;
@@ -485,15 +477,12 @@ begin
   end;
 end;
 
-{$IFDEF SILVERLIGHT} 
-method ScriptComponent.Dispose;
-{$ELSE}
-method ScriptComponent.Dispose(disposing: Boolean);
-{$ENDIF}
-begin
-  {$IFNDEF SILVERLIGHT} if disposing then {$ENDIF}
-  fWaitEvent.Close;
 
+method ScriptComponent.Dispose(disposing: Boolean);
+begin
+  if disposing then begin
+    self.fWaitEvent.Close();
+  end;
 end;
 
 

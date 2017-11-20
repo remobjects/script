@@ -1,6 +1,8 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{656346D9-4656-40DA-A068-22D5425D4639}") = "RemObjects.Script", "RemObjects.Script\RemObjects.Script.oxygene", "{CAF9C919-D826-4452-910E-D8BA4861CD72}"
 EndProject
 Global
@@ -9,10 +11,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{CAF9C919-D826-4452-910E-D8BA4861CD72}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CAF9C919-D826-4452-910E-D8BA4861CD72}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CAF9C919-D826-4452-910E-D8BA4861CD72}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{CAF9C919-D826-4452-910E-D8BA4861CD72}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CAF9C919-D826-4452-910E-D8BA4861CD72}.Debug|Any CPU.ActiveCfg = Debug
+		{CAF9C919-D826-4452-910E-D8BA4861CD72}.Debug|Any CPU.Build.0 = Debug
+		{CAF9C919-D826-4452-910E-D8BA4861CD72}.Release|Any CPU.ActiveCfg = Release
+		{CAF9C919-D826-4452-910E-D8BA4861CD72}.Release|Any CPU.Build.0 = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
