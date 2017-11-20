@@ -70,7 +70,6 @@ begin
       self.tabs.SelectedTab := tbOutput;
       exit ;
     end), array of Object([args]));
-    exit nil;
   end));
 end;
 

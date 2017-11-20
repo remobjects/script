@@ -76,12 +76,10 @@
   <ItemGroup>
     <Compile Include="MainForm.Commands.pas">
       <SubType>Form</SubType>
-      <DesignableClassName>Debugger.MainForm</DesignableClassName>
     </Compile>
     <Compile Include="MainForm.Designer.pas">
       <SubType>Form</SubType>
       <DependentUpon>MainForm.pas</DependentUpon>
-      <DesignableClassName>Debugger.MainForm</DesignableClassName>
     </Compile>
     <Compile Include="MainForm.pas">
       <SubType>Form</SubType>
@@ -105,7 +103,7 @@
   <ItemGroup>
     <Folder Include="Properties\" />
   </ItemGroup>
-  <Import Project="$(MSBuildExtensionsPath)\RemObjects Software\Oxygene\RemObjects.Oxygene.Echoes.targets" />
+  <Import Project="$(MSBuildExtensionsPath)\RemObjects Software\Elements\RemObjects.Elements.Echoes.targets" />
   <PropertyGroup>
     <PreBuildEvent />
   </PropertyGroup>

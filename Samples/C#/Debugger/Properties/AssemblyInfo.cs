@@ -6,10 +6,10 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("RemObjects Software LLC")]
 [assembly: AssemblyProduct("RemObjects Script for .NET")]
-[assembly: AssemblyCopyright("Copyright RemObjects Software LLC. 2009-2012. All Rights Reserved.")]
+[assembly: AssemblyCopyright("Copyright RemObjects Software 2009-2017. All Rights Reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 [assembly: ComVisible(false)]
 
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("2.0.0.0")]
+[assembly: AssemblyFileVersion("2.0.0.0")]
