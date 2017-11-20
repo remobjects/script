@@ -1,8 +1,5 @@
-﻿{
-
-  Copyright (c) 2009-2010 RemObjects Software. See LICENSE.txt for more details.
-
-}
+﻿//  Copyright RemObjects Software 2002-2017. All rights reserved.
+//  See LICENSE.txt for more details.
 
 namespace RemObjects.Script.EcmaScript;
 

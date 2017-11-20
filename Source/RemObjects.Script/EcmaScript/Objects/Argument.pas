@@ -1,3 +1,6 @@
+//  Copyright RemObjects Software 2002-2017. All rights reserved.
+//  See LICENSE.txt for more details.
+
 namespace RemObjects.Script.EcmaScript;
 
 interface

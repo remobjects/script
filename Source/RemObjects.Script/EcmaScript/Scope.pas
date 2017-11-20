@@ -1,4 +1,6 @@
-﻿
+﻿//  Copyright RemObjects Software 2002-2017. All rights reserved.
+//  See LICENSE.txt for more details.
+
 namespace RemObjects.Script.EcmaScript;
 
 interface
@@ -301,7 +303,7 @@ begin
       exit aExecutionContext.Global.Put(aExecutionContext, lRef.Name, aValue, lRef.Flags);
   var lObj := EcmaScriptObject(lRef.Base);
   if assigned(lObj) then 
-    exit lObj.Put(aExecutionContext,lRef.Name, aValue, lRef.Flags);
+    exit lObj.Put(aExecutionContext, lRef.Name, aValue, lRef.Flags);
   var lExec := EnvironmentRecord(lRef.Base);
   if assigned(lExec) then begin
     lExec.SetMutableBinding(lRef.Name, aValue, lRef.Strict);

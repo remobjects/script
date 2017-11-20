@@ -1,8 +1,6 @@
-﻿{
+﻿//  Copyright RemObjects Software 2002-2017. All rights reserved.
+//  See LICENSE.txt for more details.
 
-  Copyright (c) 2009-2012 RemObjects Software. See LICENSE.txt for more details.
-
-}
 namespace RemObjects.RemObjects.Script;
 
 interface
@@ -17,7 +15,7 @@ uses
 [assembly: AssemblyConfiguration('')]
 [assembly: AssemblyCompany('RemObjects Software LLC')]
 [assembly: AssemblyProduct('RemObjects Script')]
-[assembly: AssemblyCopyright('Copyright RemObjects Software LLC. 2009-2012. All Rights Reserved.')]
+[assembly: AssemblyCopyright('Copyright RemObjects Software 2002-2017. All Rights Reserved.')]
 [assembly: AssemblyTrademark('')]
 [assembly: AssemblyCulture('')]
 [assembly: AssemblyVersion('2.0.0.0')]
