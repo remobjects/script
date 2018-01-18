@@ -8,10 +8,14 @@ interface
 uses
   System.Collections.Generic,
   System.Text,
+  System.Text.RegularExpressions,
   RemObjects.Script.EcmaScript.Internal;
 
 type
   GlobalObject = public partial class(EcmaScriptObject)
+  private
+    class var fStringReplacementPlaceholders: Regex := new Regex("(\\$[`'&])|(\\$([1-9]{1}(?![0-9])|[0-9]{2}))", RegexOptions.Compiled);
+
   public
     method CreateString: EcmaScriptObject;
 
@@ -220,23 +224,175 @@ end;
 
 
 method GlobalObject.StringReplace(aCaller: ExecutionContext;  aSelf: Object;  params args: array of Object): Object;
+
+  method ExtractMatchPlaceholders(value: String): IList<Match>;
+  begin
+    var replacementPlaceholders: List<Match> := List<Match>(nil);
+    for each match: Match in GlobalObject.fStringReplacementPlaceholders.Matches(value) do begin
+      if not match.Success then begin
+        continue;
+      end;
+
+      var i: Int32 := match.Index;
+      var count: Int32 := 1;
+      var &result: Int32 := 0;
+      while i > 0 do begin
+        dec(i);
+        if value[i] <> '$' then begin
+          break;
+        end;
+        inc(count);
+      end;
+      Math.DivRem(count, 2, out &result);
+      if &result <> 0 then begin
+        if not assigned(replacementPlaceholders) then begin
+          replacementPlaceholders := new List<Match>();
+        end;
+        replacementPlaceholders.Add(match);
+      end;
+    end;
+
+    exit replacementPlaceholders;
+  end;
+
+  method FixRegExpSymbols(pattern: String): String;
+  begin
+    if String.IsNullOrEmpty(pattern) then begin
+      exit '';
+    end;
+
+    var symbols: array of String := ['\', '[', ']', '^', '!', '|', '$', '?', '=', '{', '}', '+', '*', '(', ')'];
+
+    for i: Int32 := 0 to symbols.Length-1 do begin
+      pattern := pattern.Replace(symbols[i], '\' + symbols[i]);
+    end;
+
+    exit pattern;
+  end;
+
 begin
-  var lSelf: String := coalesce(Utilities.GetObjAsString(aSelf, aCaller), String.Empty);
+  var selfReference: String := coalesce(Utilities.GetObjAsString(aSelf, aCaller), '');
+  if args.Length = 0 then begin
+    exit selfReference;
+  end;
 
+  var arg_0: Object := Utilities.GetArg(args, 0);
+  if not assigned(arg_0) or (arg_0 = Undefined.Instance) then begin
+    exit selfReference;
+  end;
 
-  var lNewValue: String := coalesce(Utilities.GetArgAsString(args, 1, aCaller), String.Empty);
+  var arg_1: Object := Utilities.GetArg(args, 1);
+  var callback: EcmaScriptInternalFunctionObject := EcmaScriptInternalFunctionObject(arg_1);
+  var newValue: String := nil;
+  if not assigned(callback) then begin
+    newValue := coalesce(Utilities.GetObjAsString(arg_1, aCaller), '');
+  end;
 
-  var lPattern: EcmaScriptRegexpObject;
-  if  (args[0] is EcmaScriptRegexpObject)  then
-    lPattern := EcmaScriptRegexpObject(args[0])
-  else
-    exit lSelf.Replace(Utilities.GetArgAsString(args, 0, aCaller), lNewValue);
+  var replacementPlaceholders: IList<Match> := nil;
+  if not String.IsNullOrEmpty(newValue) then begin
+    replacementPlaceholders := ExtractMatchPlaceholders(newValue);
+  end;
 
-    
-  if  (lPattern.GlobalVal)  then
-    exit  (lPattern.Regex.Replace(lSelf, lNewValue));
+  var pattern: EcmaScriptRegexpObject := EcmaScriptRegexpObject(arg_0);
+  if (not assigned(pattern)) and (assigned(callback) or assigned(replacementPlaceholders)) then begin
+    pattern := new EcmaScriptRegexpObject(aCaller.Global, FixRegExpSymbols(Utilities.GetObjAsString(arg_0, aCaller)), '');
+  end;
 
-  exit  (lPattern.Regex.Replace(lSelf, lNewValue, 1));
+  if not (assigned(callback) or assigned(replacementPlaceholders)) then begin
+   if not assigned(pattern) then begin
+      // This will replace all occurrences
+      exit selfReference.Replace(Utilities.GetObjAsString(arg_0, aCaller), newValue);
+    end;
+
+    if pattern.GlobalVal then begin
+      exit pattern.Regex.Replace(selfReference, newValue);
+    end;
+
+    exit pattern.Regex.Replace(selfReference, newValue, 1);
+  end;
+
+  var evaluator: MatchEvaluator := nil;
+
+  if not assigned(replacementPlaceholders) then begin
+    var callbackArgs: array of Object := nil;
+    var groups: Int32 := 0;
+    evaluator :=
+      (match) ->
+      begin
+        if not assigned(callbackArgs) then begin
+          groups := match.Groups.Count;
+          callbackArgs := new Object[groups+2];
+          callbackArgs[callbackArgs.Length-1] := selfReference;
+        end;
+
+        for i: Int32 := 0 to groups-1 do begin
+          if i = 0 then begin
+            callbackArgs[callbackArgs.Length-2] := match.Groups[i].Index;
+          end;
+          callbackArgs[i] := iif(match.Groups[i].Success, Object(match.Groups[i].Value), Undefined.Instance);
+        end;
+
+        var replacment: String := Utilities.GetObjAsString(callback.CallEx(aCaller, aCaller.Global, callbackArgs), aCaller);
+
+        exit replacment;
+      end;
+  end
+  else begin
+    var text: StringBuilder := new StringBuilder();
+
+    evaluator :=
+      (match) ->
+      begin
+        text.Length := 0;
+        var &index: Int32 := 0;
+        var matchIndex: Int32 := 0;
+        var matchCount: Int32 := match.Groups.Count;
+        for each placeholder in replacementPlaceholders do begin
+          text.Append(newValue.Substring(&index, placeholder.Index-&index).Replace('$$', '$')); // Remove escape symbols
+
+          case placeholder.Value of
+            '$`':
+                begin
+                  // Insert portion of the string that precedes the matched substring
+                  text.Append(selfReference.Substring(0, match.Index));
+                end;
+            "$'":
+                begin
+                  // Insert portion of the string that follows the matched substring
+                  &index := match.Index + match.Value.Length;
+                  if &index < selfReference.Length then begin
+                    text.Append(selfReference.Substring(&index));
+                  end;
+                end;
+            '$&':
+                begin
+                  text.Append(match.Groups[0].Value);
+                end;
+            else
+                begin
+                  matchIndex := Int32.Parse(placeholder.Value.Substring(1));
+                  if matchIndex < matchCount then begin
+                    text.Append(match.Groups[matchIndex].Value);
+                  end;
+               end;
+          end;
+
+          &index := placeholder.Index + placeholder.Value.Length;
+        end;
+
+        if &index < newValue.Length then begin
+          text.Append(newValue.Substring(&index).Replace('$$', '$'));
+        end;
+
+        exit text.ToString();
+      end;
+  end;
+
+  if pattern.GlobalVal then begin
+    exit pattern.Regex.Replace(selfReference, evaluator);
+  end;
+
+  exit pattern.Regex.Replace(selfReference, evaluator, 1);
 end;
 
 
