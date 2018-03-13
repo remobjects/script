@@ -2316,6 +2316,16 @@ begin
           fILG.Emit(OpCodes.Ldc_I4_0);
         fILG.Emit(OpCodes.Call, EnvironmentRecord.Method_CreateMutableBindingNoFail);
       end;
+    end else if el.Type = ElementType.VariableDeclaration then begin
+      var en  := VariableDeclaration(el);
+      fILG.Emit(OpCodes.Ldloc, fExecutionContext);
+      fILG.Emit(OpCodes.Call, ExecutionContext.Method_get_VariableScope);
+      fILG.Emit(OpCodes.Ldstr, en.Identifier);
+      if aEval then
+        fILG.Emit(OpCodes.Ldc_I4_1) 
+      else
+        fILG.Emit(OpCodes.Ldc_I4_0);
+      fILG.Emit(OpCodes.Call, EnvironmentRecord.Method_CreateMutableBindingNoFail);
     end;
   end;
 end;
