@@ -20,10 +20,10 @@ type
     /// <summary>invalid string</summary>
     ErrorInChar,
     EnterInString,
-    EOFInString);  
+    EOFInString);
 
   /// <summary>contains all tokens the tokenizersupports</summary>
-  TokenKind = public enum(    
+  TokenKind = public enum(
     EOF,
 
     Error,
@@ -127,9 +127,9 @@ type
     K_true,
     K_false,
     K_result
-  );  
+  );
 
-  
+
   KeywordMap nested in Tokenizer = private class
   private
   public
@@ -155,16 +155,15 @@ type
 
     method SaveState: Object;
     method RestoreState(o: Object);
-    
+
     event Error: TokenizerError;
   end;
 
   Tokenizer = public class(ITokenizer)
   private
-    class var     
-      FIdentifiers: array of KeywordMap;
-      FCharMap: Array[Byte] of Char;
-    var     
+    class var FIdentifiers: array of KeywordMap;
+    class var FCharMap: array[Byte] of Char;
+    var
     FInput: array of Char;
     FPos, FRow, FLastEnterPos, FLen: Integer;
     FToken: TokenKind;
@@ -172,11 +171,11 @@ type
     FPosition: Position := new Position();
     FEndPosition: Position := new Position();
     FLastEndPosition: Position := new Position();
-    
+
     method IdentCompare(aPos: Integer; len: Integer; Data: array of Char): Integer;
     method IsIdentifier(aPos: Integer; len: Integer): TokenKind;
     method IntNext(): Boolean;
-    
+
     class constructor;
   public
     constructor; empty;
@@ -196,7 +195,7 @@ type
     property EndPosition: Position read FEndPosition;
     property LastEndPosition: Position read FLastEndPosition;
     property PositionPair: PositionPair read new PositionPair(Position, EndPosition);
-    
+
     event Error: TokenizerError;
   end;
 
@@ -206,7 +205,7 @@ type
   /// <param name="Caller">the tokenizer that caused this</param>
   /// <param name="Kind">the error kind</param>
   /// <param name="Parameter">optional parameter</param>
-  
+
   TokenizerError = public delegate(Caller: Tokenizer; Kind: TokenizerErrorKind; Parameter: String);
 
 implementation
@@ -244,7 +243,7 @@ begin
   begin
     var curr: Integer := (L + H) / 2;
     case IdentCompare(aPos, len, FIdentifiers[curr].Chars) of
-     0:      
+     0:
        exit FIdentifiers[curr].Token;
       1:begin
         H := curr - 1;
@@ -266,14 +265,14 @@ begin
   begin
     FPos := FPos + FLen;
     var lStartRow := Row; // Actual row
-    var lStartColumn := Col; 
+    var lStartColumn := Col;
     if not IntNext() then
     begin
       FToken := TokenKind.Error;
       exit;
     end;
     case FToken of
-      TokenKind.Comment, 
+      TokenKind.Comment,
       TokenKind.WhiteSpace: ;
       else begin
         Stop := true;
@@ -308,7 +307,7 @@ begin
       begin
         if FInput[curroffset + 1] = '/' then begin // single line commment
           inc(curroffset);
-          while FInput[curroffset] not in [#0, #10, #13] do 
+          while FInput[curroffset] not in [#0, #10, #13] do
             inc(curroffset);
           FLen := curroffset - FPos;
           FToken := TokenKind.Comment
@@ -324,7 +323,7 @@ begin
             end;
             inc(curroffset);
           end;
-          
+
           if FInput[curroffset] = #0 then begin
             if Error <> nil then Error(self, TokenizerErrorKind.CommentError, '');
             FLen := 0;
@@ -374,14 +373,14 @@ begin
           FToken := TokenKind.HexInt;
           FLen := curroffset - FPos;
         end;
-      '0'..'9', '.': 
+      '0'..'9', '.':
         begin
           if (FInput[curroffset] = '.') and (FInput[curroffset+1] not in ['0'..'9']) then begin
             if FInput[curroffset + 1] = '.' then
             begin
               FLen := 2;
               FToken := TokenKind.TwoDots;
-            end else begin 
+            end else begin
               FLen := 1;
               FToken := TokenKind.Period;
             end;
@@ -393,7 +392,7 @@ begin
             end else begin
               var lHasDot: Boolean := FInput[curroffset] = '.';
               inc(curroffset);
-              while (FInput[curroffset] in ['0' .. '9']) or ((FInput[curroffset] = '.') and not lHasDot) do begin 
+              while (FInput[curroffset] in ['0' .. '9']) or ((FInput[curroffset] = '.') and not lHasDot) do begin
                 if FInput[curroffset] = '.' then lHasDot := true;
                 inc(curroffset);
               end;
