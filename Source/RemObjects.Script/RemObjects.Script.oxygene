@@ -52,9 +52,7 @@
     <ItemGroup>
         <Reference Include="mscorlib"/>
         <Reference Include="System"/>
-        <Reference Include="System.Core">
-            <HintPath>C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\v3.5\System.Core.dll</HintPath>
-        </Reference>
+        <Reference Include="System.Core"/>
         <Reference Include="System.Data"/>
         <Reference Include="System.Drawing"/>
         <Reference Include="System.Windows.Forms"/>
