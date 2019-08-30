@@ -12,8 +12,8 @@
     <AllowUnsafeCode>False</AllowUnsafeCode>
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
     <Name>RemObjects.Script</Name>
-    <TargetFramework>.NETCore2.0</TargetFramework>
-    <NETCoreRuntimeVersion>2.0.0</NETCoreRuntimeVersion>
+    <TargetFramework>.NETCore2.2</TargetFramework>
+    <NETCoreRuntimeVersion>2.1.6</NETCoreRuntimeVersion>
     <NETCoreSDKVersion>2.1.502</NETCoreSDKVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -53,7 +53,7 @@
     <FutureHelperClassName />
   </PropertyGroup>
   <ItemGroup>
-    <NuGetReference Include="Microsoft.NETCore.App:[2.0.9]" />
+    <NuGetReference Include="Microsoft.NETCore.App:2.1.6" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Common.pas" />
