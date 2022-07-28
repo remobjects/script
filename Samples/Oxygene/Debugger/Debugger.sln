@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{656346D9-4656-40DA-A068-22D5425D4639}") = "Debugger", "Debugger.oxygene", "{37626F77-CB09-429C-909E-516216FAF34B}"
+Project("{656346D9-4656-40DA-A068-22D5425D4639}") = "Debugger", "Debugger.elements", "{37626F77-CB09-429C-909E-516216FAF34B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

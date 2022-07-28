@@ -123,14 +123,14 @@
     <Folder Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\RemObjects.Script\RemObjects.Script.oxygene">
+    <ProjectReference Include="..\RemObjects.Script\RemObjects.Script.elements">
       <Name>RemObjects.Script</Name>
       <Project>{caf9c919-d826-4452-910e-d8ba4861cd72}</Project>
       <Private>True</Private>
       <HintPath>\..\..\Bin\RemObjects.Script.dll</HintPath>
     </ProjectReference>
   </ItemGroup>
-  <Import Project="$(MSBuildExtensionsPath)\RemObjects Software\Oxygene\RemObjects.Oxygene.targets" />
+  <Import Project="$(MSBuildExtensionsPath)\RemObjects Software\Elements\RemObjects.Elements.targets" />
   <PropertyGroup>
     <PreBuildEvent />
   </PropertyGroup>
